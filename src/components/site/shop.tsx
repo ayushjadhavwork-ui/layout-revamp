@@ -147,18 +147,42 @@ export function ProductModal({
   onClose: () => void;
 }) {
   const [note, setNote] = useState("");
+  const [slide, setSlide] = useState(0);
+  const [reviews, setReviews] = useState<{ name: string; rating: number; text: string }[]>([]);
+  const [rvName, setRvName] = useState("");
+  const [rvText, setRvText] = useState("");
+  const [rvRating, setRvRating] = useState(5);
+
   const setSize = useStore((s) => s.setSize);
   const toggleTemplate = useStore((s) => s.toggleTemplate);
   const addItem = useStore((s) => s.addItem);
   const templateLimit = useStore((s) => s.templateLimit());
   const selectedSizeId = useStore((s) => s.selectedSizeId);
 
-  useEffect(() => { if (open) setNote(""); }, [open, product?.id]);
+  useEffect(() => {
+    if (open) {
+      setNote("");
+      setSlide(0);
+      // Seed a couple of mock reviews per product
+      setReviews([
+        { name: "Aarohi S.", rating: 5, text: "Absolutely stunning quality — exceeded expectations." },
+        { name: "Karan M.", rating: 4, text: "Loved the presentation. Delivery was quick too." },
+      ]);
+    }
+  }, [open, product?.id]);
 
   if (!open || !product || !category) return null;
 
   const isSize = category === "sizes";
   const isTemplate = category === "templates";
+
+  // Build 3 mock slides using gradients + product initials
+  const initials = product.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "✦";
+  const slides = [
+    "from-pink-mist to-blush-rose",
+    "from-blush-rose to-rose-wine",
+    "from-dusty-rose to-pink-mist",
+  ];
 
   const handleAdd = () => {
     if (isSize) {
@@ -176,15 +200,59 @@ export function ProductModal({
     onClose();
   };
 
+  const submitReview = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!rvName.trim() || !rvText.trim()) return toast.error("Add your name and review.");
+    setReviews((r) => [{ name: rvName.trim(), rating: rvRating, text: rvText.trim() }, ...r]);
+    setRvName(""); setRvText(""); setRvRating(5);
+    toast.success("Review posted");
+  };
+
   return (
     <ModalShell onClose={onClose}>
       <div className="grid gap-6 md:grid-cols-2">
-        <div className="flex h-64 items-center justify-center rounded-2xl bg-gradient-to-br from-pink-mist to-blush-rose font-display text-7xl text-white">
-          {product.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "✦"}
+        {/* Image carousel */}
+        <div>
+          <div className={`relative flex h-64 md:h-80 items-center justify-center rounded-2xl bg-gradient-to-br ${slides[slide]} font-display text-7xl text-white overflow-hidden`}>
+            {initials}
+            <button
+              type="button"
+              onClick={() => setSlide((slide - 1 + slides.length) % slides.length)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/70 text-rose-wine hover:bg-white"
+              aria-label="Previous image"
+            >‹</button>
+            <button
+              type="button"
+              onClick={() => setSlide((slide + 1) % slides.length)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/70 text-rose-wine hover:bg-white"
+              aria-label="Next image"
+            >›</button>
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+              {slides.map((_, i) => (
+                <span key={i} className={`h-1.5 w-1.5 rounded-full ${i === slide ? "bg-white" : "bg-white/40"}`} />
+              ))}
+            </div>
+          </div>
+          <div className="mt-3 grid grid-cols-3 gap-2">
+            {slides.map((g, i) => (
+              <button
+                key={i}
+                type="button"
+                onClick={() => setSlide(i)}
+                className={`h-16 rounded-xl bg-gradient-to-br ${g} font-display text-white text-xl ${i === slide ? "ring-2 ring-rose-wine" : ""}`}
+              >{initials}</button>
+            ))}
+          </div>
         </div>
+
+        {/* Product details */}
         <div>
           <p className="text-xs uppercase tracking-[0.3em] text-blush-rose">{category}</p>
           <h3 className="font-display text-4xl text-rose-wine mt-2">{product.name}</h3>
+          <div className="mt-2 flex items-center gap-2 text-xs text-dusty-rose">
+            <span className="text-blush-rose">★★★★☆</span>
+            <span>{reviews.length} review{reviews.length === 1 ? "" : "s"}</span>
+          </div>
           <p className="mt-3 text-neutral-700">{product.desc}</p>
           <p className="mt-4 text-2xl font-semibold text-blush-rose">
             {isTemplate ? "Included with package" : product.price ? fmt(product.price) : "Free"}
@@ -195,7 +263,7 @@ export function ProductModal({
               <textarea
                 value={note}
                 onChange={(e) => setNote(e.target.value)}
-                rows={3}
+                rows={2}
                 className="mt-1 w-full rounded-xl border border-rose-wine/20 bg-white/60 p-3 text-sm outline-none focus:border-rose-wine"
                 maxLength={300}
                 placeholder="Anything we should know?"
@@ -206,6 +274,49 @@ export function ProductModal({
             {isSize ? "Select package" : isTemplate ? "Toggle selection" : "Add to cart"}
           </button>
         </div>
+      </div>
+
+      {/* Reviews section */}
+      <div className="mt-8 border-t border-white/60 pt-6">
+        <h4 className="font-display text-2xl text-rose-wine">Customer reviews</h4>
+        <form onSubmit={submitReview} className="mt-4 rounded-2xl bg-white/50 p-4 space-y-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <input
+              value={rvName}
+              onChange={(e) => setRvName(e.target.value)}
+              placeholder="Your name"
+              className="rounded-xl border border-rose-wine/20 bg-white/70 px-3 py-2 text-sm outline-none focus:border-rose-wine"
+              maxLength={60}
+            />
+            <select
+              value={rvRating}
+              onChange={(e) => setRvRating(Number(e.target.value))}
+              className="rounded-xl border border-rose-wine/20 bg-white/70 px-3 py-2 text-sm outline-none focus:border-rose-wine"
+            >
+              {[5,4,3,2,1].map((n) => <option key={n} value={n}>{n} star{n === 1 ? "" : "s"}</option>)}
+            </select>
+          </div>
+          <textarea
+            value={rvText}
+            onChange={(e) => setRvText(e.target.value)}
+            rows={2}
+            placeholder="Share your experience…"
+            className="w-full rounded-xl border border-rose-wine/20 bg-white/70 px-3 py-2 text-sm outline-none focus:border-rose-wine"
+            maxLength={400}
+          />
+          <button type="submit" className="pill-btn pill-btn-hover !py-2 !px-4 !text-xs">Post review</button>
+        </form>
+        <ul className="mt-4 space-y-3 max-h-56 overflow-y-auto pr-1">
+          {reviews.map((r, i) => (
+            <li key={i} className="rounded-2xl bg-white/40 p-3">
+              <div className="flex items-center justify-between">
+                <p className="font-medium text-rose-wine text-sm">{r.name}</p>
+                <span className="text-xs text-blush-rose">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
+              </div>
+              <p className="mt-1 text-sm text-neutral-700">{r.text}</p>
+            </li>
+          ))}
+        </ul>
       </div>
     </ModalShell>
   );
