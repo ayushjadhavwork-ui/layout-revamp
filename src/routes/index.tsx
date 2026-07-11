@@ -145,8 +145,8 @@ function Home() {
             <ProductGrid category="polaroids" items={CATALOG.polaroids} onOpen={openProduct("polaroids")} cols="sm:grid-cols-2" />
           </div>
           <div>
-            <SectionHead eyebrow="Step 5" title="Photobooth strips" />
-            <ProductGrid category="strips" items={CATALOG.strips} onOpen={openProduct("strips")} cols="sm:grid-cols-2" />
+            <SectionHead eyebrow="Step 5" title="Polaroid Strips" sub="Click a pill to add it, or tap View More for details." />
+            <ProductGrid category="strips" items={CATALOG.strips} onOpen={openProduct("strips")} cols="sm:grid-cols-2 lg:grid-cols-3" />
           </div>
           <div>
             <SectionHead eyebrow="Step 6" title="Delivery" />
