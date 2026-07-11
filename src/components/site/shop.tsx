@@ -385,6 +385,9 @@ export function CartDrawer({
 
           <div className="mt-4 flex-1 space-y-3 overflow-y-auto pr-1">
             {cart.length === 0 && <p className="text-center text-dusty-rose py-10">Your cart is empty.</p>}
+
+            {cart.length > 0 && <CartSummaryPanel />}
+
             {cart.map((item) => (
               <div key={item.key} className="flex items-start gap-3 rounded-2xl bg-white/50 p-3">
                 <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-pink-mist to-blush-rose font-display text-white">
