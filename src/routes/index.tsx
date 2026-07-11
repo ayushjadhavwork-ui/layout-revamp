@@ -157,6 +157,7 @@ function Home() {
 
       <section className="pattern-gingham">
         <Founders />
+        <Journey />
       </section>
       <Reels />
       <Policy />
