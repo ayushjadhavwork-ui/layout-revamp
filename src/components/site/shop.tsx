@@ -423,6 +423,7 @@ export function CartDrawer({
             </div>
             {msg && <p className={`text-xs ${coupon ? "text-green-700" : "text-rose-wine"}`}>{msg}</p>}
             <div className="flex justify-between"><span>Discount</span><span>−{fmt(discount)}</span></div>
+            <DeliveryEta />
             <div className="flex justify-between border-t border-white/60 pt-2 text-lg font-semibold">
               <span>Total</span><span className="text-blush-rose">{fmt(total)}</span>
             </div>
