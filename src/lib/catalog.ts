@@ -56,9 +56,11 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
     { id: "pol-premium", name: "Premium Pack (36)", price: 599, desc: "36 premium polaroids." },
   ],
   strips: [
-    { id: "str-1",    name: "1 Strip",  price: 79,  desc: "A single photobooth strip." },
-    { id: "str-3",    name: "3 Strips", price: 199, desc: "Three photobooth strips." },
-    { id: "str-5",    name: "5 Strips", price: 299, desc: "Five photobooth strips." },
+    { id: "str-1", name: "1 Strip",  price: 100, desc: "A single polaroid strip." },
+    { id: "str-2", name: "2 Strips", price: 125, desc: "Two polaroid strips." },
+    { id: "str-3", name: "3 Strips", price: 175, desc: "Three polaroid strips." },
+    { id: "str-4", name: "4 Strips", price: 220, desc: "Four polaroid strips." },
+    { id: "str-5", name: "5 Strips", price: 275, desc: "Five polaroid strips." },
   ],
   delivery: [
     { id: "del-std", name: "Standard Delivery", price: 0,   desc: "Free — arrives in 7-8 days." },
