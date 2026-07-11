@@ -113,11 +113,11 @@ export function ProductGrid({
                 )}
               </button>
               
-              {/* Only show View More if the item has been selected */}
-              {active && (
+              {/* View More always visible for shoppable items; templates/sizes only when active */}
+              {(active || (!isSize && !isTemplate)) && (
                 <button
                   onClick={() => onOpen(item)}
-                  className="pill-btn pill-btn-hover !py-2 !px-3 !text-xs animate-in fade-in zoom-in duration-200"
+                  className="pill-btn pill-btn-hover !py-2 !px-3 !text-xs"
                   type="button"
                 >
                   View More
