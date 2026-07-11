@@ -666,3 +666,81 @@ export function StepIndicator() {
     </p>
   );
 }
+
+/* ================================================================ */
+/*                CART SUMMARY PANEL + DELIVERY ETA                 */
+/* ================================================================ */
+
+function CartSummaryPanel() {
+  const cart = useStore((s) => s.cart);
+  const selectedSizeId = useStore((s) => s.selectedSizeId);
+
+  const sizeItem = CATALOG.sizes.find((s) => s.id === selectedSizeId);
+  const templates = cart.filter((c) => c.category === "templates").map((c) => {
+    const m = c.id.match(/tpl-(\d+)/);
+    return m ? Number(m[1]) : c.id;
+  });
+  const addons = cart.filter((c) => c.category === "addons").map((c) => c.name).join(", ") || "—";
+  const polaroids = cart.filter((c) => c.category === "polaroids").map((c) => c.name).join(", ") || "—";
+  const stripsItems = cart.filter((c) => c.category === "strips");
+  const stripsSummary = stripsItems.length
+    ? stripsItems.map((c) => c.name).join(", ")
+    : "—";
+  const stripCount = stripsItems.reduce((n, c) => {
+    const m = c.name.match(/(\d+)/);
+    return n + (m ? Number(m[1]) : 0);
+  }, 0);
+
+  return (
+    <div className="rounded-2xl bg-white/60 p-4 border border-white/60">
+      <p className="text-xs uppercase tracking-[0.25em] text-blush-rose mb-3">Order summary</p>
+      <div className="grid grid-cols-2 gap-4 text-xs">
+        <div>
+          <p className="font-semibold text-rose-wine uppercase tracking-wider mb-2">Magazine</p>
+          <p className="text-neutral-700">
+            <span className="text-dusty-rose">Pages:</span>{" "}
+            {sizeItem ? sizeItem.name : "—"}
+          </p>
+          <p className="mt-1 text-neutral-700">
+            <span className="text-dusty-rose">Templates:</span>{" "}
+            {templates.length ? `[${templates.join(", ")}]` : "—"}
+          </p>
+        </div>
+        <div>
+          <p className="font-semibold text-rose-wine uppercase tracking-wider mb-2">Add-ons</p>
+          <p className="text-neutral-700">
+            <span className="text-dusty-rose">Gift Wrap & Letter:</span> {addons}
+          </p>
+          <p className="mt-1 text-neutral-700">
+            <span className="text-dusty-rose">Polaroids:</span> {polaroids}
+          </p>
+          <p className="mt-1 text-neutral-700">
+            <span className="text-dusty-rose">Polaroid Strips:</span>{" "}
+            {stripCount ? `${stripCount} Strips — ${stripsSummary}` : "—"}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DeliveryEta() {
+  const cart = useStore((s) => s.cart);
+  const delivery = cart.find((c) => c.category === "delivery");
+  const isExpress = delivery?.id === "del-exp";
+  const range = isExpress ? { min: 3, max: 4, label: "Express Shipping" } : { min: 7, max: 8, label: "Standard Shipping" };
+  const now = new Date();
+  const eta1 = new Date(now); eta1.setDate(now.getDate() + range.min);
+  const eta2 = new Date(now); eta2.setDate(now.getDate() + range.max);
+  const fmtDate = (d: Date) => d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  return (
+    <div className="rounded-xl bg-rose-wine/5 px-3 py-2 text-xs text-rose-wine">
+      <span className="font-semibold">{range.label}</span>
+      {delivery ? (
+        <> · expected {fmtDate(eta1)} – {fmtDate(eta2)} ({range.min}-{range.max} days)</>
+      ) : (
+        <> · pick a delivery mode in Step 6 to see ETA</>
+      )}
+    </div>
+  );
+}
