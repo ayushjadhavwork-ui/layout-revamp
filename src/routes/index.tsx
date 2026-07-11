@@ -175,6 +175,14 @@ function Home() {
               Complete my order <ArrowUpRight className="h-4 w-4" />
             </button>
             <p className="mt-3 text-xs text-dusty-rose">{cartCount} item{cartCount === 1 ? "" : "s"} in cart</p>
+            <a
+              href="https://www.instagram.com/thelayout"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 inline-block text-sm text-rose-wine underline underline-offset-4 hover:text-blush-rose"
+            >
+              Behind The Layout →
+            </a>
           </div>
         </div>
       </section>
