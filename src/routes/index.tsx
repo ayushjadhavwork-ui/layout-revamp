@@ -516,5 +516,42 @@ function Footer() {
   );
 }
 
+function Journey() {
+  const stats = [
+    { big: "70,000+", small: "Orders Delivered" },
+    { big: "45,000+", small: "Customer Reviews" },
+    { big: "4.5 / 5.0", small: "Total Review Rating", progress: 90 },
+  ];
+  return (
+    <div id="journey" className="relative z-10 px-4 py-20">
+      <div className="mx-auto max-w-6xl">
+        <div className="mb-10 text-center">
+          <h2 className="font-display text-3xl md:text-4xl font-light tracking-wide text-rose-wine">
+            Our Journey <span className="italic text-blush-rose">in Numbers</span>
+          </h2>
+          <p className="mt-2 text-sm text-dusty-rose">Trusted by shoppers across India</p>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-3">
+          {stats.map((s) => (
+            <div
+              key={s.small}
+              className="rounded-2xl p-8 text-center text-white shadow-[0_20px_60px_-20px_rgba(120,20,50,0.5)]"
+              style={{ backgroundColor: "#7a1330" }}
+            >
+              <p className="font-display text-4xl md:text-5xl font-bold tracking-tight">{s.big}</p>
+              {s.progress != null && (
+                <div className="mt-3 mx-auto h-1.5 w-3/4 rounded-full bg-white/25 overflow-hidden">
+                  <div className="h-full bg-white rounded-full" style={{ width: `${s.progress}%` }} />
+                </div>
+              )}
+              <p className="mt-3 text-xs uppercase tracking-[0.25em] text-white/80">{s.small}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 // keep unused imports referenced if any tree-shake concern
 void useRef;
