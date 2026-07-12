@@ -490,9 +490,9 @@ function Policy() {
   );
 }
 
-function SocialIcon({ icon }: { icon: React.ReactNode }) {
+function SocialIcon({ icon, href = "#" }: { icon: React.ReactNode; href?: string }) {
   return (
-    <a href="#" className="grid h-9 w-9 place-items-center rounded-full border border-rose-wine/20 bg-white/50 text-rose-wine transition-colors hover:bg-rose-wine hover:text-white">
+    <a href={href} target={href.startsWith("http") ? "_blank" : undefined} rel="noreferrer" className="grid h-9 w-9 place-items-center rounded-full border border-rose-wine/20 bg-white/50 text-rose-wine transition-colors hover:bg-rose-wine hover:text-white">
       {icon}
     </a>
   );
@@ -511,9 +511,9 @@ function Footer() {
             </div>
           </div>
           <div className="flex gap-2">
-            <SocialIcon icon={<Instagram className="h-4 w-4" />} />
-            <SocialIcon icon={<Twitter className="h-4 w-4" />} />
-            <SocialIcon icon={<Linkedin className="h-4 w-4" />} />
+            <SocialIcon icon={<Instagram className="h-4 w-4" />} href={SITE.links.instagram} />
+            <SocialIcon icon={<Twitter className="h-4 w-4" />} href={SITE.links.twitter} />
+            <SocialIcon icon={<Linkedin className="h-4 w-4" />} href={SITE.links.linkedin} />
           </div>
         </div>
         <p className="mt-8 text-center text-xs text-dusty-rose">© {new Date().getFullYear()} The Layout. All rights reserved.</p>
