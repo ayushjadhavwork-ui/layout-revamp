@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { X, ShoppingBag, Trash2, Plus, Check, ArrowUpRight } from "lucide-react";
+import { X, ShoppingBag, Trash2, Plus, Check, ArrowUpRight, ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";;
 import { toast } from "sonner";
 import { CATALOG, CONFIG, fmt, type Category, type Product } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
@@ -85,9 +85,25 @@ export function ProductGrid({
               active ? "ring-2 ring-rose-wine bg-rose-wine/5" : ""
             } ${templateDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
           >
-            <div className="mb-3 flex h-32 items-center justify-center rounded-xl bg-gradient-to-br from-pink-mist/60 to-blush-rose/40 font-display text-4xl text-rose-wine pointer-events-none">
-              {item.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "✦"}
-            </div>
+            {/* NEW LOGIC: Check if this item has images in site-content.ts */}
+            {(() => {
+              const photos = SITE.productImages?.[item.id] ?? [];
+              const thumb = photos[0];
+              
+              return (
+                <div className="mb-3 flex aspect-[16/10] w-full relative items-center justify-center rounded-xl bg-gradient-to-br from-pink-mist/60 to-blush-rose/40 font-display text-4xl text-rose-wine pointer-events-none overflow-hidden">
+                  {thumb ? (
+                    <img 
+                      src={thumb} 
+                      alt={item.name} 
+                      className="absolute inset-0 h-full w-full object-cover" 
+                    />
+                  ) : (
+                    item.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "✦"
+                  )}
+                </div>
+            );
+            })()}
             <h4 className="font-display text-xl text-rose-wine">{item.name}</h4>
             <p className="mt-1 text-xs text-neutral-600 line-clamp-2">{item.desc}</p>
             <p className="mt-2 text-sm font-semibold text-blush-rose">
@@ -149,6 +165,7 @@ export function ProductModal({
 }) {
   const [note, setNote] = useState("");
   const [slide, setSlide] = useState(0);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const [reviews, setReviews] = useState<{ name: string; rating: number; text: string }[]>([]);
   const [rvName, setRvName] = useState("");
   const [rvText, setRvText] = useState("");
@@ -164,7 +181,7 @@ export function ProductModal({
     if (open) {
       setNote("");
       setSlide(0);
-      // Seed a couple of mock reviews per product
+      setLightboxOpen(false);
       setReviews([
         { name: "Aarohi S.", rating: 5, text: "Absolutely stunning quality — exceeded expectations." },
         { name: "Karan M.", rating: 4, text: "Loved the presentation. Delivery was quick too." },
@@ -177,7 +194,6 @@ export function ProductModal({
   const isSize = category === "sizes";
   const isTemplate = category === "templates";
 
-  // Real product photos (from src/lib/site-content.ts) — falls back to gradient tiles.
   const initials = product.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "✦";
   const gradients = [
     "from-pink-mist to-blush-rose",
@@ -187,6 +203,12 @@ export function ProductModal({
   const photos: string[] = SITE.productImages?.[product.id] ?? [];
   const slideCount = photos.length > 0 ? photos.length : gradients.length;
   const currentSlide = slide % slideCount;
+  const goPrev = () => setSlide((currentSlide - 1 + slideCount) % slideCount);
+  const goNext = () => setSlide((currentSlide + 1) % slideCount);
+
+  const avgRating = reviews.length
+    ? Math.round((reviews.reduce((a, r) => a + r.rating, 0) / reviews.length) * 10) / 10
+    : 5;
 
   const handleAdd = () => {
     if (isSize) {
@@ -213,128 +235,245 @@ export function ProductModal({
   };
 
   return (
-    <ModalShell onClose={onClose}>
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Image carousel */}
-        <div>
-          <div className="relative flex h-64 md:h-80 items-center justify-center rounded-2xl overflow-hidden bg-pink-mist">
-            {photos.length > 0 ? (
-              <img src={photos[currentSlide]} alt={product.name} className="absolute inset-0 h-full w-full object-cover" />
-            ) : (
-              <div className={`absolute inset-0 grid place-items-center bg-gradient-to-br ${gradients[currentSlide]} font-display text-7xl text-white`}>
-                {initials}
+    <>
+      <ModalShell onClose={onClose} maxW="max-w-6xl">
+        <div className="grid gap-8 md:grid-cols-12">
+
+          {/* ================= GALLERY ================= */}
+          <div className="md:col-span-7">
+            <div className="flex gap-3">
+              {/* Vertical thumbnail rail — desktop, Amazon-style */}
+              {slideCount > 1 && (
+                <div className="hidden sm:flex flex-col gap-2 w-20 shrink-0 max-h-[440px] overflow-y-auto pr-0.5">
+                  {Array.from({ length: slideCount }).map((_, i) => (
+                    <button
+                      key={i}
+                      type="button"
+                      onClick={() => setSlide(i)}
+                      className={`h-16 w-16 shrink-0 rounded-lg overflow-hidden border-2 transition ${
+                        i === currentSlide ? "border-rose-wine" : "border-transparent opacity-70 hover:opacity-100"
+                      }`}
+                    >
+                      {photos.length > 0 ? (
+                        <img src={photos[i]} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <div className={`h-full w-full grid place-items-center bg-gradient-to-br ${gradients[i]} font-display text-white text-sm`}>
+                          {initials}
+                        </div>
+                      )}
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              {/* Main image — white background (not pink), click opens lightbox */}
+              <button
+                type="button"
+                onClick={() => setLightboxOpen(true)}
+                className="group relative flex-1 aspect-[16/10] rounded-2xl overflow-hidden bg-white border border-rose-wine/10 cursor-zoom-in"
+              >
+                {photos.length > 0 ? (
+                  <img
+                    src={photos[currentSlide]}
+                    alt={product.name}
+                    className="absolute inset-0 h-full w-full object-contain p-3"
+                  />
+                ) : (
+                  <div className={`absolute inset-0 grid place-items-center bg-gradient-to-br ${gradients[currentSlide]} font-display text-7xl text-white`}>
+                    {initials}
+                  </div>
+                )}
+
+                <span className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium text-rose-wine opacity-0 shadow-sm transition group-hover:opacity-100">
+                  <Maximize2 className="h-3.5 w-3.5" /> View full image
+                </span>
+
+                {slideCount > 1 && (
+                  <>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                      className="absolute left-2 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/80 text-rose-wine hover:bg-white z-10"
+                      aria-label="Previous image"
+                    ><ChevronLeft className="h-5 w-5" /></span>
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(e) => { e.stopPropagation(); goNext(); }}
+                      className="absolute right-2 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/80 text-rose-wine hover:bg-white z-10"
+                      aria-label="Next image"
+                    ><ChevronRight className="h-5 w-5" /></span>
+                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 sm:hidden">
+                      {Array.from({ length: slideCount }).map((_, i) => (
+                        <span key={i} className={`h-1.5 w-1.5 rounded-full ${i === currentSlide ? "bg-rose-wine" : "bg-rose-wine/30"}`} />
+                      ))}
+                    </div>
+                  </>
+                )}
+              </button>
+            </div>
+
+            {/* Mobile thumbnail row (below image, since no side rail on small screens) */}
+            {slideCount > 1 && (
+              <div className="mt-3 flex gap-2 overflow-x-auto sm:hidden">
+                {Array.from({ length: slideCount }).map((_, i) => (
+                  <button
+                    key={i}
+                    type="button"
+                    onClick={() => setSlide(i)}
+                    className={`h-14 w-20 shrink-0 rounded-lg overflow-hidden border-2 ${
+                      i === currentSlide ? "border-rose-wine" : "border-transparent opacity-70"
+                    }`}
+                  >
+                    {photos.length > 0 ? (
+                      <img src={photos[i]} alt="" className="h-full w-full object-cover" />
+                    ) : (
+                      <div className={`h-full w-full grid place-items-center bg-gradient-to-br ${gradients[i]} font-display text-white text-sm`}>{initials}</div>
+                    )}
+                  </button>
+                ))}
               </div>
             )}
-            <button
-              type="button"
-              onClick={() => setSlide((currentSlide - 1 + slideCount) % slideCount)}
-              className="absolute left-2 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/70 text-rose-wine hover:bg-white z-10"
-              aria-label="Previous image"
-            >‹</button>
-            <button
-              type="button"
-              onClick={() => setSlide((currentSlide + 1) % slideCount)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/70 text-rose-wine hover:bg-white z-10"
-              aria-label="Next image"
-            >›</button>
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+          </div>
+
+          {/* ================= DETAILS ================= */}
+          <div className="md:col-span-5 flex flex-col">
+            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">{category}</p>
+            <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">{product.name}</h3>
+
+            <div className="mt-3 flex items-center gap-2 text-sm">
+              <span className="text-blush-rose">{"★".repeat(Math.round(avgRating))}{"☆".repeat(5 - Math.round(avgRating))}</span>
+              <span className="text-dusty-rose">{avgRating} · {reviews.length} review{reviews.length === 1 ? "" : "s"}</span>
+            </div>
+
+            <p className="mt-4 text-3xl font-semibold text-blush-rose">
+              {isTemplate ? "Included with package" : product.price ? fmt(product.price) : "Free"}
+            </p>
+
+            <div className="mt-4 h-px bg-rose-wine/10" />
+
+            <p className="mt-4 text-sm leading-relaxed text-neutral-700">{product.desc}</p>
+
+            {!isSize && !isTemplate && (
+              <>
+                <label className="mt-5 block text-sm font-medium text-rose-wine">Note (optional)</label>
+                <textarea
+                  value={note}
+                  onChange={(e) => setNote(e.target.value)}
+                  rows={2}
+                  className="mt-1 w-full rounded-xl border border-rose-wine/20 bg-white/60 p-3 text-sm outline-none focus:border-rose-wine"
+                  maxLength={300}
+                  placeholder="Anything we should know?"
+                />
+              </>
+            )}
+
+            <button onClick={handleAdd} className="pill-btn pill-btn-hover pill-primary mt-6 w-full !py-3 !text-base">
+              {isSize ? "Select package" : isTemplate ? "Select" : "Add to cart"}
+            </button>
+          </div>
+        </div>
+
+        {/* ================= REVIEWS (unchanged) ================= */}
+        <div className="mt-8 border-t border-white/60 pt-6">
+          <h4 className="font-display text-2xl text-rose-wine">Customer reviews</h4>
+          <form onSubmit={submitReview} className="mt-4 rounded-2xl bg-white/50 p-4 space-y-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <input
+                value={rvName}
+                onChange={(e) => setRvName(e.target.value)}
+                placeholder="Your name"
+                className="rounded-xl border border-rose-wine/20 bg-white/70 px-3 py-2 text-sm outline-none focus:border-rose-wine"
+                maxLength={60}
+              />
+              <select
+                value={rvRating}
+                onChange={(e) => setRvRating(Number(e.target.value))}
+                className="rounded-xl border border-rose-wine/20 bg-white/70 px-3 py-2 text-sm outline-none focus:border-rose-wine"
+              >
+                {[5,4,3,2,1].map((n) => <option key={n} value={n}>{n} star{n === 1 ? "" : "s"}</option>)}
+              </select>
+            </div>
+            <textarea
+              value={rvText}
+              onChange={(e) => setRvText(e.target.value)}
+              rows={2}
+              placeholder="Share your experience…"
+              className="w-full rounded-xl border border-rose-wine/20 bg-white/70 px-3 py-2 text-sm outline-none focus:border-rose-wine"
+              maxLength={400}
+            />
+            <button type="submit" className="pill-btn pill-btn-hover !py-2 !px-4 !text-xs">Post review</button>
+          </form>
+          <ul className="mt-4 space-y-3 max-h-56 overflow-y-auto pr-1">
+            {reviews.map((r, i) => (
+              <li key={i} className="rounded-2xl bg-white/40 p-3">
+                <div className="flex items-center justify-between">
+                  <p className="font-medium text-rose-wine text-sm">{r.name}</p>
+                  <span className="text-xs text-blush-rose">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
+                </div>
+                <p className="mt-1 text-sm text-neutral-700">{r.text}</p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </ModalShell>
+
+      {/* ================= FULLSCREEN LIGHTBOX ================= */}
+      {lightboxOpen && (
+        <div
+          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setLightboxOpen(false)}
+        >
+          <button
+            onClick={() => setLightboxOpen(false)}
+            className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 z-10"
+            aria-label="Close"
+          >
+            <X className="h-6 w-6" />
+          </button>
+
+          {slideCount > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); goPrev(); }}
+                className="absolute left-4 top-1/2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20 z-10"
+                aria-label="Previous image"
+              ><ChevronLeft className="h-6 w-6" /></button>
+              <button
+                onClick={(e) => { e.stopPropagation(); goNext(); }}
+                className="absolute right-4 top-1/2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20 z-10"
+                aria-label="Next image"
+              ><ChevronRight className="h-6 w-6" /></button>
+            </>
+          )}
+
+          {photos.length > 0 ? (
+            <img
+              src={photos[currentSlide]}
+              alt={product.name}
+              onClick={(e) => e.stopPropagation()}
+              className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg"
+            />
+          ) : (
+            <div
+              onClick={(e) => e.stopPropagation()}
+              className={`h-72 w-72 grid place-items-center rounded-2xl bg-gradient-to-br ${gradients[currentSlide]} font-display text-8xl text-white`}
+            >
+              {initials}
+            </div>
+          )}
+
+          {slideCount > 1 && (
+            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
               {Array.from({ length: slideCount }).map((_, i) => (
                 <span key={i} className={`h-1.5 w-1.5 rounded-full ${i === currentSlide ? "bg-white" : "bg-white/40"}`} />
               ))}
             </div>
-          </div>
-          <div className="mt-3 grid grid-cols-3 gap-2">
-            {Array.from({ length: Math.min(3, slideCount) }).map((_, i) => (
-              <button
-                key={i}
-                type="button"
-                onClick={() => setSlide(i)}
-                className={`h-16 rounded-xl overflow-hidden ${i === currentSlide ? "ring-2 ring-rose-wine" : ""}`}
-              >
-                {photos.length > 0 ? (
-                  <img src={photos[i]} alt="" className="h-full w-full object-cover" />
-                ) : (
-                  <div className={`h-full w-full grid place-items-center bg-gradient-to-br ${gradients[i]} font-display text-white text-xl`}>{initials}</div>
-                )}
-              </button>
-            ))}
-          </div>
-        </div>
-
-        {/* Product details */}
-        <div>
-          <p className="text-xs uppercase tracking-[0.3em] text-blush-rose">{category}</p>
-          <h3 className="font-display text-4xl text-rose-wine mt-2">{product.name}</h3>
-          <div className="mt-2 flex items-center gap-2 text-xs text-dusty-rose">
-            <span className="text-blush-rose">★★★★☆</span>
-            <span>{reviews.length} review{reviews.length === 1 ? "" : "s"}</span>
-          </div>
-          <p className="mt-3 text-neutral-700">{product.desc}</p>
-          <p className="mt-4 text-2xl font-semibold text-blush-rose">
-            {isTemplate ? "Included with package" : product.price ? fmt(product.price) : "Free"}
-          </p>
-          {!isSize && !isTemplate && (
-            <>
-              <label className="mt-5 block text-sm font-medium text-rose-wine">Note (optional)</label>
-              <textarea
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                rows={2}
-                className="mt-1 w-full rounded-xl border border-rose-wine/20 bg-white/60 p-3 text-sm outline-none focus:border-rose-wine"
-                maxLength={300}
-                placeholder="Anything we should know?"
-              />
-            </>
           )}
-          <button onClick={handleAdd} className="pill-btn pill-btn-hover pill-primary mt-5 w-full">
-            {isSize ? "Select package" : isTemplate ? "Toggle selection" : "Add to cart"}
-          </button>
         </div>
-      </div>
-
-      {/* Reviews section */}
-      <div className="mt-8 border-t border-white/60 pt-6">
-        <h4 className="font-display text-2xl text-rose-wine">Customer reviews</h4>
-        <form onSubmit={submitReview} className="mt-4 rounded-2xl bg-white/50 p-4 space-y-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <input
-              value={rvName}
-              onChange={(e) => setRvName(e.target.value)}
-              placeholder="Your name"
-              className="rounded-xl border border-rose-wine/20 bg-white/70 px-3 py-2 text-sm outline-none focus:border-rose-wine"
-              maxLength={60}
-            />
-            <select
-              value={rvRating}
-              onChange={(e) => setRvRating(Number(e.target.value))}
-              className="rounded-xl border border-rose-wine/20 bg-white/70 px-3 py-2 text-sm outline-none focus:border-rose-wine"
-            >
-              {[5,4,3,2,1].map((n) => <option key={n} value={n}>{n} star{n === 1 ? "" : "s"}</option>)}
-            </select>
-          </div>
-          <textarea
-            value={rvText}
-            onChange={(e) => setRvText(e.target.value)}
-            rows={2}
-            placeholder="Share your experience…"
-            className="w-full rounded-xl border border-rose-wine/20 bg-white/70 px-3 py-2 text-sm outline-none focus:border-rose-wine"
-            maxLength={400}
-          />
-          <button type="submit" className="pill-btn pill-btn-hover !py-2 !px-4 !text-xs">Post review</button>
-        </form>
-        <ul className="mt-4 space-y-3 max-h-56 overflow-y-auto pr-1">
-          {reviews.map((r, i) => (
-            <li key={i} className="rounded-2xl bg-white/40 p-3">
-              <div className="flex items-center justify-between">
-                <p className="font-medium text-rose-wine text-sm">{r.name}</p>
-                <span className="text-xs text-blush-rose">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
-              </div>
-              <p className="mt-1 text-sm text-neutral-700">{r.text}</p>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </ModalShell>
+      )}
+    </>
   );
 }
 
@@ -623,10 +762,17 @@ export function SuccessModal({ open, onClose, orderId }: { open: boolean; onClos
 /* ================================================================ */
 
 function ModalShell({ children, onClose, maxW = "max-w-2xl" }: { children: React.ReactNode; onClose: () => void; maxW?: string }) {
+    useEffect(() => {
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => { document.body.style.overflow = original; };
+  }, []);
+  
+  
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-rose-wine/30 backdrop-blur-sm" onClick={onClose} />
-      <div className={`glass relative z-10 w-full ${maxW} rounded-3xl p-6 md:p-8 max-h-[90vh] overflow-y-auto`}>
+      <div className={`glass relative z-10 w-full ${maxW} rounded-3xl p-6 md:p-8 max-h-[90vh] overflow-y-auto overscroll-contain`}>
         <button onClick={onClose} className="absolute right-4 top-4 rounded-full p-2 hover:bg-rose-wine/10" aria-label="Close">
           <X className="h-5 w-5 text-rose-wine" />
         </button>

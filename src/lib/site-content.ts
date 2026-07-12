@@ -113,7 +113,17 @@ export const SITE = {
   // Give each product an array of image URLs — 3-5 works best.
   // Leave the array empty [] to fall back to the auto-generated gradient tile.
   // ────────────────────────────────────────────────────────────────
+
+
+
+
+
   productImages: {
+
+    "tpl-24": ["/media/products/24.jpg","/media/products/24.jpg"],
+
+
+
     // Polaroid strips
     "str-1": [] as string[],
     "str-2": [] as string[],
