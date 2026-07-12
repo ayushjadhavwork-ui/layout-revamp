@@ -90,8 +90,8 @@ function Home() {
 
       <Marquee />
       <Nav onCart={() => setCartOpen(true)} />
-      <Hero />
       <Showreel />
+      <Hero />
       <Milestone />
 
       <section className="pattern-gingham">
@@ -296,11 +296,7 @@ function Hero() {
         <p className="mx-auto mt-6 max-w-2xl text-xl md:text-2xl font-display italic text-rose-wine">
           Editorial storytelling, printed with <span className="text-blush-rose">quiet obsession.</span>
         </p>
-        <div className="mt-8 flex flex-wrap items-center justify-center gap-3">
-          <a href="#how" className="pill-btn pill-btn-hover">How it works</a>
-          <a href="#build" className="pill-btn pill-btn-hover pill-primary">Customize magazine <ArrowUpRight className="h-4 w-4" /></a>
-          <a href="#build" className="pill-btn pill-btn-hover">Personalised magazine <Sparkles className="h-4 w-4" /></a>
-        </div>
+
       </div>
     </section>
   );

@@ -81,11 +81,11 @@ export const SITE = {
   stats: {
     title: "Our Journey in Numbers",
     subtitle: "Trusted by shoppers across India",
-    color: "#7a1330", // block background (dark red)
+    color: "#e1477e", // block background (dark red)
     blocks: [
-      { big: "70,000+",   small: "Orders Delivered" },
-      { big: "45,000+",   small: "Customer Reviews" },
-      { big: "4.5 / 5.0", small: "Total Review Rating", progress: 90 },
+      { big: "500+",   small: "Orders Delivered" },
+      { big: "100+",   small: "Customer Reviews" },
+      { big: "4.9 / 5.0", small: "Total Review Rating", progress: 90 },
     ] as { big: string; small: string; progress?: number }[],
   },
 
