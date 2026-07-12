@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { CATALOG, CONFIG, fmt, type Category, type Product } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { validateCoupon, logCart, completeOrder } from "@/lib/gas";
+import { SITE } from "@/lib/site-content";
 
 /* ================================================================ */
 /* PRODUCT GRID + CARD                       */
@@ -176,13 +177,16 @@ export function ProductModal({
   const isSize = category === "sizes";
   const isTemplate = category === "templates";
 
-  // Build 3 mock slides using gradients + product initials
+  // Real product photos (from src/lib/site-content.ts) — falls back to gradient tiles.
   const initials = product.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "✦";
-  const slides = [
+  const gradients = [
     "from-pink-mist to-blush-rose",
     "from-blush-rose to-rose-wine",
     "from-dusty-rose to-pink-mist",
   ];
+  const photos: string[] = SITE.productImages?.[product.id] ?? [];
+  const slideCount = photos.length > 0 ? photos.length : gradients.length;
+  const currentSlide = slide % slideCount;
 
   const handleAdd = () => {
     if (isSize) {
@@ -213,34 +217,46 @@ export function ProductModal({
       <div className="grid gap-6 md:grid-cols-2">
         {/* Image carousel */}
         <div>
-          <div className={`relative flex h-64 md:h-80 items-center justify-center rounded-2xl bg-gradient-to-br ${slides[slide]} font-display text-7xl text-white overflow-hidden`}>
-            {initials}
+          <div className="relative flex h-64 md:h-80 items-center justify-center rounded-2xl overflow-hidden bg-pink-mist">
+            {photos.length > 0 ? (
+              <img src={photos[currentSlide]} alt={product.name} className="absolute inset-0 h-full w-full object-cover" />
+            ) : (
+              <div className={`absolute inset-0 grid place-items-center bg-gradient-to-br ${gradients[currentSlide]} font-display text-7xl text-white`}>
+                {initials}
+              </div>
+            )}
             <button
               type="button"
-              onClick={() => setSlide((slide - 1 + slides.length) % slides.length)}
-              className="absolute left-2 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/70 text-rose-wine hover:bg-white"
+              onClick={() => setSlide((currentSlide - 1 + slideCount) % slideCount)}
+              className="absolute left-2 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/70 text-rose-wine hover:bg-white z-10"
               aria-label="Previous image"
             >‹</button>
             <button
               type="button"
-              onClick={() => setSlide((slide + 1) % slides.length)}
-              className="absolute right-2 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/70 text-rose-wine hover:bg-white"
+              onClick={() => setSlide((currentSlide + 1) % slideCount)}
+              className="absolute right-2 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/70 text-rose-wine hover:bg-white z-10"
               aria-label="Next image"
             >›</button>
-            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
-              {slides.map((_, i) => (
-                <span key={i} className={`h-1.5 w-1.5 rounded-full ${i === slide ? "bg-white" : "bg-white/40"}`} />
+            <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
+              {Array.from({ length: slideCount }).map((_, i) => (
+                <span key={i} className={`h-1.5 w-1.5 rounded-full ${i === currentSlide ? "bg-white" : "bg-white/40"}`} />
               ))}
             </div>
           </div>
           <div className="mt-3 grid grid-cols-3 gap-2">
-            {slides.map((g, i) => (
+            {Array.from({ length: Math.min(3, slideCount) }).map((_, i) => (
               <button
                 key={i}
                 type="button"
                 onClick={() => setSlide(i)}
-                className={`h-16 rounded-xl bg-gradient-to-br ${g} font-display text-white text-xl ${i === slide ? "ring-2 ring-rose-wine" : ""}`}
-              >{initials}</button>
+                className={`h-16 rounded-xl overflow-hidden ${i === currentSlide ? "ring-2 ring-rose-wine" : ""}`}
+              >
+                {photos.length > 0 ? (
+                  <img src={photos[i]} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  <div className={`h-full w-full grid place-items-center bg-gradient-to-br ${gradients[i]} font-display text-white text-xl`}>{initials}</div>
+                )}
+              </button>
             ))}
           </div>
         </div>
