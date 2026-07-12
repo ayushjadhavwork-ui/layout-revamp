@@ -5,6 +5,8 @@ import { Toaster, toast } from "sonner";
 import logoAsset from "@/assets/logo.png.asset.json";
 import { CATALOG, type Category, type Product } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
+import { SITE } from "@/lib/site-content";
+import { TiledSection } from "@/components/site/TiledSection";
 import {
   ProductGrid, ProductModal, CartDrawer, CustomerInfoModal,
   PaymentModal, SuccessModal, CartButton, StepIndicator,
