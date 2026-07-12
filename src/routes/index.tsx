@@ -178,7 +178,7 @@ function Home() {
             </button>
             <p className="mt-3 text-xs text-dusty-rose">{cartCount} item{cartCount === 1 ? "" : "s"} in cart</p>
             <a
-              href="https://www.instagram.com/thelayout"
+              href={SITE.links.behindTheLayout}
               target="_blank"
               rel="noreferrer"
               className="mt-4 inline-block text-sm text-rose-wine underline underline-offset-4 hover:text-blush-rose"
@@ -443,20 +443,24 @@ function Founders() {
       <div className="mx-auto max-w-6xl">
         <SectionHead eyebrow="The team" title="Meet the founders" />
         <div className="grid gap-6 md:grid-cols-2">
-          {FOUNDERS.map((f, i) => (
+          {SITE.founders.map((f, i) => (
             <div key={f.name} className="glass rounded-3xl p-8">
               <div className="flex gap-6">
-                <div className={`grid h-24 w-24 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${i === 0 ? "from-blush-rose to-rose-wine" : "from-pink-mist to-dusty-rose"} font-display text-4xl text-white shadow-lg`}>
-                  {f.name.charAt(0)}
-                </div>
+                {f.photo ? (
+                  <img src={f.photo} alt={f.name} className="h-24 w-24 shrink-0 rounded-2xl object-cover shadow-lg" />
+                ) : (
+                  <div className={`grid h-24 w-24 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${i === 0 ? "from-blush-rose to-rose-wine" : "from-pink-mist to-dusty-rose"} font-display text-4xl text-white shadow-lg`}>
+                    {f.name.charAt(0)}
+                  </div>
+                )}
                 <div className="min-w-0">
                   <h4 className="font-display text-3xl text-rose-wine">{f.name}</h4>
                   <p className="text-xs uppercase tracking-[0.3em] text-dusty-rose">{f.role}</p>
                   <p className="mt-3 text-sm text-neutral-700">{f.bio}</p>
                   <div className="mt-4 flex gap-2">
-                    <SocialIcon icon={<Instagram className="h-4 w-4" />} />
-                    <SocialIcon icon={<Twitter className="h-4 w-4" />} />
-                    <SocialIcon icon={<Linkedin className="h-4 w-4" />} />
+                    <SocialIcon icon={<Instagram className="h-4 w-4" />} href={SITE.links.instagram} />
+                    <SocialIcon icon={<Twitter className="h-4 w-4" />} href={SITE.links.twitter} />
+                    <SocialIcon icon={<Linkedin className="h-4 w-4" />} href={SITE.links.linkedin} />
                   </div>
                 </div>
               </div>
