@@ -506,8 +506,8 @@ function Footer() {
           <div className="flex items-center gap-3">
             <img src={logoAsset.url} alt="" className="h-10 w-10" />
             <div>
-              <p className="font-display text-2xl text-rose-wine">The Layout</p>
-              <p className="text-xs text-dusty-rose">Handcrafted keepsakes, printed with love.</p>
+              <p className="font-display text-2xl text-rose-wine">{SITE.brand.name}</p>
+              <p className="text-xs text-dusty-rose">{SITE.brand.tagline}</p>
             </div>
           </div>
           <div className="flex gap-2">
@@ -523,26 +523,22 @@ function Footer() {
 }
 
 function Journey() {
-  const stats = [
-    { big: "70,000+", small: "Orders Delivered" },
-    { big: "45,000+", small: "Customer Reviews" },
-    { big: "4.5 / 5.0", small: "Total Review Rating", progress: 90 },
-  ];
+  const { title, subtitle, blocks, color } = SITE.stats;
   return (
     <div id="journey" className="relative z-10 px-4 py-20">
       <div className="mx-auto max-w-6xl">
         <div className="mb-10 text-center">
           <h2 className="font-display text-3xl md:text-4xl font-light tracking-wide text-rose-wine">
-            Our Journey <span className="italic text-blush-rose">in Numbers</span>
+            {title}
           </h2>
-          <p className="mt-2 text-sm text-dusty-rose">Trusted by shoppers across India</p>
+          <p className="mt-2 text-sm text-dusty-rose">{subtitle}</p>
         </div>
         <div className="grid gap-4 sm:grid-cols-3">
-          {stats.map((s) => (
+          {blocks.map((s) => (
             <div
               key={s.small}
               className="rounded-2xl p-8 text-center text-white shadow-[0_20px_60px_-20px_rgba(120,20,50,0.5)]"
-              style={{ backgroundColor: "#7a1330" }}
+              style={{ backgroundColor: color }}
             >
               <p className="font-display text-4xl md:text-5xl font-bold tracking-tight">{s.big}</p>
               {s.progress != null && (
