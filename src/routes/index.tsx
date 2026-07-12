@@ -210,7 +210,7 @@ function Home() {
 }
 
 function Marquee() {
-  const items = [...MARQUEE_ITEMS, ...MARQUEE_ITEMS];
+  const items = [...SITE.marquee, ...SITE.marquee];
   return (
     <div className="relative z-40 w-full overflow-hidden bg-rose-wine text-off-white">
       <div className="marquee-track py-2 text-sm font-medium tracking-wide">
@@ -254,7 +254,7 @@ function Reels() {
       <div className="mx-auto max-w-6xl">
         <SectionHead eyebrow="From our feed" title="Reels & stories" sub="Peek into recent projects, unboxings and behind-the-scenes moments." />
         <div className="flex gap-6 overflow-x-auto pb-6 snap-x snap-mandatory">
-          {REELS.map((url) => (
+          {SITE.reels.map((url) => (
             <div key={url} className="snap-center shrink-0 w-[320px] sm:w-[360px] glass rounded-3xl p-3">
               <blockquote
                 className="instagram-media"
@@ -266,8 +266,8 @@ function Reels() {
           ))}
         </div>
         <div className="mt-6 text-center">
-          <a href="https://www.instagram.com/" target="_blank" rel="noreferrer" className="pill-btn pill-btn-hover">
-            <Instagram className="h-4 w-4" /> Follow @thelayout
+          <a href={SITE.links.instagram} target="_blank" rel="noreferrer" className="pill-btn pill-btn-hover">
+            <Instagram className="h-4 w-4" /> Follow on Instagram
           </a>
         </div>
       </div>
