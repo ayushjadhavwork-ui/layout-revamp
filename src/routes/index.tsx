@@ -91,11 +91,9 @@ function Home() {
       <Marquee />
       <Nav onCart={() => setCartOpen(true)} />
       <Showreel />
-
-
-      <TiledSection tiles={SITE.backgrounds.hero}>
-        <Hero />
-      </TiledSection>
+      <CustomImageSection />
+      
+      <Hero />
 
 
 
@@ -298,24 +296,38 @@ function Nav({ onCart }: { onCart: () => void }) {
 
 function Hero() {
   return (
-    <section className="min-h-screen flex items-center justify-center">
-      <div className="mx-auto max-w-[1400px] w-full" />
+    <section className="px-4 pt-10 pb-16">
+      <div className="glass mx-auto max-w-[1400px] rounded-[2.5rem] px-6 py-20 md:px-16 md:py-28 text-center">
+        <p className="text-xs uppercase tracking-[0.45em] text-dusty-rose">Welcome to</p>
+        <img
+          src={logoAsset.url}
+          alt="The Layout"
+          className="mx-auto mt-6 h-40 w-40 md:h-56 md:w-56 object-contain"
+        />
+        <p className="mx-auto mt-6 max-w-2xl text-xl md:text-2xl font-display italic text-rose-wine">
+          Editorial storytelling, printed with <span className="text-blush-rose">quiet obsession.</span>
+        </p>
+
+      </div>
     </section>
   );
 }
 
 function Showreel() {
   return (
-    <section id="showreel" className="px-4 pb-16">
-      <div className="mx-auto max-w-[1400px] overflow-hidden rounded-[2.5rem] border border-white/40 bg-black shadow-[0_40px_120px_-40px_rgba(193,71,109,0.5)]">
-        <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
-          <video
-            autoPlay muted loop playsInline
-            className="absolute inset-0 h-full w-full object-cover"
-          >
-            <source src={SITE.showreelVideo} type="video/mp4" />
-          </video>
-        </div>
+    // 1. Removed side/bottom padding (px-4 pb-16) so it touches the absolute edges
+    // 2. Added 'w-full' to ensure it spans the entire screen
+    <section id="showreel" className="relative z-10 w-full">
+      {/* Removed the 'max-w-[1400px]' limit, the 'rounded-[2.5rem]', 
+        the border, and the shadow. 
+      */}
+      <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
+        <video
+          autoPlay muted loop playsInline
+          className="absolute inset-0 h-full w-full object-cover"
+        >
+          <source src={SITE.showreelVideo} type="video/mp4" />
+        </video>
       </div>
     </section>
   );
@@ -539,6 +551,27 @@ function Journey() {
     </div>
   );
 }
+
+function CustomImageSection() {
+  return (
+    // Removed all side padding (px-4) and spacing so it touches the absolute edges
+    <section className="relative z-10 w-full">
+      {/* 1. Removed the 'max-w-6xl' wrapper so it can span 100% of the screen.
+        2. Removed 'rounded' and 'shadow' classes.
+        3. Kept the aspect ratio and object-cover so the text stays perfectly centered.
+      */}
+      <img 
+        src="/media/bg/2.svg" 
+        alt="Showcase" 
+        className="block w-full aspect-[4/3] md:aspect-auto object-cover object-center"
+      />
+    </section>
+  );
+}
+
+
+
+
 
 // keep unused imports referenced if any tree-shake concern
 void useRef;
