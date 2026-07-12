@@ -328,7 +328,7 @@ function Showreel() {
             autoPlay muted loop playsInline
             className="absolute inset-0 h-full w-full object-cover"
           >
-            <source src="/showreel.mp4" type="video/mp4" />
+            <source src={SITE.showreelVideo} type="video/mp4" />
           </video>
         </div>
       </div>
@@ -344,7 +344,7 @@ function Milestone() {
         <div className="glass rounded-3xl p-3 overflow-hidden">
           <blockquote
             className="instagram-media"
-            data-instgrm-permalink={REEL_19M}
+            data-instgrm-permalink={SITE.milestoneReel.url}
             data-instgrm-version="14"
             style={{ background: "#fff", border: 0, margin: 0, minWidth: "300px", width: "100%" }}
           />
@@ -352,12 +352,12 @@ function Milestone() {
         <div>
           <p className="text-xs uppercase tracking-[0.4em] text-blush-rose">A moment we'll never forget</p>
           <h2 className="mt-3 font-display text-5xl md:text-6xl text-rose-wine leading-[0.95]">
-            19 million <span className="italic text-blush-rose">views</span> later…
+            {SITE.milestoneReel.heading}
           </h2>
           <p className="mt-6 text-neutral-700 leading-relaxed">
-            What started as a simple moment on the internet became something far greater than we ever imagined. With over 19 million views, your love, support, and encouragement gave us the confidence to turn a dream into reality. Every view, share, comment, and message reminded us that this journey was worth pursuing. This video is our way of saying thank you to everyone who has been a part of our story. We're incredibly grateful — and this is only the beginning. <Heart className="inline h-5 w-5 fill-rose-wine text-rose-wine" />
+            {SITE.milestoneReel.body} <Heart className="inline h-5 w-5 fill-rose-wine text-rose-wine" />
           </p>
-          <a href={REEL_19M} target="_blank" rel="noreferrer" className="pill-btn pill-btn-hover pill-primary mt-6">
+          <a href={SITE.milestoneReel.url} target="_blank" rel="noreferrer" className="pill-btn pill-btn-hover pill-primary mt-6">
             Watch on Instagram <Instagram className="h-4 w-4" />
           </a>
         </div>
