@@ -37,9 +37,6 @@ const STEPS = [
   { n: 5, t: "Checkout & confirm", d: "Add everything to your cart, checkout, and send us a screenshot of your order summary to confirm." },
 ];
 
-const REEL_19M = "https://www.instagram.com/reel/DUi4r8pCMgy/";
-
-
 const MANDATORY = [
   { t: "Front Cover", d: "Your title, hero image and issue mark." },
   { t: "First Page",  d: "A welcoming opener — a letter, a dedication." },
@@ -51,18 +48,6 @@ const TIMELINE = [
   { t: "Design",   d: "1–2 working days" },
   { t: "Printing", d: "1 day after approval" },
   { t: "Delivery", d: "7–8 days (location dependent)" },
-];
-
-const FOUNDERS = [
-  { name: "Founder One", role: "Creative Director", bio: "A designer with an eye for editorial detail. She curates every layout, colour story and cover — obsessing over the little things so your keepsake feels timeless." },
-  { name: "Founder Two", role: "Operations & Print", bio: "The operator and storyteller. He handles print, quality and delivery — making sure every magazine arrives exactly how you imagined it." },
-];
-
-const MARQUEE_ITEMS = [
-  "Use code LAYOUT10 for 10% off ✨",
-  "Free standard shipping on all orders",
-  "Handcrafted in small batches",
-  "New templates dropped this month",
 ];
 
 function Home() {
