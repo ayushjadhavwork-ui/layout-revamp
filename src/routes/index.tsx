@@ -91,8 +91,18 @@ function Home() {
       <Marquee />
       <Nav onCart={() => setCartOpen(true)} />
       <Showreel />
-      <Hero />
+
+
+      <TiledSection tiles={SITE.backgrounds.hero}>
+        <Hero />
+      </TiledSection>
+
+
+
+
       <Milestone />
+
+
 
       <section className="pattern-gingham">
         <HowToOrder />
@@ -143,11 +153,14 @@ function Home() {
           </div>
         </div>
       </TiledSection>
+      <TiledSection tiles={SITE.backgrounds.founders}>
+        <Founders />
+      </TiledSection>
 
       <section className="pattern-gingham">
-        <Founders />
         <Journey />
-      </section>
+      </section>         
+
       <Reels />
       <Policy />
 
@@ -285,19 +298,8 @@ function Nav({ onCart }: { onCart: () => void }) {
 
 function Hero() {
   return (
-    <section className="px-4 pt-10 pb-16">
-      <div className="glass mx-auto max-w-[1400px] rounded-[2.5rem] px-6 py-20 md:px-16 md:py-28 text-center">
-        <p className="text-xs uppercase tracking-[0.45em] text-dusty-rose">Welcome to</p>
-        <img
-          src={logoAsset.url}
-          alt="The Layout"
-          className="mx-auto mt-6 h-40 w-40 md:h-56 md:w-56 object-contain"
-        />
-        <p className="mx-auto mt-6 max-w-2xl text-xl md:text-2xl font-display italic text-rose-wine">
-          Editorial storytelling, printed with <span className="text-blush-rose">quiet obsession.</span>
-        </p>
-
-      </div>
+    <section className="min-h-screen flex items-center justify-center">
+      <div className="mx-auto max-w-[1400px] w-full" />
     </section>
   );
 }

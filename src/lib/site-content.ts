@@ -136,8 +136,13 @@ export const SITE = {
   // Any tile you leave out is simply skipped.
   // ────────────────────────────────────────────────────────────────
   backgrounds: {
-    // Single-tile examples
-    hero:     {} as Tiles, // e.g. { head: "/media/bg/hero.jpg" }
+    hero: {
+      head: "/media/bg/3.svg" // Replace with your actual filename
+
+
+    } as Tiles,
+
+
     journey:  {} as Tiles,
 
     // Head + repeating middle + tail — for LONG sections
@@ -148,5 +153,9 @@ export const SITE = {
     //   repeat: "/media/bg/customize-mid.jpg",
     //   tail:   "/media/bg/customize-tail.jpg",
     // },
+    
+    founders: {
+      tail: "/media/bg/1.svg"
+    } as Tiles,
   } as Record<string, Tiles>,
 };
