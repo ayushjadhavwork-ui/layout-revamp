@@ -106,41 +106,43 @@ function Home() {
       </section>
 
 
-      <section id="build" className="relative z-10 px-4 py-20">
-        <div className="mx-auto max-w-6xl">
-          <SectionHead eyebrow="Step 1" title="Choose your package" sub="Pricing scales with page count. Front & back covers included." />
-          <ProductGrid category="sizes" items={CATALOG.sizes} onOpen={openProduct("sizes")} />
+      <TiledSection tiles={SITE.backgrounds.customize}>
+        <div id="build" className="relative z-10 px-4 py-20">
+          <div className="mx-auto max-w-6xl">
+            <SectionHead eyebrow="Step 1" title="Choose your package" sub="Pricing scales with page count. Front & back covers included." />
+            <ProductGrid category="sizes" items={CATALOG.sizes} onOpen={openProduct("sizes")} />
+          </div>
         </div>
-      </section>
 
-      <section id="templates" className="relative z-10 px-4 py-20">
-        <div className="mx-auto max-w-6xl">
-          <SectionHead eyebrow="Step 2" title="Pick your templates" sub="Choose the exact number your package allows. Click a card for details." />
-          <StepIndicator />
-          <ProductGrid category="templates" items={CATALOG.templates} onOpen={openProduct("templates")} />
+        <div id="templates" className="relative z-10 px-4 py-20">
+          <div className="mx-auto max-w-6xl">
+            <SectionHead eyebrow="Step 2" title="Pick your templates" sub="Choose the exact number your package allows. Click a card for details." />
+            <StepIndicator />
+            <ProductGrid category="templates" items={CATALOG.templates} onOpen={openProduct("templates")} />
+          </div>
         </div>
-      </section>
 
-      <section id="extras" className="relative z-10 px-4 py-20">
-        <div className="mx-auto max-w-6xl space-y-16">
-          <div>
-            <SectionHead eyebrow="Step 3" title="Add-ons" sub="Little extras that make the keepsake feel personal." />
-            <ProductGrid category="addons" items={CATALOG.addons} onOpen={openProduct("addons")} cols="sm:grid-cols-2" />
-          </div>
-          <div>
-            <SectionHead eyebrow="Step 4" title="Polaroid packs" />
-            <ProductGrid category="polaroids" items={CATALOG.polaroids} onOpen={openProduct("polaroids")} cols="sm:grid-cols-2" />
-          </div>
-          <div>
-            <SectionHead eyebrow="Step 5" title="Polaroid Strips" sub="Click a pill to add it, or tap View More for details." />
-            <ProductGrid category="strips" items={CATALOG.strips} onOpen={openProduct("strips")} cols="sm:grid-cols-2 lg:grid-cols-3" />
-          </div>
-          <div>
-            <SectionHead eyebrow="Step 6" title="Delivery" />
-            <ProductGrid category="delivery" items={CATALOG.delivery} onOpen={openProduct("delivery")} cols="sm:grid-cols-2" />
+        <div id="extras" className="relative z-10 px-4 py-20">
+          <div className="mx-auto max-w-6xl space-y-16">
+            <div>
+              <SectionHead eyebrow="Step 3" title="Add-ons" sub="Little extras that make the keepsake feel personal." />
+              <ProductGrid category="addons" items={CATALOG.addons} onOpen={openProduct("addons")} cols="sm:grid-cols-2" />
+            </div>
+            <div>
+              <SectionHead eyebrow="Step 4" title="Polaroid packs" />
+              <ProductGrid category="polaroids" items={CATALOG.polaroids} onOpen={openProduct("polaroids")} cols="sm:grid-cols-2" />
+            </div>
+            <div>
+              <SectionHead eyebrow="Step 5" title="Polaroid Strips" sub="Click a pill to add it, or tap View More for details." />
+              <ProductGrid category="strips" items={CATALOG.strips} onOpen={openProduct("strips")} cols="sm:grid-cols-2 lg:grid-cols-3" />
+            </div>
+            <div>
+              <SectionHead eyebrow="Step 6" title="Delivery" />
+              <ProductGrid category="delivery" items={CATALOG.delivery} onOpen={openProduct("delivery")} cols="sm:grid-cols-2" />
+            </div>
           </div>
         </div>
-      </section>
+      </TiledSection>
 
       <section className="pattern-gingham">
         <Founders />
