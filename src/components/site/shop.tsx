@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { CATALOG, CONFIG, fmt, type Category, type Product } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { validateCoupon, logCart, completeOrder } from "@/lib/gas";
+import { SITE } from "@/lib/site-content";
 
 /* ================================================================ */
 /* PRODUCT GRID + CARD                       */
@@ -183,9 +184,7 @@ export function ProductModal({
     "from-blush-rose to-rose-wine",
     "from-dusty-rose to-pink-mist",
   ];
-  // Lazy require to avoid circulars
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const photos: string[] = (require("@/lib/site-content").SITE.productImages?.[product.id] ?? []) as string[];
+  const photos: string[] = SITE.productImages?.[product.id] ?? [];
   const slideCount = photos.length > 0 ? photos.length : gradients.length;
   const currentSlide = slide % slideCount;
 
