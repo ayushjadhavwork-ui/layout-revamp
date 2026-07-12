@@ -572,16 +572,13 @@ function CustomImageSection() {
 
 function CreateMagazineSection() {
   return (
-    // Removed all side padding (px-4) and spacing so it touches the absolute edges
     <section className="relative z-10 w-full">
-      {/* 1. Removed the 'max-w-6xl' wrapper so it can span 100% of the screen.
-        2. Removed 'rounded' and 'shadow' classes.
-        3. Kept the aspect ratio and object-cover so the text stays perfectly centered.
-      */}
       <img 
         src="/media/bg/3.svg" 
         alt="Showcase" 
-        className="block w-full aspect-[4/3] md:aspect-auto object-cover object-center"
+        // Swapped aspect-[4/3] and object-cover for h-auto
+        // This makes the image scale proportionally without ever cropping the sides
+        className="block w-full h-auto object-center"
       />
     </section>
   );
