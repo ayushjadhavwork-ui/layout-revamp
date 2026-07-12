@@ -69,10 +69,10 @@ export const SITE = {
   // EXTERNAL LINKS (open in new tab)
   // ────────────────────────────────────────────────────────────────
   links: {
-    behindTheLayout: "https://www.instagram.com/thelayout",
-    instagram:       "https://www.instagram.com/thelayout",
-    linkedin:        "https://www.linkedin.com/company/thelayout",
-    twitter:         "https://twitter.com/thelayout",
+    behindTheLayout: "https://www.instagram.com/the_layoutt",
+    instagram:       "https://www.instagram.com/the_layoutt",
+    linkedin:        "https://www.linkedin.com/company/the_layoutt",
+    twitter:         "https://twitter.com/the_layoutt",
   },
 
   // ────────────────────────────────────────────────────────────────
