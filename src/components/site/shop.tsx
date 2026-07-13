@@ -761,7 +761,7 @@ export function SuccessModal({ open, onClose, orderId }: { open: boolean; onClos
 /*                            SHARED                                */
 /* ================================================================ */
 
-function ModalShell({ children, onClose, maxW = "max-w-2xl" }: { children: React.ReactNode; onClose: () => void; maxW?: string }) {
+export function ModalShell({ children, onClose, maxW = "max-w-2xl" }: { children: React.ReactNode; onClose: () => void; maxW?: string }) {
     useEffect(() => {
     const original = document.body.style.overflow;
     document.body.style.overflow = "hidden";

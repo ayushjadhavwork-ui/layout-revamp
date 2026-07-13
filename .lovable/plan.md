@@ -1,195 +1,122 @@
 ## Goal
 
-Make every piece of media, copy stat, and external link on the site editable from **one single file** — no component hunting, no CSS. Then add a **tiled background system** so you can drop in 1920×1080 art tiles (head / repeating middle / tail) per section.
+Split **Polaroid Strips** and **Polaroid Packs** off from the generic `ProductGrid` and give each its own custom, dedicated layout — strips must render as **tall, full-scale vertical strips** (like the catalogue screenshot), and packs must look like **real stacked polaroids**. Both sections keep the "click to add / View More for details" pattern, but View More opens a modal that preserves the correct aspect: strips stay tall, packs stay square.
+
+The rest of the shop (sizes, templates, add-ons, delivery) keeps using the existing `ProductGrid` / `ProductModal` — untouched.
 
 ---
 
-## Part 1 — One config file to rule them all
+## What each section will look like
 
-Create `src/lib/site-content.ts`. This becomes the ONLY file a non-coder edits. Every component reads from it.
+### Polaroid Strips (Step 5)
 
-```ts
-// src/lib/site-content.ts
-export const SITE = {
-  // ---- Global background (page-wide) ----
-  pageBackground: "/media/bg/page.jpg",  // or leave "" to use the CSS default
-
-  // ---- Hero video / reel ----
-  heroVideo: "/media/hero.mp4",
-  heroPoster: "/media/hero-poster.jpg",
-
-  // ---- Reels / Instagram / social embeds ----
-  reels: [
-    { id: "r1", thumbnail: "/media/reels/reel-1.jpg", href: "https://instagram.com/reel/XXXX" },
-    { id: "r2", thumbnail: "/media/reels/reel-2.jpg", href: "https://instagram.com/reel/YYYY" },
-    { id: "r3", thumbnail: "/media/reels/reel-3.jpg", href: "https://instagram.com/reel/ZZZZ" },
-  ],
-
-  // ---- External links (LinkedIn, Behind The Layout, etc.) ----
-  links: {
-    behindTheLayout: "https://drive.google.com/…",
-    linkedin: "https://linkedin.com/company/the-layout",
-    instagram: "https://instagram.com/thelayout",
-  },
-
-  // ---- Journey / Stats section (Step 1 block) ----
-  stats: {
-    title: "Our Journey in Numbers",
-    subtitle: "Trusted by shoppers across India",
-    blocks: [
-      { big: "70,000+", small: "Orders Delivered" },
-      { big: "45,000+", small: "Customer Reviews" },
-      { big: "4.5 / 5.0", small: "Total Review Rating", progress: 90 }, // % filled
-    ],
-  },
-
-  // ---- Product images (for the e-commerce modal) ----
-  // Keyed by product id from catalog.ts
-  productImages: {
-    "str-1":     ["/media/products/strip-1-a.jpg", "/media/products/strip-1-b.jpg"],
-    "pol-mini":  ["/media/products/pol-mini-a.jpg", "/media/products/pol-mini-b.jpg"],
-    "add-wrap":  ["/media/products/wrap-a.jpg", "/media/products/wrap-b.jpg"],
-    // …one entry per product
-  },
-
-  // ---- Founders ----
-  founders: [
-    { name: "Founder A", role: "Creative Director", photo: "/media/founders/a.jpg", bio: "…" },
-    { name: "Founder B", role: "Operations",        photo: "/media/founders/b.jpg", bio: "…" },
-  ],
-};
-```
-
-### Where the media lives
-
-- Put all media in `public/media/…` (folders: `hero/`, `reels/`, `products/`, `founders/`, `bg/`).
-- Anything in `public/` is served at the same path — `public/media/hero.mp4` → `/media/hero.mp4`.
-- **To update:** the client just replaces a file in the right folder OR edits a string in `site-content.ts`. No build knowledge needed.
-
-### Rewire existing components
-
-- `src/routes/index.tsx` (hero, reels, founders, journey, Behind-The-Layout link) → read from `SITE.*`.
-- `src/components/site/shop.tsx` `ProductModal` → read images from `SITE.productImages[product.id]` (fallback to a placeholder).
-- Remove hardcoded stat numbers / URLs / image paths from JSX.
-
-### A tiny `MEDIA.md` cheat-sheet at project root
-
-Plain-English 20-line guide: "To change hero video, drop a new file at `public/media/hero.mp4`. To change a stat, open `src/lib/site-content.ts` and edit the number in quotes." That's it.
-
----
-
-## Part 2 — Tiled background system (head / repeat / tail)
-
-**Short answer: yes, this works perfectly.** It's just three stacked `background-image` layers on a section. No JS.
-
-### How it works
-
-A section becomes a vertical strip. You provide up to three 1920×1080 (or any) PNG/JPG/WebP tiles:
+Replaces the current 2-3-col grid with a **horizontal rail of 5 tall strips** — one per SKU, matching the catalogue exactly:
 
 ```text
-┌──────────────┐  head.jpg   (drawn once, top)
-├──────────────┤
-│              │
-│  repeat.jpg  │ (tiled vertically as many times as needed to fill middle)
-│              │
-├──────────────┤
-│  tail.jpg    │ (drawn once, bottom)
-└──────────────┘
+┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐ ┌────────┐
+│        │ │        │ │        │ │        │ │        │
+│Strip 1 │ │Strip 2 │ │Strip 3 │ │Strip 4 │ │Strip 5 │
+│ (tall) │ │ (tall) │ │ (tall) │ │ (tall) │ │ (tall) │
+│        │ │        │ │        │ │        │ │        │
+│        │ │        │ │        │ │        │ │        │
+└────────┘ └────────┘ └────────┘ └────────┘ └────────┘
+  ₹100      ₹125      ₹175      ₹220      ₹275
+[Select]   [Select]  [Select]  [Select]  [Select]
+[View →]   [View →]  [View →]  [View →]  [View →]
 ```
 
-CSS multi-background handles all three in one element. Middle repeats automatically based on section height — so a short section might show the repeat once, a long section shows it 8 times, no code change. Note: good but the tiles can also be svgs. let me know which one works best png, jpeg or svg.
+- Each card = a vertical rectangle at roughly **3:8** aspect ratio (matches a real photo strip).
+- Placeholder tile: layered pastel bands + "Strip N" label + tiny caption, styled to *feel* like a photo strip so the layout reads correctly before real images land.
+- When you drop 5 real strip images into `public/media/strips/strip-1.jpg` … `strip-5.jpg` (already wired via `SITE.productImages` keys `str-1`..`str-5`), the placeholders swap out automatically — the shape stays identical.
+- Selected state: `ring-2 ring-rose-wine` + a small ✓ badge in the top-right corner.
+- Horizontal scroll on mobile (`overflow-x-auto snap-x`), 5-across on desktop.
 
-### The reusable component
+**View More modal (StripModal):**
+- Left = the **full-length strip at real scale** (same 3:8 tall image, up to ~560px tall on desktop, no cropping).
+- Right = title, ₹price, long description, "Add to Cart" pill, review section (reuses same review UI as ProductModal).
+- Same modal shell, just a two-column layout that respects the strip's tall aspect instead of forcing 16:10.
 
-`src/components/site/TiledSection.tsx`:
+### Polaroid Packs (Step 4)
 
-```tsx
-type Tiles = { head?: string; repeat?: string; tail?: string; tileHeight?: number };
+Replaces the current card grid with 4 **real-polaroid-looking tiles**, matching the catalogue mockup:
 
-export function TiledSection({ tiles, children, className = "" }: {
-  tiles: Tiles; children: React.ReactNode; className?: string;
-}) {
-  const h = tiles.tileHeight ?? 1080;
-  const layers: string[] = [];
-  const positions: string[] = [];
-  const repeats: string[] = [];
-  const sizes: string[] = [];
-
-  if (tiles.head)   { layers.push(`url(${tiles.head})`);   positions.push("top center");    repeats.push("no-repeat"); sizes.push("100% auto"); }
-  if (tiles.tail)   { layers.push(`url(${tiles.tail})`);   positions.push("bottom center"); repeats.push("no-repeat"); sizes.push("100% auto"); }
-  if (tiles.repeat) { layers.push(`url(${tiles.repeat})`); positions.push("center");        repeats.push("repeat-y");  sizes.push("100% auto"); }
-
-  return (
-    <section
-      className={`relative ${className}`}
-      style={{
-        backgroundImage: layers.join(", "),
-        backgroundPosition: positions.join(", "),
-        backgroundRepeat: repeats.join(", "),
-        backgroundSize: sizes.join(", "),
-        paddingTop: tiles.head ? h * 0.4 : undefined,   // reserve space for head art
-        paddingBottom: tiles.tail ? h * 0.4 : undefined,
-      }}
-    >
-      {children}
-    </section>
-  );
-}
+```text
+┌───────────┐   ┌───────────┐   ┌───────────┐   ┌───────────┐
+│ MINI PACK │   │CLASSIC    │   │ MEMORY    │   │ PREMIUM   │
+│           │   │  PACK     │   │   PACK    │   │   PACK    │
+│  ┌─────┐  │   │  ┌─────┐  │   │  ┌─────┐  │   │  ┌─────┐  │
+│  │ 📷  │  │   │  │ 📷  │  │   │  │ 📷  │  │   │  │ 📷  │  │
+│  │photo│  │   │  │photo│  │   │  │photo│  │   │  │photo│  │
+│  └─────┘  │   │  └─────┘  │   │  └─────┘  │   │  └─────┘  │
+│           │   │           │   │           │   │           │
+│9 POLAROIDS│   │18POLAROIDS│   │27POLAROIDS│   │36POLAROIDS│
+│  ₹80      │   │  ₹150     │   │  ₹220     │   │  ₹280     │
+│ [Select]  │   │ [Select]  │   │ [Select]  │   │ [Select]  │
+│[View More]│   │[View More]│   │[View More]│   │[View More]│
+└───────────┘   └───────────┘   └───────────┘   └───────────┘
 ```
 
-Order matters in CSS: the **first** listed layer paints on top. Head + tail are listed before repeat so they cover the repeating tile where they overlap.
+Each tile is styled as a **stacked polaroid**:
+- Outer card: cream (`#f8ecd8` / catalogue brown accent), rounded, thin border.
+- Inner: a square photo with white "polaroid frame" padding, subtle drop shadow, and a second/third card slightly rotated behind it (`rotate-[-3deg]`, `translate-x-1`) to sell the "stack of photos" effect.
+- Camera icon top-center, pack name in uppercase serif, count below the photo, price in a pill at the bottom.
+- Placeholder photos: I'll AI-generate 4 tasteful stock-style images (dried flowers / daisies / sunset sky / bedroom — matching the catalogue) at ~1024×1024 and drop them into `src/assets/polaroids/`, then wire via `SITE.productImages` (`pol-mini`, `pol-classic`, `pol-memory`, `pol-premium`).
 
-### Register tile sets in `site-content.ts`
+**View More modal (PackModal):**
+- Same modal shell.
+- Left = the polaroid photo in a **large white polaroid frame** (square-ish), preserving the "instant photo" look.
+- Right = title, count ("9 Polaroids"), price, description, Add to Cart, reviews.
+
+---
+
+## Catalogue changes
+
+`src/lib/catalog.ts` — replace the 3 pack entries with the 4 catalogue prices:
 
 ```ts
-backgrounds: {
-  hero:      { head: "/media/bg/hero-single.jpg" }, // single tile — done
-  customize: {
-    head:   "/media/bg/customize-head.jpg",
-    repeat: "/media/bg/customize-mid.jpg",
-    tail:   "/media/bg/customize-tail.jpg",
-  },
-  journey:   { head: "/media/bg/journey.jpg" },
-},
+polaroids: [
+  { id: "pol-mini",    name: "Mini Pack",    price: 80,  desc: "9 mini polaroids, matte-finish." },
+  { id: "pol-classic", name: "Classic Pack", price: 150, desc: "18 classic polaroids." },
+  { id: "pol-memory",  name: "Memory Pack",  price: 220, desc: "27 polaroids for the full story." },
+  { id: "pol-premium", name: "Premium Pack", price: 280, desc: "36 premium polaroids, keepsake box." },
+],
 ```
 
-### Usage in a route
-
-```tsx
-<TiledSection tiles={SITE.backgrounds.customize}>
-  {/* … existing customization UI unchanged … */}
-</TiledSection>
-```
-
-### Rules for the client when creating tiles
-
-- **Width:** design at 1920 px wide; the CSS scales to 100% container width, so on mobile it still looks right (bleeds off correctly).
-- **Middle tile:** the **top and bottom edges must match** (seamless), otherwise you'll see a hard line where it repeats. Easiest: keep the middle a solid texture/pattern, no strong horizontal elements at the edges.
-- **Head/tail:** can have unique art (curves, decorations); their inner edge should visually blend into the middle tile.
-- **Format:** JPG for photos (~200-400 KB each), WebP if you can, PNG only when you need transparency.
-- **Section height** = however tall the content is; the middle just repeats to fill. Nothing to configure.
-
-### What if the client wants no tiles?
-
-Pass `{}` or omit — the section renders with the normal page background. Zero risk.
+Strips catalogue already matches (₹100/125/175/220/275) — no changes.
 
 ---
 
-## Files to add / change
+## Files touched
 
-- **New:** `src/lib/site-content.ts` (config)
-- **New:** `src/components/site/TiledSection.tsx`
-- **New:** `MEDIA.md` (client cheat-sheet)
-- **New folders:** `public/media/{hero,reels,products,founders,bg}/` with placeholder files so paths resolve
-- **Edit:** `src/routes/index.tsx` — read stats, hero, reels, founders, Behind-The-Layout link from `SITE`; wrap sections in `<TiledSection>` where desired
-- **Edit:** `src/components/site/shop.tsx` — `ProductModal` reads images from `SITE.productImages[id]`
+**New**
+- `src/components/site/strips-section.tsx` — `<StripsSection />` (custom grid) + `<StripModal />`
+- `src/components/site/packs-section.tsx` — `<PacksSection />` (polaroid-styled grid) + `<PackModal />`
+- `src/assets/polaroids/{mini,classic,memory,premium}.jpg` — AI-generated placeholder photos (4 files, one per pack)
 
-Won't touch: `catalog.ts` pricing, routing, existing utility classes, cart logic.
+**Edited**
+- `src/lib/catalog.ts` — 4 packs at ₹80/150/220/280 (adds `pol-memory`, updates prices)
+- `src/lib/site-content.ts` — swap `pol-premium` for the new keys; add polaroid image paths; add `str-1..5` placeholder pattern comments
+- `src/routes/index.tsx` — swap the two `<ProductGrid category="strips" …>` and `<ProductGrid category="polaroids" …>` calls for `<StripsSection />` and `<PacksSection />`; wire their own modal state (independent from generic `ProductModal`)
+
+**Untouched**
+- `ProductGrid` / `ProductModal` in `src/components/site/shop.tsx` (still used for sizes, templates, add-ons, delivery)
+- Cart, delivery ETA, store, backgrounds, routing, hero, journey, founders
 
 ---
 
-## After you approve
+## Technical notes
 
-I'll implement all of the above in one pass, wire the existing sections to the config, and drop in placeholder tiles so you can see the head/repeat/tail behavior live. Then you swap the placeholder files with your real art whenever ready.
+- **Zustand `useStore` reuse.** Both new sections use existing `addItem`/`removeItem` — no store changes; cart, single-choice logic for `polaroids` and `strips` (already enforced), and delivery ETA all keep working.
+- **Aspect containers.** Strips use `aspect-[3/8]` on tiles and `max-h-[560px]` in the modal; packs use `aspect-square` for the inner photo. Both sit inside the existing pink/cream page background and respect the `TiledSection` wrap already registered under `SITE.backgrounds`.
+- **Media swap-in.** Client drops files into `public/media/strips/*.jpg` (strips) and `public/media/products/pol-*.jpg` (packs); paths already reserved in `site-content.ts`. Removing my placeholder polaroid image imports later takes one line — the fallback stays.
+- **View More parity.** New modals reuse the review form + toast pattern from `ProductModal` so behavior stays consistent (existing reviews shown, form to post one, "Add to cart" closes modal).
 
-also write a detailed description of how the tiles should be made for each section so the client is able to understand how we are gonna make it, also please make sure the tiles that is the background is very easy to update on the go.
+---
+
+## Confirmed from your answers
+
+1. **Strip images:** waiting on your 5 uploads → placeholder strip tiles now, swap-ready when you drop files.
+2. **Pack pricing:** 4 packs — Mini ₹80, Classic ₹150, Memory ₹220, Premium ₹280.
+3. **Pack photos:** I'll AI-generate 4 stylized polaroid-style placeholder photos to sell the look now.
+
+Say the word and I'll build.

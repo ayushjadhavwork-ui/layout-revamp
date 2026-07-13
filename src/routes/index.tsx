@@ -11,6 +11,8 @@ import {
   ProductGrid, ProductModal, CartDrawer, CustomerInfoModal,
   PaymentModal, SuccessModal, CartButton, StepIndicator,
 } from "@/components/site/shop";
+import { StripsSection } from "@/components/site/strips-section";
+import { PacksSection } from "@/components/site/packs-section";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -138,12 +140,12 @@ function Home() {
               <ProductGrid category="addons" items={CATALOG.addons} onOpen={openProduct("addons")} cols="sm:grid-cols-2" />
             </div>
             <div>
-              <SectionHead eyebrow="Step 4" title="Polaroid packs" />
-              <ProductGrid category="polaroids" items={CATALOG.polaroids} onOpen={openProduct("polaroids")} cols="sm:grid-cols-2" />
+              <SectionHead eyebrow="Step 4" title="Polaroid packs" sub="Real polaroid keepsakes — tap a pack to add, or View for the full look." />
+              <PacksSection />
             </div>
             <div>
-              <SectionHead eyebrow="Step 5" title="Polaroid Strips" sub="Click a pill to add it, or tap View More for details." />
-              <ProductGrid category="strips" items={CATALOG.strips} onOpen={openProduct("strips")} cols="sm:grid-cols-2 lg:grid-cols-3" />
+              <SectionHead eyebrow="Step 5" title="Polaroid Strips" sub="Click a strip to add it, or tap View for details." />
+              <StripsSection />
             </div>
             <div>
               <SectionHead eyebrow="Step 6" title="Delivery" />

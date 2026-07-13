@@ -51,9 +51,10 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
     { id: "add-combo",  name: "Combo (Wrap + Letter)", price: 219, desc: "Both — because why not?" },
   ],
   polaroids: [
-    { id: "pol-mini",    name: "Mini Pack (9)",     price: 199, desc: "9 mini polaroids." },
-    { id: "pol-classic", name: "Classic Pack (18)", price: 349, desc: "18 classic polaroids." },
-    { id: "pol-premium", name: "Premium Pack (36)", price: 599, desc: "36 premium polaroids." },
+    { id: "pol-mini",    name: "Mini Pack",    price: 80,  desc: "9 mini polaroids — matte finish, keepsake-ready." },
+    { id: "pol-classic", name: "Classic Pack", price: 150, desc: "18 classic polaroids — the everyday memory stack." },
+    { id: "pol-memory",  name: "Memory Pack",  price: 220, desc: "27 polaroids to tell the whole story." },
+    { id: "pol-premium", name: "Premium Pack", price: 280, desc: "36 premium polaroids — the full collection." },
   ],
   strips: [
     { id: "str-1", name: "1 Strip",  price: 100, desc: "A single polaroid strip." },
