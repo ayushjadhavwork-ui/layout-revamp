@@ -5,6 +5,7 @@ import { CATALOG, CONFIG, fmt, type Category, type Product } from "@/lib/catalog
 import { useStore } from "@/lib/store";
 import { validateCoupon, logCart, completeOrder } from "@/lib/gas";
 import { SITE } from "@/lib/site-content";
+import { createPortal } from "react-dom";
 
 /* ================================================================ */
 /* PRODUCT GRID + CARD                       */
@@ -91,12 +92,12 @@ export function ProductGrid({
               const thumb = photos[0];
               
               return (
-                <div className="mb-3 flex aspect-[16/10] w-full relative items-center justify-center rounded-xl bg-gradient-to-br from-pink-mist/60 to-blush-rose/40 font-display text-4xl text-rose-wine pointer-events-none overflow-hidden">
+                <div className="mb-3 flex h-48 w-full relative items-center justify-center rounded-xl bg-white border border-rose-wine/10 font-display text-4xl text-rose-wine pointer-events-none overflow-hidden">
                   {thumb ? (
                     <img 
                       src={thumb} 
                       alt={item.name} 
-                      className="absolute inset-0 h-full w-full object-cover" 
+                      className="absolute inset-0 h-full w-full object-contain p-2" 
                     />
                   ) : (
                     item.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "✦"
@@ -270,7 +271,7 @@ export function ProductModal({
               <button
                 type="button"
                 onClick={() => setLightboxOpen(true)}
-                className="group relative flex-1 aspect-[16/10] rounded-2xl overflow-hidden bg-white border border-rose-wine/10 cursor-zoom-in"
+                className="group relative flex-1 h-[420px] md:h-[500px] rounded-2xl overflow-hidden bg-white border border-rose-wine/10 cursor-zoom-in"
               >
                 {photos.length > 0 ? (
                   <img
@@ -419,10 +420,10 @@ export function ProductModal({
         </div>
       </ModalShell>
 
-      {/* ================= FULLSCREEN LIGHTBOX ================= */}
-      {lightboxOpen && (
+{/* ================= FULLSCREEN LIGHTBOX ================= */}
+      {lightboxOpen && createPortal(
         <div
-          className="fixed inset-0 z-[70] flex items-center justify-center bg-black/90 p-4"
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/90 p-4"
           onClick={() => setLightboxOpen(false)}
         >
           <button
@@ -471,7 +472,8 @@ export function ProductModal({
               ))}
             </div>
           )}
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
@@ -762,15 +764,14 @@ export function SuccessModal({ open, onClose, orderId }: { open: boolean; onClos
 /* ================================================================ */
 
 export function ModalShell({ children, onClose, maxW = "max-w-2xl" }: { children: React.ReactNode; onClose: () => void; maxW?: string }) {
-    useEffect(() => {
+  useEffect(() => {
     const original = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => { document.body.style.overflow = original; };
   }, []);
-  
-  
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-rose-wine/30 backdrop-blur-sm" onClick={onClose} />
       <div className={`glass relative z-10 w-full ${maxW} rounded-3xl p-6 md:p-8 max-h-[90vh] overflow-y-auto overscroll-contain`}>
         <button onClick={onClose} className="absolute right-4 top-4 rounded-full p-2 hover:bg-rose-wine/10" aria-label="Close">
@@ -778,7 +779,8 @@ export function ModalShell({ children, onClose, maxW = "max-w-2xl" }: { children
         </button>
         {children}
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

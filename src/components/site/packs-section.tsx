@@ -84,13 +84,13 @@ export function PacksSection() {
 
   return (
     <>
-      <div className="mt-6 rounded-3xl p-6 md:p-10" style={{ background: "#3d2a20" }}>
+      <div className="mt-6 rounded-3xl p-6 md:p-10 bg-rose-wine">
         <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 text-[#e8d1b0]">
+          <div className="inline-flex items-center gap-2 text-off-white">
             <Camera className="h-5 w-5" />
             <span className="font-display text-2xl tracking-[0.2em]">POLAROID</span>
           </div>
-          <p className="mt-2 text-xs uppercase tracking-[0.35em] text-[#c9a97a]">Add-on to your order</p>
+          <p className="mt-2 text-xs uppercase tracking-[0.35em] text-pink-mist">Add-on to your order</p>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-5">
@@ -111,21 +111,20 @@ export function PacksSection() {
             return (
               <div
                 key={item.id}
-                className={`relative rounded-xl p-4 md:p-5 flex flex-col items-center text-center transition ${
-                  active ? "ring-2 ring-[#e8d1b0]" : "ring-1 ring-[#c9a97a]/30"
+                className={`relative rounded-xl p-4 md:p-5 flex flex-col items-center text-center transition bg-black/15 ${
+                  active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
                 }`}
-                style={{ background: "rgba(0,0,0,0.15)" }}
               >
                 {active && (
-                  <span className="absolute top-3 right-3 grid h-6 w-6 place-items-center rounded-full bg-[#e8d1b0] text-[#3d2a20] shadow z-10">
+                  <span className="absolute top-3 right-3 grid h-6 w-6 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10">
                     <Check className="h-3.5 w-3.5" />
                   </span>
                 )}
 
-                <div className="flex items-center gap-1.5 text-[#c9a97a] mb-2">
+                <div className="flex items-center gap-1.5 text-pink-mist mb-2">
                   <Camera className="h-4 w-4" />
                 </div>
-                <h4 className="font-display uppercase tracking-[0.2em] text-sm text-[#e8d1b0]">
+                <h4 className="font-display uppercase tracking-[0.2em] text-sm text-off-white">
                   {item.name}
                 </h4>
 
@@ -133,12 +132,12 @@ export function PacksSection() {
                   <PolaroidTile photo={packPhoto(item.id)} active={active} />
                 </div>
 
-                <p className="mt-5 font-display tracking-[0.2em] text-xs text-[#e8d1b0]">
+                <p className="mt-5 font-display tracking-[0.2em] text-xs text-off-white">
                   {meta?.count ?? ""}
                 </p>
-                <div className="my-2 h-px w-16 bg-[#c9a97a]/40" />
-                <p className="text-[0.6rem] uppercase tracking-[0.3em] text-[#c9a97a]">Selling price</p>
-                <p className="mt-1 inline-block rounded-md px-4 py-1 font-display text-xl text-[#3d2a20]" style={{ background: "#e8d1b0" }}>
+                <div className="my-2 h-px w-16 bg-pink-mist/40" />
+                <p className="text-[0.6rem] uppercase tracking-[0.3em] text-pink-mist">Selling price</p>
+                <p className="mt-1 inline-block rounded-md px-4 py-1 font-display text-xl text-rose-wine bg-off-white">
                   {fmt(item.price)}
                 </p>
 
@@ -148,8 +147,8 @@ export function PacksSection() {
                     onClick={handleToggle}
                     className={`flex-1 rounded-full px-3 py-1.5 text-[0.7rem] font-medium transition border ${
                       active
-                        ? "bg-[#e8d1b0] text-[#3d2a20] border-[#e8d1b0]"
-                        : "bg-transparent text-[#e8d1b0] border-[#c9a97a]/50 hover:bg-[#e8d1b0]/10"
+                        ? "bg-off-white text-rose-wine border-off-white"
+                        : "bg-transparent text-off-white border-pink-mist/50 hover:bg-off-white/10"
                     }`}
                   >
                     {active ? "Selected" : "Select"}
@@ -157,7 +156,7 @@ export function PacksSection() {
                   <button
                     type="button"
                     onClick={() => setOpenId(item.id)}
-                    className="rounded-full px-3 py-1.5 text-[0.7rem] font-medium text-[#e8d1b0] border border-[#c9a97a]/50 hover:bg-[#e8d1b0]/10"
+                    className="rounded-full px-3 py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
                   >
                     View
                   </button>
@@ -167,7 +166,7 @@ export function PacksSection() {
           })}
         </div>
 
-        <p className="mt-6 text-center text-xs tracking-[0.2em] text-[#c9a97a]">
+        <p className="mt-6 text-center text-xs tracking-[0.2em] text-pink-mist">
           ♡ capture moments, keep them forever ♡
         </p>
       </div>

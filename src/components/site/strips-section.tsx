@@ -81,7 +81,7 @@ export function StripsSection() {
                 <button
                   type="button"
                   onClick={handleToggle}
-                  className="relative w-full aspect-[3/8] bg-white overflow-hidden cursor-pointer"
+                  className="relative w-full aspect-[3/8] bg-white overflow-hidden cursor-pointer p-3"
                   aria-label={`Select ${item.name}`}
                 >
                   {hero ? (
@@ -89,10 +89,12 @@ export function StripsSection() {
                       src={hero}
                       alt={item.name}
                       loading="lazy"
-                      className="absolute inset-0 h-full w-full object-cover"
+                      className="block w-full h-full object-contain"
                     />
                   ) : (
-                    <PlaceholderStrip n={idx + 1} />
+                    <div className="absolute inset-0">
+                      <PlaceholderStrip n={idx + 1} />
+                    </div>
                   )}
                   {active && (
                     <span className="absolute top-2 right-2 grid h-7 w-7 place-items-center rounded-full bg-rose-wine text-white shadow-md">
@@ -204,11 +206,13 @@ function StripModal({
       <div className="grid gap-6 md:grid-cols-12">
         {/* Left — full tall strip, real scale */}
         <div className="md:col-span-5 flex justify-center">
-          <div className="w-full max-w-[220px] aspect-[3/8] max-h-[560px] rounded-xl overflow-hidden bg-white border border-rose-wine/10 shadow-xl relative">
+          <div className="w-full max-w-[220px] aspect-[3/8] max-h-[560px] rounded-xl overflow-hidden bg-white border border-rose-wine/10 shadow-xl relative p-4">
             {hero ? (
-              <img src={hero} alt={item.name} className="absolute inset-0 h-full w-full object-cover" />
+              <img src={hero} alt={item.name} className="block w-full h-full object-contain" />
             ) : (
-              <PlaceholderStrip n={stripIndex + 1} />
+              <div className="absolute inset-0">
+                <PlaceholderStrip n={stripIndex + 1} />
+              </div>
             )}
           </div>
         </div>
