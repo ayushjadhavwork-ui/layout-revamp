@@ -122,18 +122,15 @@ export const SITE = {
 
     "tpl-24": ["/media/products/24.jpg","/media/products/24.jpg"],
 
-    // ── Polaroid strips ──
-    // Drop real strip images at /public/media/strips/strip-N.jpg (tall 3:8).
-    // Leave arrays empty [] to show the built-in placeholder tile.
-    "str-1": [] as string[],
-    "str-2": [] as string[],
-    "str-3": [] as string[],
-    "str-4": [] as string[],
-    "str-5": [] as string[],
 
-    // ── Polaroid packs ──
-    // Placeholder photos ship from src/assets/polaroids/*.jpg (wired in packs-section.tsx).
-    // To override, add e.g. ["/media/products/pol-mini.jpg"] here — it takes precedence.
+
+    // Polaroid strips
+    "str-1": ["/media/products/strips/1.jpeg"] as string[],
+    "str-2": ["/media/products/strips/2.jpeg"] as string[],
+    "str-3": ["/media/products/strips/3.jpeg"] as string[],
+    "str-4": ["/media/products/strips/4.jpeg"] as string[],
+    "str-5": ["/media/products/strips/5.jpeg"] as string[],
+    // Polaroid packs
     "pol-mini":    [] as string[],
     "pol-classic": [] as string[],
     "pol-memory":  [] as string[],
