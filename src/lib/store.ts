@@ -15,6 +15,7 @@ type State = {
   cart: CartItem[];
   selectedSizeId: string | null;
   selectedTemplateIds: string[];
+  stripSelections: string[];
   coupon: { code: string; percent: number } | null;
   cartId: string | null;
   customer: null | { name: string; phone: string; email: string; address: string };
@@ -23,6 +24,7 @@ type State = {
   removeItem: (key: string) => void;
   setSize: (sizeId: string) => void;
   toggleTemplate: (id: string) => boolean; // returns success
+  toggleStrip: (id: string) => boolean; // returns success; false if cap reached
   setCoupon: (c: State["coupon"]) => void;
   setCustomer: (c: State["customer"]) => void;
   setCartId: (id: string | null) => void;
@@ -33,6 +35,7 @@ type State = {
   total: () => number;
   templateLimit: () => number;
 };
+
 
 const key = (cat: Category, id: string) => `${cat}:${id}`;
 
