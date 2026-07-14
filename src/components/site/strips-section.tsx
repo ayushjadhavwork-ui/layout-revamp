@@ -1,13 +1,13 @@
 import { useEffect, useState } from "react";
 import { Check } from "lucide-react";
 import { toast } from "sonner";
-import { CATALOG, fmt } from "@/lib/catalog";
+import { CATALOG, STRIP_TIERS, STRIP_MAX, fmt } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { SITE } from "@/lib/site-content";
 import { ModalShell } from "./shop";
 
 /* -------------------------------------------------------------- */
-/* Placeholder tile — shown when SITE.productImages[str-N] is empty. */
+/* Placeholder tile — shown when SITE.productImages[strip-N] empty */
 /* -------------------------------------------------------------- */
 function PlaceholderStrip({ n }: { n: number }) {
   const palettes = [
@@ -40,35 +40,70 @@ function PlaceholderStrip({ n }: { n: number }) {
 }
 
 /* -------------------------------------------------------------- */
+/* Pricing table                                                   */
+/* -------------------------------------------------------------- */
+function StripsPricingTable({ count }: { count: number }) {
+  return (
+    <div className="mx-auto mt-4 max-w-xl rounded-2xl bg-white/70 backdrop-blur-sm ring-1 ring-rose-wine/10 p-4">
+      <p className="text-center text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-blush-rose">
+        Bundle pricing
+      </p>
+      <div className="mt-3 grid grid-cols-5 gap-1 text-center">
+        {[1, 2, 3, 4, 5].map((n) => {
+          const active = count === n;
+          return (
+            <div
+              key={n}
+              className={`rounded-xl px-1.5 py-2 transition ${
+                active
+                  ? "bg-rose-wine text-white shadow-md"
+                  : "bg-white/70 text-rose-wine ring-1 ring-rose-wine/10"
+              }`}
+            >
+              <p className="text-[0.6rem] uppercase tracking-[0.2em] opacity-80">
+                {n} strip{n === 1 ? "" : "s"}
+              </p>
+              <p className="font-display text-base font-semibold">{fmt(STRIP_TIERS[n])}</p>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------- */
 /* StripsSection                                                   */
 /* -------------------------------------------------------------- */
 export function StripsSection() {
   const [openId, setOpenId] = useState<string | null>(null);
-  const cart = useStore((s) => s.cart);
-  const addItem = useStore((s) => s.addItem);
-  const removeItem = useStore((s) => s.removeItem);
+  const selections = useStore((s) => s.stripSelections);
+  const toggleStrip = useStore((s) => s.toggleStrip);
 
   const items = CATALOG.strips;
+  const count = selections.length;
+  const tierPrice = count > 0 ? STRIP_TIERS[count] : 0;
+
+  const handleToggle = (id: string, name: string) => {
+    const already = selections.includes(id);
+    const ok = toggleStrip(id);
+    if (!ok) {
+      toast.error(`You can only pick up to ${STRIP_MAX} strips.`);
+      return;
+    }
+    toast.success(already ? `${name} removed` : `${name} added`);
+  };
 
   return (
     <>
+      <StripsPricingTable count={count} />
+
       <div className="mt-6">
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           {items.map((item, idx) => {
-            const cartItem = cart.find((c) => c.category === "strips" && c.id === item.id);
-            const active = !!cartItem;
+            const active = selections.includes(item.id);
             const photos = SITE.productImages?.[item.id] ?? [];
             const hero = photos[0];
-
-            const handleToggle = () => {
-              if (active && cartItem) {
-                removeItem(cartItem.key);
-                toast.success(`${item.name} removed`);
-              } else {
-                addItem("strips", item, "");
-                toast.success(`${item.name} added`);
-              }
-            };
 
             return (
               <div
@@ -77,10 +112,9 @@ export function StripsSection() {
                   active ? "ring-2 ring-rose-wine shadow-lg" : "ring-1 ring-rose-wine/10"
                 }`}
               >
-                {/* Tall strip visual — 3:8 aspect */}
                 <button
                   type="button"
-                  onClick={handleToggle}
+                  onClick={() => handleToggle(item.id, item.name)}
                   className="relative w-full aspect-[3/8] bg-white overflow-hidden cursor-pointer p-3"
                   aria-label={`Select ${item.name}`}
                 >
@@ -103,22 +137,22 @@ export function StripsSection() {
                   )}
                 </button>
 
-                {/* Info + actions */}
                 <div className="p-3 bg-white/80 backdrop-blur-sm flex flex-col gap-2">
-                  <div className="flex items-baseline justify-between gap-2">
-                    <h4 className="font-display text-base text-rose-wine leading-tight">{item.name}</h4>
-                    <p className="text-sm font-semibold text-blush-rose">{fmt(item.price)}</p>
-                  </div>
+                  <h4 className="font-display text-base text-rose-wine leading-tight text-center">
+                    {item.name}
+                  </h4>
                   <div className="flex gap-1.5">
                     <button
                       type="button"
-                      onClick={handleToggle}
+                      onClick={() => handleToggle(item.id, item.name)}
                       className={`pill-btn !py-1.5 !px-2 !text-[0.7rem] flex-1 ${
                         active ? "!bg-rose-wine !text-white !border-rose-wine" : "pill-btn-hover"
                       }`}
                     >
                       {active ? (
-                        <span className="flex items-center justify-center gap-1"><Check className="h-3 w-3" /> Selected</span>
+                        <span className="flex items-center justify-center gap-1">
+                          <Check className="h-3 w-3" /> Selected
+                        </span>
                       ) : (
                         "Select"
                       )}
@@ -136,6 +170,13 @@ export function StripsSection() {
             );
           })}
         </div>
+
+        {count > 0 && (
+          <p className="mt-4 text-center text-sm text-rose-wine">
+            <span className="font-semibold">{count}</span> strip{count === 1 ? "" : "s"} selected ·{" "}
+            <span className="font-semibold">{fmt(tierPrice)}</span>
+          </p>
+        )}
       </div>
 
       <StripModal
@@ -148,7 +189,7 @@ export function StripsSection() {
 }
 
 /* -------------------------------------------------------------- */
-/* StripModal — tall image, right-side details, reviews below.     */
+/* StripModal — tall image + right-side details + reviews          */
 /* -------------------------------------------------------------- */
 function StripModal({
   open,
@@ -160,8 +201,8 @@ function StripModal({
   onClose: () => void;
 }) {
   const item = stripIndex >= 0 ? CATALOG.strips[stripIndex] : null;
-  const addItem = useStore((s) => s.addItem);
-  const cart = useStore((s) => s.cart);
+  const selections = useStore((s) => s.stripSelections);
+  const toggleStrip = useStore((s) => s.toggleStrip);
 
   const [reviews, setReviews] = useState<{ name: string; rating: number; text: string }[]>([]);
   const [rvName, setRvName] = useState("");
@@ -182,15 +223,16 @@ function StripModal({
 
   const photos = SITE.productImages?.[item.id] ?? [];
   const hero = photos[0];
-  const inCart = cart.some((c) => c.category === "strips" && c.id === item.id);
+  const active = selections.includes(item.id);
   const avg = reviews.length
     ? Math.round((reviews.reduce((a, r) => a + r.rating, 0) / reviews.length) * 10) / 10
     : 5;
 
-  const handleAdd = () => {
-    addItem("strips", item, "");
-    toast.success(`${item.name} added to cart`);
-    onClose();
+  const handleToggle = () => {
+    const already = active;
+    const ok = toggleStrip(item.id);
+    if (!ok) return toast.error(`You can only pick up to ${STRIP_MAX} strips.`);
+    toast.success(already ? `${item.name} removed` : `${item.name} added`);
   };
 
   const submitReview = (e: React.FormEvent) => {
@@ -204,7 +246,6 @@ function StripModal({
   return (
     <ModalShell onClose={onClose} maxW="max-w-4xl">
       <div className="grid gap-6 md:grid-cols-12">
-        {/* Left — full tall strip, real scale */}
         <div className="md:col-span-5 flex justify-center">
           <div className="w-full max-w-[220px] aspect-[3/8] max-h-[560px] rounded-xl overflow-hidden bg-white border border-rose-wine/10 shadow-xl relative p-4">
             {hero ? (
@@ -217,7 +258,6 @@ function StripModal({
           </div>
         </div>
 
-        {/* Right — details */}
         <div className="md:col-span-7 flex flex-col">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">Polaroid Strip</p>
           <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">{item.name}</h3>
@@ -225,7 +265,17 @@ function StripModal({
             <span className="text-blush-rose">{"★".repeat(Math.round(avg))}{"☆".repeat(5 - Math.round(avg))}</span>
             <span className="text-dusty-rose">{avg} · {reviews.length} review{reviews.length === 1 ? "" : "s"}</span>
           </div>
-          <p className="mt-4 text-3xl font-semibold text-blush-rose">{fmt(item.price)}</p>
+          <div className="mt-4 rounded-xl bg-white/60 p-3 ring-1 ring-rose-wine/10">
+            <p className="text-[0.65rem] uppercase tracking-[0.3em] text-blush-rose">Bundle pricing</p>
+            <div className="mt-2 grid grid-cols-5 gap-1 text-center text-xs">
+              {[1, 2, 3, 4, 5].map((n) => (
+                <div key={n} className="rounded-md bg-white px-1 py-1.5 ring-1 ring-rose-wine/10">
+                  <p className="text-[0.6rem] text-dusty-rose">{n}</p>
+                  <p className="font-semibold text-rose-wine">{fmt(STRIP_TIERS[n])}</p>
+                </div>
+              ))}
+            </div>
+          </div>
           <div className="mt-4 h-px bg-rose-wine/10" />
           <p className="mt-4 text-sm leading-relaxed text-neutral-700">{item.desc}</p>
           <ul className="mt-3 space-y-1.5 text-sm text-neutral-700">
@@ -235,16 +285,16 @@ function StripModal({
           </ul>
 
           <button
-            onClick={handleAdd}
-            disabled={inCart}
-            className="pill-btn pill-btn-hover pill-primary mt-6 w-full !py-3 !text-base disabled:opacity-60"
+            onClick={handleToggle}
+            className={`pill-btn pill-btn-hover mt-6 w-full !py-3 !text-base ${
+              active ? "!bg-rose-wine !text-white !border-rose-wine" : "pill-primary"
+            }`}
           >
-            {inCart ? "Already in cart" : "Add to cart"}
+            {active ? "Remove from selection" : "Add to selection"}
           </button>
         </div>
       </div>
 
-      {/* Reviews */}
       <div className="mt-8 border-t border-white/60 pt-6">
         <h4 className="font-display text-2xl text-rose-wine">Customer reviews</h4>
         <form onSubmit={submitReview} className="mt-4 rounded-2xl bg-white/50 p-4 space-y-2">
