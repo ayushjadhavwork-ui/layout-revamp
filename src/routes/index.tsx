@@ -39,12 +39,54 @@ const STEPS = [
   { n: 5, t: "Checkout & confirm", d: "Add everything to your cart, checkout, and send us a screenshot of your order summary to confirm." },
 ];
 
-const MANDATORY = [
-  { t: "Front Cover", d: "Your title, hero image and issue mark." },
-  { t: "First Page",  d: "A welcoming opener — a letter, a dedication." },
-  { t: "Last Page",   d: "A closing note, credits, a signature." },
-  { t: "Back Cover",  d: "Barcode, tagline and finishing details." },
+const MANDATORY: {
+  t: string;
+  d: string;
+  long: string;
+  bullets: string[];
+}[] = [
+  {
+    t: "Front Cover",
+    d: "Your title, hero image and issue mark.",
+    long: "The Front Cover sets the tone of the entire magazine — your name or title, the issue number, and the hero photograph that anchors your story.",
+    bullets: [
+      "Custom title & issue mark",
+      "Hero image with editorial framing",
+      "Matte or gloss cover finish",
+    ],
+  },
+  {
+    t: "First Page",
+    d: "A welcoming opener — a letter, a dedication.",
+    long: "The First Page welcomes the reader — a personal letter, a dedication, or a quote that captures the spirit of your magazine.",
+    bullets: [
+      "Personal note or dedication",
+      "Custom typography & layout",
+      "Optional signature or photo",
+    ],
+  },
+  {
+    t: "Last Page",
+    d: "A closing note, credits, a signature.",
+    long: "The Last Page closes the story — a heartfelt sign-off, credits to contributors, or a final photo that lingers.",
+    bullets: [
+      "Closing note or signature",
+      "Contributor credits",
+      "Optional final photograph",
+    ],
+  },
+  {
+    t: "Back Cover",
+    d: "Barcode, tagline and finishing details.",
+    long: "The Back Cover is the finishing touch — tagline, barcode, and the little details that make your magazine feel real.",
+    bullets: [
+      "Custom tagline",
+      "Editorial barcode",
+      "Matching finish to front cover",
+    ],
+  },
 ];
+
 
 const TIMELINE = [
   { t: "Design",   d: "1–2 working days" },
