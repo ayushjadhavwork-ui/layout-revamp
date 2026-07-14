@@ -57,12 +57,23 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
     { id: "pol-premium", name: "Premium Pack", price: 280, desc: "36 premium polaroids — the full collection." },
   ],
   strips: [
-    { id: "str-1", name: "1 Strip",  price: 100, desc: "A single polaroid strip." },
-    { id: "str-2", name: "2 Strips", price: 125, desc: "Two polaroid strips." },
-    { id: "str-3", name: "3 Strips", price: 175, desc: "Three polaroid strips." },
-    { id: "str-4", name: "4 Strips", price: 220, desc: "Four polaroid strips." },
-    { id: "str-5", name: "5 Strips", price: 275, desc: "Five polaroid strips." },
+    { id: "strip-1", name: "Strip 1", price: 0, desc: "Editorial polaroid strip — design 1." },
+    { id: "strip-2", name: "Strip 2", price: 0, desc: "Editorial polaroid strip — design 2." },
+    { id: "strip-3", name: "Strip 3", price: 0, desc: "Editorial polaroid strip — design 3." },
+    { id: "strip-4", name: "Strip 4", price: 0, desc: "Editorial polaroid strip — design 4." },
+    { id: "strip-5", name: "Strip 5", price: 0, desc: "Editorial polaroid strip — design 5." },
   ],
+
+// Tier pricing for polaroid strips, indexed by number of strips selected (1..5).
+export const STRIP_TIERS: Record<number, number> = {
+  1: 100,
+  2: 125,
+  3: 175,
+  4: 220,
+  5: 275,
+};
+export const STRIP_MAX = 5;
+
   delivery: [
     { id: "del-std", name: "Standard Delivery", price: 0,   desc: "Free — arrives in 7-8 days." },
     { id: "del-exp", name: "Express Shipping",  price: 149, desc: "Priority — arrives in 3-4 days." },
