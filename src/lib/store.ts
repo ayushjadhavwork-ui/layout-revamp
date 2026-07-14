@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { CATALOG, type Product, type Category } from "./catalog";
+import { CATALOG, STRIP_TIERS, STRIP_MAX, type Product, type Category } from "./catalog";
+
 
 export type CartItem = {
   key: string;
@@ -14,6 +15,7 @@ type State = {
   cart: CartItem[];
   selectedSizeId: string | null;
   selectedTemplateIds: string[];
+  stripSelections: string[];
   coupon: { code: string; percent: number } | null;
   cartId: string | null;
   customer: null | { name: string; phone: string; email: string; address: string };
@@ -22,6 +24,7 @@ type State = {
   removeItem: (key: string) => void;
   setSize: (sizeId: string) => void;
   toggleTemplate: (id: string) => boolean; // returns success
+  toggleStrip: (id: string) => boolean; // returns success; false if cap reached
   setCoupon: (c: State["coupon"]) => void;
   setCustomer: (c: State["customer"]) => void;
   setCartId: (id: string | null) => void;
@@ -33,15 +36,18 @@ type State = {
   templateLimit: () => number;
 };
 
+
 const key = (cat: Category, id: string) => `${cat}:${id}`;
 
 export const useStore = create<State>((set, get) => ({
   cart: [],
   selectedSizeId: null,
   selectedTemplateIds: [],
+  stripSelections: [],
   coupon: null,
   cartId: null,
   customer: null,
+
 
   addItem: (category, product, note) => {
     // Single-choice categories (only one active at a time)
@@ -69,8 +75,12 @@ export const useStore = create<State>((set, get) => ({
     if (item?.category === "templates") {
       patch.selectedTemplateIds = s.selectedTemplateIds.filter((id) => id !== item.id);
     }
+    if (item?.category === "strips") {
+      patch.stripSelections = [];
+    }
     return patch as State;
   }),
+
 
   setSize: (sizeId) => {
     const size = CATALOG.sizes.find((s) => s.id === sizeId);
@@ -104,10 +114,42 @@ export const useStore = create<State>((set, get) => ({
     return true;
   },
 
+  toggleStrip: (id) => {
+    const s = get();
+    const already = s.stripSelections.includes(id);
+    if (!already && s.stripSelections.length >= STRIP_MAX) return false;
+    const next = already
+      ? s.stripSelections.filter((x) => x !== id)
+      : [...s.stripSelections, id];
+    // Rebuild the single strips cart line
+    const otherCart = s.cart.filter((c) => c.category !== "strips");
+    let cart = otherCart;
+    if (next.length > 0) {
+      const price = STRIP_TIERS[next.length] ?? 0;
+      const names = next
+        .map((sid) => CATALOG.strips.find((st) => st.id === sid)?.name ?? sid)
+        .join(", ");
+      cart = [
+        ...otherCart,
+        {
+          key: key("strips", "bundle"),
+          category: "strips",
+          id: "bundle",
+          name: `Polaroid Strips × ${next.length}`,
+          price,
+          note: names,
+        },
+      ];
+    }
+    set({ stripSelections: next, cart });
+    return true;
+  },
+
   setCoupon: (coupon) => set({ coupon }),
   setCustomer: (customer) => set({ customer }),
   setCartId: (cartId) => set({ cartId }),
-  clear: () => set({ cart: [], selectedSizeId: null, selectedTemplateIds: [], coupon: null, cartId: null }),
+  clear: () => set({ cart: [], selectedSizeId: null, selectedTemplateIds: [], stripSelections: [], coupon: null, cartId: null }),
+
 
   subtotal: () => get().cart.reduce((s, c) => s + c.price, 0),
   discount: () => {

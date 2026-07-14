@@ -9,8 +9,9 @@ import { SITE } from "@/lib/site-content";
 import { TiledSection } from "@/components/site/TiledSection";
 import {
   ProductGrid, ProductModal, CartDrawer, CustomerInfoModal,
-  PaymentModal, SuccessModal, CartButton, StepIndicator,
+  PaymentModal, SuccessModal, CartButton, StepIndicator, ModalShell,
 } from "@/components/site/shop";
+
 import { StripsSection } from "@/components/site/strips-section";
 import { PacksSection } from "@/components/site/packs-section";
 
@@ -39,12 +40,54 @@ const STEPS = [
   { n: 5, t: "Checkout & confirm", d: "Add everything to your cart, checkout, and send us a screenshot of your order summary to confirm." },
 ];
 
-const MANDATORY = [
-  { t: "Front Cover", d: "Your title, hero image and issue mark." },
-  { t: "First Page",  d: "A welcoming opener — a letter, a dedication." },
-  { t: "Last Page",   d: "A closing note, credits, a signature." },
-  { t: "Back Cover",  d: "Barcode, tagline and finishing details." },
+const MANDATORY: {
+  t: string;
+  d: string;
+  long: string;
+  bullets: string[];
+}[] = [
+  {
+    t: "Front Cover",
+    d: "Your title, hero image and issue mark.",
+    long: "The Front Cover sets the tone of the entire magazine — your name or title, the issue number, and the hero photograph that anchors your story.",
+    bullets: [
+      "Custom title & issue mark",
+      "Hero image with editorial framing",
+      "Matte or gloss cover finish",
+    ],
+  },
+  {
+    t: "First Page",
+    d: "A welcoming opener — a letter, a dedication.",
+    long: "The First Page welcomes the reader — a personal letter, a dedication, or a quote that captures the spirit of your magazine.",
+    bullets: [
+      "Personal note or dedication",
+      "Custom typography & layout",
+      "Optional signature or photo",
+    ],
+  },
+  {
+    t: "Last Page",
+    d: "A closing note, credits, a signature.",
+    long: "The Last Page closes the story — a heartfelt sign-off, credits to contributors, or a final photo that lingers.",
+    bullets: [
+      "Closing note or signature",
+      "Contributor credits",
+      "Optional final photograph",
+    ],
+  },
+  {
+    t: "Back Cover",
+    d: "Barcode, tagline and finishing details.",
+    long: "The Back Cover is the finishing touch — tagline, barcode, and the little details that make your magazine feel real.",
+    bullets: [
+      "Custom tagline",
+      "Editorial barcode",
+      "Matching finish to front cover",
+    ],
+  },
 ];
+
 
 const TIMELINE = [
   { t: "Design",   d: "1–2 working days" },
@@ -400,23 +443,86 @@ function HowToOrder() {
 }
 
 
-function Mandatory() {
+function MandatoryPlaceholder({ label }: { label: string }) {
   return (
-    <div className="relative z-10 px-4 py-20">
-      <div className="mx-auto max-w-6xl">
-        <SectionHead eyebrow="Included by default" title="Mandatory pages" sub="Every magazine ships with these four cornerstones — always." />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          {MANDATORY.map((m) => (
-            <div key={m.t} className="step-card text-center">
-              <h4 className="font-display text-2xl text-rose-wine">{m.t}</h4>
-              <p className="mt-2 text-sm text-neutral-700">{m.d}</p>
-            </div>
-          ))}
-        </div>
-      </div>
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-blush-rose/30 via-pink-mist/40 to-rose-wine/20 text-rose-wine">
+      <span className="font-display italic text-lg opacity-70">The Layout</span>
+      <span className="mt-1 text-[0.6rem] uppercase tracking-[0.35em] opacity-70">{label}</span>
     </div>
   );
 }
+
+function Mandatory() {
+  const [openIdx, setOpenIdx] = useState<number | null>(null);
+  const active = openIdx !== null ? MANDATORY[openIdx] : null;
+  const photo = active ? SITE.productImages?.[`mandatory-${openIdx! + 1}`]?.[0] : undefined;
+
+  return (
+    <div className="relative z-10 px-4 py-20">
+      <div className="mx-auto max-w-6xl">
+        <SectionHead eyebrow="Included by default" title="Mandatory pages" sub="Tap any page to view it in isolation." />
+        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+          {MANDATORY.map((m, i) => {
+            const hero = SITE.productImages?.[`mandatory-${i + 1}`]?.[0];
+            return (
+              <button
+                key={m.t}
+                type="button"
+                onClick={() => setOpenIdx(i)}
+                className="group text-left rounded-2xl overflow-hidden bg-white shadow-md ring-1 ring-rose-wine/10 hover:shadow-xl hover:-translate-y-0.5 transition"
+              >
+                <div className="relative aspect-[3/4] overflow-hidden bg-neutral-100">
+                  {hero ? (
+                    <img src={hero} alt={m.t} loading="lazy" className="h-full w-full object-cover" />
+                  ) : (
+                    <MandatoryPlaceholder label={m.t} />
+                  )}
+                </div>
+                <div className="p-4 text-center">
+                  <h4 className="font-display text-xl text-rose-wine">{m.t}</h4>
+                  <p className="mt-1 text-xs text-neutral-600 line-clamp-2">{m.d}</p>
+                  <span className="mt-3 inline-block text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-blush-rose group-hover:text-rose-wine">
+                    View page →
+                  </span>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {active && (
+        <ModalShell onClose={() => setOpenIdx(null)} maxW="max-w-3xl">
+          <div className="grid gap-6 md:grid-cols-12">
+            <div className="md:col-span-6 flex justify-center">
+              <div className="w-full max-w-[340px] aspect-[3/4] rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10 relative">
+                {photo ? (
+                  <img src={photo} alt={active.t} className="h-full w-full object-cover" />
+                ) : (
+                  <MandatoryPlaceholder label={active.t} />
+                )}
+              </div>
+            </div>
+            <div className="md:col-span-6 flex flex-col">
+              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">Mandatory page</p>
+              <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">{active.t}</h3>
+              <p className="mt-4 text-sm leading-relaxed text-neutral-700">{active.long}</p>
+              <ul className="mt-3 space-y-1.5 text-sm text-neutral-700">
+                {active.bullets.map((b) => (
+                  <li key={b}>• {b}</li>
+                ))}
+              </ul>
+              <p className="mt-6 text-xs text-dusty-rose italic">
+                Included with every magazine at no extra cost.
+              </p>
+            </div>
+          </div>
+        </ModalShell>
+      )}
+    </div>
+  );
+}
+
 
 function Timeline() {
   return (
