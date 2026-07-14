@@ -147,16 +147,16 @@ function Home() {
 
 
 
-      <section className="pattern-gingham">
+      <TiledSection tiles={SITE.backgrounds.howToOrder}>
         <HowToOrder />
-      </section>
+      </TiledSection>
 
       
       <CreateMagazineSection />
 
       <section className="pattern-satin">
         <Mandatory />
-        <Timeline />
+        
       </section>
 
 
@@ -192,10 +192,15 @@ function Home() {
             </div>
             <div>
               <SectionHead eyebrow="Step 6" title="Delivery" />
-              <ProductGrid category="delivery" items={CATALOG.delivery} onOpen={openProduct("delivery")} cols="sm:grid-cols-2" />
+              <ProductGrid category="delivery" items={CATALOG.delivery} onOpen={openProduct("dcdcdelivery")} cols="sm:grid-cols-2" />
             </div>
           </div>
         </div>
+
+      <section className="pattern-satin"></section>
+        <Timeline />
+      <section/>
+      
       </TiledSection>
       <TiledSection tiles={SITE.backgrounds.founders}>
         <Founders />
@@ -342,7 +347,10 @@ function Nav({ onCart }: { onCart: () => void }) {
 
 function Hero() {
   return (
-    <section className="px-4 pt-10 pb-16">
+    <TiledSection 
+      tiles={SITE.backgrounds.hero} 
+      className="px-4 pt-10 pb-16"
+    >
       <div className="glass mx-auto max-w-[1400px] rounded-[2.5rem] px-6 py-20 md:px-16 md:py-28 text-center">
         <p className="text-xs uppercase tracking-[0.45em] text-dusty-rose">Welcome to</p>
         <img
@@ -355,7 +363,7 @@ function Hero() {
         </p>
 
       </div>
-    </section>
+    </TiledSection>
   );
 }
 

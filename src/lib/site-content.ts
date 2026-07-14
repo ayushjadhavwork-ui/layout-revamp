@@ -125,11 +125,11 @@ export const SITE = {
 
 
     // Polaroid strips
-    "str-1": ["/media/products/strips/1.jpeg"] as string[],
-    "str-2": ["/media/products/strips/2.jpeg"] as string[],
-    "str-3": ["/media/products/strips/3.jpeg"] as string[],
-    "str-4": ["/media/products/strips/4.jpeg"] as string[],
-    "str-5": ["/media/products/strips/5.jpeg"] as string[],
+    "strip-1": ["/media/products/strips/1.jpeg"] as string[],
+    "strip-2": ["/media/products/strips/2.jpeg"] as string[],
+    "strip-3": ["/media/products/strips/3.jpeg"] as string[],
+    "strip-4": ["/media/products/strips/4.jpeg"] as string[],
+    "strip-5": ["/media/products/strips/5.jpeg"] as string[],
     // Polaroid packs
     "pol-mini":    [] as string[],
     "pol-classic": [] as string[],
@@ -149,11 +149,15 @@ export const SITE = {
   // ────────────────────────────────────────────────────────────────
   backgrounds: {
     hero: {
-      head: "/media/bg/3.svg" // Replace with your actual filename
+      repeat: "/media/bg/checkers.jpeg" // Replace with your actual filename
 
 
     } as Tiles,
 
+
+    howToOrder: {
+      repeat: "/media/bg/4.svg",
+    } as Tiles,
 
     journey:  {} as Tiles,
 
