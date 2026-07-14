@@ -63,6 +63,11 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
     { id: "strip-4", name: "Strip 4", price: 0, desc: "Editorial polaroid strip — design 4." },
     { id: "strip-5", name: "Strip 5", price: 0, desc: "Editorial polaroid strip — design 5." },
   ],
+  delivery: [
+    { id: "del-std", name: "Standard Delivery", price: 0,   desc: "Free — arrives in 7-8 days." },
+    { id: "del-exp", name: "Express Shipping",  price: 149, desc: "Priority — arrives in 3-4 days." },
+  ],
+};
 
 // Tier pricing for polaroid strips, indexed by number of strips selected (1..5).
 export const STRIP_TIERS: Record<number, number> = {
@@ -74,11 +79,6 @@ export const STRIP_TIERS: Record<number, number> = {
 };
 export const STRIP_MAX = 5;
 
-  delivery: [
-    { id: "del-std", name: "Standard Delivery", price: 0,   desc: "Free — arrives in 7-8 days." },
-    { id: "del-exp", name: "Express Shipping",  price: 149, desc: "Priority — arrives in 3-4 days." },
-  ],
-};
 
 export const fmt = (n: number) =>
   `${CONFIG.CURRENCY}${n.toLocaleString("en-IN")}`;
