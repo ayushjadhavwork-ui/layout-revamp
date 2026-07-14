@@ -9,8 +9,9 @@ import { SITE } from "@/lib/site-content";
 import { TiledSection } from "@/components/site/TiledSection";
 import {
   ProductGrid, ProductModal, CartDrawer, CustomerInfoModal,
-  PaymentModal, SuccessModal, CartButton, StepIndicator,
+  PaymentModal, SuccessModal, CartButton, StepIndicator, ModalShell,
 } from "@/components/site/shop";
+
 import { StripsSection } from "@/components/site/strips-section";
 import { PacksSection } from "@/components/site/packs-section";
 
