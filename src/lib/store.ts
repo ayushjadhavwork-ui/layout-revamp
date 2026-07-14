@@ -110,10 +110,42 @@ export const useStore = create<State>((set, get) => ({
     return true;
   },
 
+  toggleStrip: (id) => {
+    const s = get();
+    const already = s.stripSelections.includes(id);
+    if (!already && s.stripSelections.length >= STRIP_MAX) return false;
+    const next = already
+      ? s.stripSelections.filter((x) => x !== id)
+      : [...s.stripSelections, id];
+    // Rebuild the single strips cart line
+    const otherCart = s.cart.filter((c) => c.category !== "strips");
+    let cart = otherCart;
+    if (next.length > 0) {
+      const price = STRIP_TIERS[next.length] ?? 0;
+      const names = next
+        .map((sid) => CATALOG.strips.find((st) => st.id === sid)?.name ?? sid)
+        .join(", ");
+      cart = [
+        ...otherCart,
+        {
+          key: key("strips", "bundle"),
+          category: "strips",
+          id: "bundle",
+          name: `Polaroid Strips × ${next.length}`,
+          price,
+          note: names,
+        },
+      ];
+    }
+    set({ stripSelections: next, cart });
+    return true;
+  },
+
   setCoupon: (coupon) => set({ coupon }),
   setCustomer: (customer) => set({ customer }),
   setCartId: (cartId) => set({ cartId }),
-  clear: () => set({ cart: [], selectedSizeId: null, selectedTemplateIds: [], coupon: null, cartId: null }),
+  clear: () => set({ cart: [], selectedSizeId: null, selectedTemplateIds: [], stripSelections: [], coupon: null, cartId: null }),
+
 
   subtotal: () => get().cart.reduce((s, c) => s + c.price, 0),
   discount: () => {
