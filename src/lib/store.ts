@@ -43,9 +43,11 @@ export const useStore = create<State>((set, get) => ({
   cart: [],
   selectedSizeId: null,
   selectedTemplateIds: [],
+  stripSelections: [],
   coupon: null,
   cartId: null,
   customer: null,
+
 
   addItem: (category, product, note) => {
     // Single-choice categories (only one active at a time)
