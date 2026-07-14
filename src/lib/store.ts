@@ -75,8 +75,12 @@ export const useStore = create<State>((set, get) => ({
     if (item?.category === "templates") {
       patch.selectedTemplateIds = s.selectedTemplateIds.filter((id) => id !== item.id);
     }
+    if (item?.category === "strips") {
+      patch.stripSelections = [];
+    }
     return patch as State;
   }),
+
 
   setSize: (sizeId) => {
     const size = CATALOG.sizes.find((s) => s.id === sizeId);
