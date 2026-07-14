@@ -1,5 +1,6 @@
 import { create } from "zustand";
-import { CATALOG, type Product, type Category } from "./catalog";
+import { CATALOG, STRIP_TIERS, STRIP_MAX, type Product, type Category } from "./catalog";
+
 
 export type CartItem = {
   key: string;
