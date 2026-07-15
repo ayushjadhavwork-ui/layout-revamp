@@ -14,6 +14,9 @@ import {
 
 import { StripsSection } from "@/components/site/strips-section";
 import { PacksSection } from "@/components/site/packs-section";
+import { TemplatesSection } from "@/components/site/templates-section";
+import { SizesSection } from "@/components/site/sizes-section";
+import { AddonsSection } from "@/components/site/addons-section";
 
 export const Route = createFileRoute("/")({
   component: Home,
