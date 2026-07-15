@@ -211,13 +211,15 @@ function TemplateModal({
 
   return (
     <ModalShell onClose={onClose} maxW="max-w-4xl">
-      <div className="grid gap-6 md:grid-cols-12">
+      <div className="grid gap-6 md:grid-cols-12 items-start">
         <div className="md:col-span-6 flex justify-center">
-          <div className="w-full max-w-[440px] aspect-[4/3] rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10 relative">
+          <div className="w-full max-w-[560px] rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10">
             {hero ? (
-              <img src={hero} alt={label} className="absolute inset-0 h-full w-full object-cover" />
+              <img src={hero} alt={label} className="w-full h-auto object-contain" />
             ) : (
-              <TemplatePlaceholder n={templateIndex + 1} />
+              <div className="aspect-[4/3] relative">
+                <TemplatePlaceholder n={templateIndex + 1} />
+              </div>
             )}
           </div>
         </div>

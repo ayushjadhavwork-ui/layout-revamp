@@ -43,15 +43,7 @@ export function SizesSection() {
   return (
     <>
       <div className="mt-6 rounded-3xl p-6 md:p-10 bg-rose-wine">
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center gap-2 text-off-white">
-            <Layers className="h-5 w-5" />
-            <span className="font-display text-2xl tracking-[0.2em]">CHOOSE YOUR PACKAGE</span>
-          </div>
-          <p className="mt-2 text-xs uppercase tracking-[0.35em] text-pink-mist">
-            Pricing scales with page count · covers included
-          </p>
-        </div>
+
 
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-5">
           {items.map((item) => {
