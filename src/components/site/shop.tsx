@@ -3,7 +3,7 @@ import { X, ShoppingBag, Trash2, Plus, Check, ArrowUpRight, ChevronLeft, Chevron
 import { toast } from "sonner";
 import { CATALOG, CONFIG, fmt, type Category, type Product } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
-import { validateCoupon, logCart, completeOrder } from "@/lib/gas";
+import { validateCoupon, logCart, completeOrder, getReviews, submitReview as submitReviewApi, deleteReview, getReviewerId, type Review } from "@/lib/gas";
 import { SITE } from "@/lib/site-content";
 import { createPortal } from "react-dom";
 
@@ -167,7 +167,9 @@ export function ProductModal({
   const [note, setNote] = useState("");
   const [slide, setSlide] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [reviews, setReviews] = useState<{ name: string; rating: number; text: string }[]>([]);
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [loadingReviews, setLoadingReviews] = useState(false);
+  const [posting, setPosting] = useState(false);
   const [rvName, setRvName] = useState("");
   const [rvText, setRvText] = useState("");
   const [rvRating, setRvRating] = useState(5);
@@ -179,14 +181,16 @@ export function ProductModal({
   const selectedSizeId = useStore((s) => s.selectedSizeId);
 
   useEffect(() => {
-    if (open) {
+    if (open && product) {
       setNote("");
       setSlide(0);
       setLightboxOpen(false);
-      setReviews([
-        { name: "Aarohi S.", rating: 5, text: "Absolutely stunning quality — exceeded expectations." },
-        { name: "Karan M.", rating: 4, text: "Loved the presentation. Delivery was quick too." },
-      ]);
+      setReviews([]);
+      setLoadingReviews(true);
+      getReviews(product.id)
+        .then(setReviews)
+        .catch(() => toast.error("Could not load reviews."))
+        .finally(() => setLoadingReviews(false));
     }
   }, [open, product?.id]);
 
@@ -227,12 +231,51 @@ export function ProductModal({
     onClose();
   };
 
-  const submitReview = (e: React.FormEvent) => {
+
+
+  const handleSubmitReview = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!rvName.trim() || !rvText.trim()) return toast.error("Add your name and review.");
-    setReviews((r) => [{ name: rvName.trim(), rating: rvRating, text: rvText.trim() }, ...r]);
-    setRvName(""); setRvText(""); setRvRating(5);
-    toast.success("Review posted");
+    if (!product) return;
+    setPosting(true);
+
+    const reviewerId = getReviewerId();
+
+    try {
+      const res = await submitReviewApi({
+
+        productId: product.id,
+        name: rvName.trim(),
+        rating: rvRating,
+        text: rvText.trim(),
+        reviewerId,
+      });
+
+      if (!res.ok) throw new Error();
+      setReviews((r) => [
+        { id: res.id!, productId: product.id, name: rvName.trim(), rating: rvRating, text: rvText.trim(), reviewerId, timestamp: new Date().toISOString() },
+        ...r,
+      ]);
+      setRvName(""); setRvText(""); setRvRating(5);
+      toast.success("Review posted");
+    } catch {
+      toast.error("Could not post review — try again.");
+    } finally {
+      setPosting(false);
+    }
+  };
+
+  const handleDeleteReview = async (review: Review) => {
+    const reviewerId = getReviewerId();
+    try {
+      const res = await deleteReview(review.id, reviewerId);
+      if (!res.ok) throw new Error();
+      setReviews((r) => r.filter((x) => x.id !== review.id));
+      toast.success("Review deleted");
+    } catch {
+      toast.error("Could not delete — this may not be your review.");
+    }
+
   };
 
   return (
@@ -379,7 +422,7 @@ export function ProductModal({
         {/* ================= REVIEWS (unchanged) ================= */}
         <div className="mt-8 border-t border-white/60 pt-6">
           <h4 className="font-display text-2xl text-rose-wine">Customer reviews</h4>
-          <form onSubmit={submitReview} className="mt-4 rounded-2xl bg-white/50 p-4 space-y-2">
+          <form onSubmit={handleSubmitReview} className="mt-4 rounded-2xl bg-white/50 p-4 space-y-2">
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
               <input
                 value={rvName}
@@ -404,19 +447,40 @@ export function ProductModal({
               className="w-full rounded-xl border border-rose-wine/20 bg-white/70 px-3 py-2 text-sm outline-none focus:border-rose-wine"
               maxLength={400}
             />
-            <button type="submit" className="pill-btn pill-btn-hover !py-2 !px-4 !text-xs">Post review</button>
+            <button type="submit" disabled={posting} className="pill-btn pill-btn-hover !py-2 !px-4 !text-xs disabled:opacity-50">
+              {posting ? "Posting…" : "Post review"}
+            </button>
           </form>
           <ul className="mt-4 space-y-3 max-h-56 overflow-y-auto pr-1">
-            {reviews.map((r, i) => (
-              <li key={i} className="rounded-2xl bg-white/40 p-3">
-                <div className="flex items-center justify-between">
-                  <p className="font-medium text-rose-wine text-sm">{r.name}</p>
-                  <span className="text-xs text-blush-rose">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
-                </div>
-                <p className="mt-1 text-sm text-neutral-700">{r.text}</p>
-              </li>
-            ))}
+            {loadingReviews && <p className="text-sm text-dusty-rose text-center py-4">Loading reviews…</p>}
+            {!loadingReviews && reviews.length === 0 && (
+              <p className="text-sm text-dusty-rose text-center py-4">No reviews yet — be the first!</p>
+            )}
+            {reviews.map((r) => {
+              const isMine = r.reviewerId === getReviewerId();
+              return (
+                <li key={r.id} className="rounded-2xl bg-white/40 p-3">
+                  <div className="flex items-center justify-between">
+                    <p className="font-medium text-rose-wine text-sm">{r.name}</p>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-blush-rose">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
+                      {isMine && (
+                        <button
+                          onClick={() => handleDeleteReview(r)}
+                          className="text-neutral-400 hover:text-rose-wine"
+                          aria-label="Delete review"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                  <p className="mt-1 text-sm text-neutral-700">{r.text}</p>
+                </li>
+              );
+            })}
           </ul>
+
         </div>
       </ModalShell>
 

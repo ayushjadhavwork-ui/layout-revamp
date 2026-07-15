@@ -120,6 +120,19 @@ export const SITE = {
 
   productImages: {
 
+      "mandatory-1": ["/media/mandatory/mandatory-front.jpg"], // For "Front Cover"
+      "mandatory-2": ["/media/mandatory/mandatory-front.jpg"], // For "First Page"
+      "mandatory-3": ["/media/mandatory/mandatory-last.jpg"],  // For "Last Page"
+      "mandatory-4": ["/media/mandatory/mandatory-back.jpg"],  // For "Back Cover"
+
+ 
+
+
+
+
+
+
+
     "tpl-24": ["/media/products/24.jpg","/media/products/24.jpg"],
 
 

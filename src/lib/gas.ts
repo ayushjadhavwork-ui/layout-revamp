@@ -39,3 +39,40 @@ export const logCart = (payload: Record<string, unknown>) =>
 
 export const completeOrder = (payload: Record<string, unknown>) =>
   post<{ ok: boolean; orderId?: string }>({ action: "completeOrder", ...payload });
+
+export type Review = {
+  id: string;
+  productId: string;
+  name: string;
+  rating: number;
+  text: string;
+  reviewerId: string;
+  timestamp: string;
+};
+
+export async function getReviews(productId: string): Promise<Review[]> {
+  if (CONFIG.GAS_URL.startsWith("REPLACE")) {
+    console.warn("[GAS] URL not configured — returning empty reviews for", productId);
+    return [];
+  }
+  const url = `${CONFIG.GAS_URL}?action=getReviews&productId=${encodeURIComponent(productId)}`;
+  const res = await fetch(url);
+  const data = await res.json();
+  return data.reviews ?? [];
+}
+
+export const submitReview = (payload: Record<string, unknown>) =>
+  post<{ ok: boolean; id?: string }>({ action: "submitReview", ...payload });
+
+export const deleteReview = (id: string, reviewerId: string) =>
+  post<{ ok: boolean }>({ action: "deleteReview", id, reviewerId });
+
+export function getReviewerId(): string {
+  const key = "reviewerId";
+  let id = localStorage.getItem(key);
+  if (!id) {
+    id = crypto.randomUUID();
+    localStorage.setItem(key, id);
+  }
+  return id;
+}

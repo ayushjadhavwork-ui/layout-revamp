@@ -192,26 +192,10 @@ function Home() {
             </div>
             <div>
               <SectionHead eyebrow="Step 6" title="Delivery" />
-              <ProductGrid category="delivery" items={CATALOG.delivery} onOpen={openProduct("dcdcdelivery")} cols="sm:grid-cols-2" />
+              <ProductGrid category="delivery" items={CATALOG.delivery} onOpen={openProduct("delivery")} cols="sm:grid-cols-2" />
             </div>
           </div>
         </div>
-
-      <section className="pattern-satin"></section>
-        <Timeline />
-      <section/>
-      
-      </TiledSection>
-      <TiledSection tiles={SITE.backgrounds.founders}>
-        <Founders />
-      </TiledSection>
-
-      <section className="pattern-gingham">
-        <Journey />
-      </section>         
-
-      <Reels />
-      <Policy />
 
       <section className="relative z-10 px-4 pb-16">
         <div className="mx-auto max-w-4xl">
@@ -237,6 +221,24 @@ function Home() {
           </div>
         </div>
       </section>
+
+      <section className="pattern-satin"></section>
+        <Timeline />
+      <section/>
+      
+      </TiledSection>
+      <TiledSection tiles={SITE.backgrounds.founders}>
+        <Founders />
+      </TiledSection>
+
+      <section className="pattern-gingham">
+        <Journey />
+      </section>         
+
+      <Reels />
+      <Policy />
+
+
 
       <Footer />
 
@@ -326,7 +328,7 @@ function Reels() {
 
 function Nav({ onCart }: { onCart: () => void }) {
   return (
-    <header className="sticky top-4 z-40 px-4 mt-4">
+    <header className="sticky top-0 z-40 px-4 pt-4">
       <nav className="glass mx-auto flex max-w-6xl items-center justify-between rounded-full px-5 py-3">
         <a href="#top" className="flex items-center gap-3 min-w-0">
           <img src={logoAsset.url} alt="The Layout" className="h-9 w-9 shrink-0 object-contain" />
