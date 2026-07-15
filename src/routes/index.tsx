@@ -505,9 +505,9 @@ function Mandatory() {
         <ModalShell onClose={() => setOpenIdx(null)} maxW="max-w-3xl">
           <div className="grid gap-6 md:grid-cols-12">
             <div className="md:col-span-6 flex justify-center">
-              <div className="w-full max-w-[340px] aspect-[2/3] rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10 relative">
+              <div className="w-full max-w-[340px] aspect-[7/10] rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10 relative">
                 {photo ? (
-                  <img src={photo} alt={active.t} className="absolute inset-0 h-full w-full object-cover object-top" />
+                  <img src={photo} alt={active.t} className="absolute inset-0 h-full w-full object-cover object-center" />
                 ) : (
                   <MandatoryPlaceholder label={active.t} />
                 )}
