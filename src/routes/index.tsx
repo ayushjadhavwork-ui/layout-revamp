@@ -481,9 +481,9 @@ function Mandatory() {
                 onClick={() => setOpenIdx(i)}
                 className="group text-left rounded-2xl overflow-hidden bg-white shadow-md ring-1 ring-rose-wine/10 hover:shadow-xl hover:-translate-y-0.5 transition"
               >
-                <div className="relative aspect-[2/3] overflow-hidden bg-neutral-100">
+                <div className="relative aspect-[7/10] overflow-hidden bg-neutral-100">
                   {hero ? (
-                    <img src={hero} alt={m.t} loading="lazy" className="absolute inset-0 h-full w-full object-cover object-top" />
+                    <img src={hero} alt={m.t} loading="lazy" className="absolute inset-0 h-full w-full object-cover object-center" />
                   ) : (
                     <MandatoryPlaceholder label={m.t} />
                   )}
