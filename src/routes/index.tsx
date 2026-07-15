@@ -14,6 +14,9 @@ import {
 
 import { StripsSection } from "@/components/site/strips-section";
 import { PacksSection } from "@/components/site/packs-section";
+import { TemplatesSection } from "@/components/site/templates-section";
+import { SizesSection } from "@/components/site/sizes-section";
+import { AddonsSection } from "@/components/site/addons-section";
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -164,7 +167,7 @@ function Home() {
         <div id="build" className="relative z-10 px-4 py-20">
           <div className="mx-auto max-w-6xl">
             <SectionHead eyebrow="Step 1" title="Choose your package" sub="Pricing scales with page count. Front & back covers included." />
-            <ProductGrid category="sizes" items={CATALOG.sizes} onOpen={openProduct("sizes")} />
+            <SizesSection />
           </div>
         </div>
 
@@ -172,7 +175,7 @@ function Home() {
           <div className="mx-auto max-w-6xl">
             <SectionHead eyebrow="Step 2" title="Pick your templates" sub="Choose the exact number your package allows. Click a card for details." />
             <StepIndicator />
-            <ProductGrid category="templates" items={CATALOG.templates} onOpen={openProduct("templates")} />
+            <TemplatesSection />
           </div>
         </div>
 
@@ -180,7 +183,7 @@ function Home() {
           <div className="mx-auto max-w-6xl space-y-16">
             <div>
               <SectionHead eyebrow="Step 3" title="Add-ons" sub="Little extras that make the keepsake feel personal." />
-              <ProductGrid category="addons" items={CATALOG.addons} onOpen={openProduct("addons")} cols="sm:grid-cols-2" />
+              <AddonsSection />
             </div>
             <div>
               <SectionHead eyebrow="Step 4" title="Polaroid packs" sub="Real polaroid keepsakes — tap a pack to add, or View for the full look." />
@@ -481,9 +484,9 @@ function Mandatory() {
                 onClick={() => setOpenIdx(i)}
                 className="group text-left rounded-2xl overflow-hidden bg-white shadow-md ring-1 ring-rose-wine/10 hover:shadow-xl hover:-translate-y-0.5 transition"
               >
-                <div className="relative aspect-[2/3] overflow-hidden bg-neutral-100">
+                <div className="relative aspect-[7/10] overflow-hidden bg-neutral-100">
                   {hero ? (
-                    <img src={hero} alt={m.t} loading="lazy" className="absolute inset-0 h-full w-full object-cover object-top" />
+                    <img src={hero} alt={m.t} loading="lazy" className="absolute inset-0 h-full w-full object-cover object-center" />
                   ) : (
                     <MandatoryPlaceholder label={m.t} />
                   )}
@@ -505,9 +508,9 @@ function Mandatory() {
         <ModalShell onClose={() => setOpenIdx(null)} maxW="max-w-3xl">
           <div className="grid gap-6 md:grid-cols-12">
             <div className="md:col-span-6 flex justify-center">
-              <div className="w-full max-w-[340px] aspect-[2/3] rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10 relative">
+              <div className="w-full max-w-[340px] aspect-[7/10] rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10 relative">
                 {photo ? (
-                  <img src={photo} alt={active.t} className="absolute inset-0 h-full w-full object-cover object-top" />
+                  <img src={photo} alt={active.t} className="absolute inset-0 h-full w-full object-cover object-center" />
                 ) : (
                   <MandatoryPlaceholder label={active.t} />
                 )}

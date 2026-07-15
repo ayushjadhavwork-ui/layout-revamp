@@ -121,7 +121,7 @@ export const SITE = {
   productImages: {
 
       "mandatory-1": ["/media/mandatory/mandatory-front.jpg"], // For "Front Cover"
-      "mandatory-2": ["/media/mandatory/mandatory-front.jpg"], // For "First Page"
+      "mandatory-2": ["/media/mandatory/mandatory-first.jpg"], // For "First Page"
       "mandatory-3": ["/media/mandatory/mandatory-last.jpg"],  // For "Last Page"
       "mandatory-4": ["/media/mandatory/mandatory-back.jpg"],  // For "Back Cover"
 
@@ -133,7 +133,19 @@ export const SITE = {
 
 
 
+    // ── Templates (optional overrides — Template 01..24) ─────────
+    // Drop a spread image at /public/media/products/templates/1.jpg (etc.)
+    // and add the path here to override the built-in placeholder.
+    // "tpl-1":  ["/media/products/templates/1.jpg"],
+    // "tpl-2":  ["/media/products/templates/2.jpg"],
+    // ...
     "tpl-24": ["/media/products/24.jpg","/media/products/24.jpg"],
+
+    // ── Package / sizes (optional cover imagery) ─────────────────
+    // "sz-4":  ["/media/products/sizes/4.jpg"],
+    // "sz-6":  ["/media/products/sizes/6.jpg"],
+    // ...
+    // "sz-20": ["/media/products/sizes/20.jpg"],
 
 
 
