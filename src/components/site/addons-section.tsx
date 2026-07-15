@@ -8,7 +8,7 @@ import { ModalShell } from "./shop";
 
 const ADDON_META: Record<
   string,
-  { icon: React.ComponentType<{ className?: string }>; tag?: string; savings?: string }
+  { icon: React.ComponentType<React.SVGProps<SVGSVGElement>>; tag?: string; savings?: string }
 > = {
   "add-wrap":   { icon: Gift,           tag: "Cute little touch" },
   "add-combo":  { icon: HeartHandshake, tag: "BEST VALUE ♡",         savings: "Save ₹20" },
