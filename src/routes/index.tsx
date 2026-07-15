@@ -481,9 +481,9 @@ function Mandatory() {
                 onClick={() => setOpenIdx(i)}
                 className="group text-left rounded-2xl overflow-hidden bg-white shadow-md ring-1 ring-rose-wine/10 hover:shadow-xl hover:-translate-y-0.5 transition"
               >
-                <div className="relative aspect-[3/4] overflow-hidden bg-neutral-100">
+                <div className="relative aspect-[2/3] overflow-hidden bg-neutral-100">
                   {hero ? (
-                    <img src={hero} alt={m.t} loading="lazy" className="h-full w-full object-cover" />
+                    <img src={hero} alt={m.t} loading="lazy" className="absolute inset-0 h-full w-full object-cover object-top" />
                   ) : (
                     <MandatoryPlaceholder label={m.t} />
                   )}
@@ -505,9 +505,9 @@ function Mandatory() {
         <ModalShell onClose={() => setOpenIdx(null)} maxW="max-w-3xl">
           <div className="grid gap-6 md:grid-cols-12">
             <div className="md:col-span-6 flex justify-center">
-              <div className="w-full max-w-[340px] aspect-[3/4] rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10 relative">
+              <div className="w-full max-w-[340px] aspect-[2/3] rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10 relative">
                 {photo ? (
-                  <img src={photo} alt={active.t} className="h-full w-full object-cover" />
+                  <img src={photo} alt={active.t} className="absolute inset-0 h-full w-full object-cover object-top" />
                 ) : (
                   <MandatoryPlaceholder label={active.t} />
                 )}
