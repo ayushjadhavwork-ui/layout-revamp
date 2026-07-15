@@ -167,7 +167,7 @@ function Home() {
         <div id="build" className="relative z-10 px-4 py-20">
           <div className="mx-auto max-w-6xl">
             <SectionHead eyebrow="Step 1" title="Choose your package" sub="Pricing scales with page count. Front & back covers included." />
-            <ProductGrid category="sizes" items={CATALOG.sizes} onOpen={openProduct("sizes")} />
+            <SizesSection />
           </div>
         </div>
 
@@ -175,7 +175,7 @@ function Home() {
           <div className="mx-auto max-w-6xl">
             <SectionHead eyebrow="Step 2" title="Pick your templates" sub="Choose the exact number your package allows. Click a card for details." />
             <StepIndicator />
-            <ProductGrid category="templates" items={CATALOG.templates} onOpen={openProduct("templates")} />
+            <TemplatesSection />
           </div>
         </div>
 
@@ -183,7 +183,7 @@ function Home() {
           <div className="mx-auto max-w-6xl space-y-16">
             <div>
               <SectionHead eyebrow="Step 3" title="Add-ons" sub="Little extras that make the keepsake feel personal." />
-              <ProductGrid category="addons" items={CATALOG.addons} onOpen={openProduct("addons")} cols="sm:grid-cols-2" />
+              <AddonsSection />
             </div>
             <div>
               <SectionHead eyebrow="Step 4" title="Polaroid packs" sub="Real polaroid keepsakes — tap a pack to add, or View for the full look." />
