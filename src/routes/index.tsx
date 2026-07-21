@@ -258,6 +258,8 @@ function Home() {
       <CustomerInfoModal open={infoOpen} onClose={() => setInfoOpen(false)} onSubmit={() => { setInfoOpen(false); setPayOpen(true); }} />
       <PaymentModal open={payOpen} onClose={() => setPayOpen(false)} onDone={(id) => { setPayOpen(false); setOrderId(id); setSuccessOpen(true); }} />
       <SuccessModal open={successOpen} onClose={() => { setSuccessOpen(false); clear(); }} orderId={orderId} />
+      <SpinWheel />
+
 
       {cartCount > 0 && (
         <button
