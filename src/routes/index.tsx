@@ -17,6 +17,9 @@ import { PacksSection } from "@/components/site/packs-section";
 import { TemplatesSection } from "@/components/site/templates-section";
 import { SizesSection } from "@/components/site/sizes-section";
 import { AddonsSection } from "@/components/site/addons-section";
+import { CombosSection } from "@/components/site/combos-section";
+import { SpinWheel } from "@/components/site/spin-wheel";
+
 
 export const Route = createFileRoute("/")({
   component: Home,
@@ -182,6 +185,10 @@ function Home() {
         <div id="extras" className="relative z-10 px-4 py-20">
           <div className="mx-auto max-w-6xl space-y-16">
             <div>
+              <SectionHead eyebrow="Curated" title="Combos" sub="Bundled favourites at a soft price — pick one and go." />
+              <CombosSection />
+            </div>
+            <div>
               <SectionHead eyebrow="Step 3" title="Add-ons" sub="Little extras that make the keepsake feel personal." />
               <AddonsSection />
             </div>
@@ -189,6 +196,7 @@ function Home() {
               <SectionHead eyebrow="Step 4" title="Polaroid packs" sub="Real polaroid keepsakes — tap a pack to add, or View for the full look." />
               <PacksSection />
             </div>
+
             <div>
               <SectionHead eyebrow="Step 5" title="Polaroid Strips" sub="Click a strip to add it, or tap View for details." />
               <StripsSection />
