@@ -127,3 +127,54 @@ strips the prefix, saves the file to a Drive folder called
   Deploy → Manage deployments → New version.
 - **Drive permission error on screenshots** — re-run the deployment flow
   and grant Drive access when prompted.
+
+---
+
+## 7. Spin-the-Wheel lead capture
+
+The homepage popup posts `{ action: "spinLead", email, optIn, sessionId }`.
+The server MUST pick the winning segment (never trust the client). Add a
+tab and a handler:
+
+### Tab: `Spin Leads`
+| timestamp | email | optIn | prize | code | sessionId | redeemed | expiresAt |
+
+### Add to `Code.gs`
+
+```js
+function handleSpinLead(payload) {
+  const segments = [
+    { label: 'FREE 1 Polaroid Strip',       code: 'SPINPOLA',   weight: 20 },
+    { label: 'FREE Personalized Letter',    code: 'SPINLETTER', weight: 20 },
+    { label: '10% OFF Your Magazine Order', code: 'SPIN10',     weight: 25 },
+    { label: 'FREE Sticker Pack',           code: 'SPINSTICK',  weight: 20 },
+    { label: 'Better Luck Next Time',       code: null,         weight: 15 },
+  ];
+  const total = segments.reduce((s, x) => s + x.weight, 0);
+  let n = Math.random() * total;
+  let won = segments[segments.length - 1];
+  for (const s of segments) { if ((n -= s.weight) <= 0) { won = s; break; } }
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  let sheet = ss.getSheetByName('Spin Leads');
+  if (!sheet) {
+    sheet = ss.insertSheet('Spin Leads');
+    sheet.appendRow(['timestamp','email','optIn','prize','code','sessionId','redeemed','expiresAt']);
+  }
+  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  sheet.appendRow([
+    new Date(), payload.email || '', !!payload.optIn,
+    won.label, won.code || '', payload.sessionId || '', false, expiresAt,
+  ]);
+  return { ok: true, result: { label: won.label, code: won.code } };
+}
+```
+
+In `doPost`, route the `spinLead` action to `handleSpinLead(payload)`.
+The frontend gracefully falls back to a local weighted pick if the backend
+is not configured, so the popup works end-to-end during development.
+
+To change the odds or add/remove prizes, update **three** places (they must
+match): this Apps Script segments array, `SPIN_PRIZES` in
+`src/components/site/spin-wheel.tsx`, and `SPIN_SEGMENTS` in
+`src/lib/gas.ts`.
