@@ -14,9 +14,11 @@ export type Category =
   | "sizes"
   | "templates"
   | "addons"
+  | "combos"
   | "polaroids"
   | "strips"
   | "delivery";
+
 
 export type Product = {
   id: string;
@@ -50,6 +52,27 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
     { id: "add-letter", name: "Handwritten Letter",  price: 149, desc: "A personal letter, penned by us." },
     { id: "add-combo",  name: "Combo (Wrap + Letter)", price: 219, desc: "Both — because why not?" },
   ],
+  combos: [
+    {
+      id: "combo-main",
+      name: "Main Character Pack",
+      price: 1049,
+      desc: "8-Page Custom Magazine + Gift Wrap + Personalized Letter. Everything you need to feel like the main character. You save ₹50.",
+    },
+    {
+      id: "combo-core",
+      name: "Core Memory Pack",
+      price: 1379,
+      desc: "12-Page Custom Magazine + Classic Polaroid Pack (18 Photos) + 1 Polaroid Strip. A whole core memory in a box. You save ₹71.",
+    },
+    {
+      id: "combo-soft",
+      name: "Soft Launch Bundle",
+      price: 1699,
+      desc: "16-Page Custom Magazine + Memory Polaroid Pack (27 Photos) + Gift Wrap + Personalized Letter. The full soft launch treatment. You save ₹70.",
+    },
+  ],
+
   polaroids: [
     { id: "pol-mini",    name: "Mini Pack",    price: 80,  desc: "9 mini polaroids — matte finish, keepsake-ready." },
     { id: "pol-classic", name: "Classic Pack", price: 150, desc: "18 classic polaroids — the everyday memory stack." },

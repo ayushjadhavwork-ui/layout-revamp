@@ -24,6 +24,7 @@ type State = {
   removeItem: (key: string) => void;
   setSize: (sizeId: string) => void;
   toggleTemplate: (id: string) => boolean; // returns success
+  randomizeTemplates: () => number; // returns count picked
   toggleStrip: (id: string) => boolean; // returns success; false if cap reached
   setCoupon: (c: State["coupon"]) => void;
   setCustomer: (c: State["customer"]) => void;
@@ -35,6 +36,7 @@ type State = {
   total: () => number;
   templateLimit: () => number;
 };
+
 
 
 const key = (cat: Category, id: string) => `${cat}:${id}`;
@@ -51,7 +53,7 @@ export const useStore = create<State>((set, get) => ({
 
   addItem: (category, product, note) => {
     // Single-choice categories (only one active at a time)
-    const singleChoice: Category[] = ["addons", "polaroids", "strips", "delivery", "sizes"];
+    const singleChoice: Category[] = ["addons", "polaroids", "strips", "delivery", "sizes", "combos"];
     set((s) => {
       let cart = s.cart;
       if (singleChoice.includes(category)) {
@@ -64,6 +66,7 @@ export const useStore = create<State>((set, get) => ({
       };
     });
   },
+
 
   removeItem: (k) => set((s) => {
     const item = s.cart.find((c) => c.key === k);
@@ -113,6 +116,36 @@ export const useStore = create<State>((set, get) => ({
     });
     return true;
   },
+
+  randomizeTemplates: () => {
+    const s = get();
+    if (!s.selectedSizeId) return 0;
+    const limit = get().templateLimit();
+    if (limit <= 0) return 0;
+    // Fisher–Yates shuffle
+    const pool = [...CATALOG.templates];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const picked = pool.slice(0, limit);
+    const pickedIds = picked.map((t) => t.id);
+    set({
+      selectedTemplateIds: pickedIds,
+      cart: [
+        ...s.cart.filter((c) => c.category !== "templates"),
+        ...picked.map((tpl) => ({
+          key: key("templates", tpl.id),
+          category: "templates" as Category,
+          id: tpl.id,
+          name: tpl.name,
+          price: 0,
+        })),
+      ],
+    });
+    return picked.length;
+  },
+
 
   toggleStrip: (id) => {
     const s = get();

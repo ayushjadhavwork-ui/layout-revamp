@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { BookOpen, Check } from "lucide-react";
+import { BookOpen, Check, Shuffle } from "lucide-react";
+
 import { toast } from "sonner";
 import { CATALOG } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
@@ -47,6 +48,8 @@ export function TemplatesSection() {
   const selectedIds = useStore((s) => s.selectedTemplateIds);
   const limit = useStore((s) => s.templateLimit());
   const toggleTemplate = useStore((s) => s.toggleTemplate);
+  const randomizeTemplates = useStore((s) => s.randomizeTemplates);
+
 
   const items = CATALOG.templates;
 
@@ -61,7 +64,7 @@ export function TemplatesSection() {
   return (
     <>
       <div className="mt-6 rounded-3xl p-6 md:p-10 bg-rose-wine">
-        <div className="text-center mb-8">
+        <div className="text-center mb-6">
           <div className="inline-flex items-center gap-2 text-off-white">
             <BookOpen className="h-5 w-5" />
             <span className="font-display text-2xl tracking-[0.2em]">RIGHT – LEFT SIDE TEMPLATES</span>
@@ -72,6 +75,23 @@ export function TemplatesSection() {
               : "Pick a package first to unlock"}
           </p>
         </div>
+
+        <div className="mb-6 flex justify-center">
+          <button
+            type="button"
+            onClick={() => {
+              if (!selectedSizeId) return toast.error("Pick a page package first.");
+              const n = randomizeTemplates();
+              if (n > 0) toast.success(`Randomised ${n} template${n === 1 ? "" : "s"} ✨`);
+            }}
+            disabled={!selectedSizeId}
+            className="group inline-flex items-center gap-2 rounded-full bg-off-white px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.25em] text-rose-wine shadow-lg ring-1 ring-pink-mist/40 transition hover:scale-[1.03] hover:bg-pink-mist/90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Shuffle className="h-4 w-4 transition group-hover:rotate-180" />
+            Randomise for me
+          </button>
+        </div>
+
 
         <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
           {items.map((item, idx) => {
