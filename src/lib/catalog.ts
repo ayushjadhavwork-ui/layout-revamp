@@ -4,8 +4,8 @@
 // ===========================================================
 
 export const CONFIG = {
-  GAS_URL: "REPLACE_WITH_YOUR_GOOGLE_APPS_SCRIPT_WEBAPP_URL",
-  UPI_ID: "yourupi@bank",
+  GAS_URL: "https://script.google.com/macros/s/AKfycbwoqxri-OOv5wTYTw3iLPJC1ZJ7nru5b2SFQ8E080e6L_OY1LJAK_BR__VTdTh3gFQq2g/exec",
+  UPI_ID: "sphati666-1@okhdfcbank",
   PAYEE: "The Layout Magazines",
   CURRENCY: "₹",
 };
