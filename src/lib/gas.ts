@@ -76,3 +76,43 @@ export function getReviewerId(): string {
   }
   return id;
 }
+
+/* ─── Spin-the-Wheel lead capture ─────────────────────────── */
+export type SpinResult = { label: string; code: string | null };
+
+// Weights MUST mirror Code.gs and src/components/site/spin-wheel.tsx.
+const SPIN_SEGMENTS: { label: string; code: string | null; weight: number }[] = [
+  { label: "FREE 1 Polaroid Strip",       code: "SPINPOLA",   weight: 20 },
+  { label: "FREE Personalized Letter",    code: "SPINLETTER", weight: 20 },
+  { label: "10% OFF Your Magazine Order", code: "SPIN10",     weight: 25 },
+  { label: "FREE Sticker Pack",           code: "SPINSTICK",  weight: 20 },
+  { label: "Better Luck Next Time",       code: null,         weight: 15 },
+];
+
+function weightedPick(): SpinResult {
+  const total = SPIN_SEGMENTS.reduce((s, x) => s + x.weight, 0);
+  let n = Math.random() * total;
+  for (const s of SPIN_SEGMENTS) {
+    if ((n -= s.weight) <= 0) return { label: s.label, code: s.code };
+  }
+  const last = SPIN_SEGMENTS[SPIN_SEGMENTS.length - 1];
+  return { label: last.label, code: last.code };
+}
+
+export async function spinLead(payload: {
+  email: string; optIn: boolean; sessionId: string;
+}): Promise<SpinResult> {
+  if (CONFIG.GAS_URL.startsWith("REPLACE")) {
+    console.warn("[GAS] URL not configured — running spin locally", payload);
+    return weightedPick();
+  }
+  const res = await post<{ ok: boolean; label?: string; code?: string | null; result?: SpinResult }>({
+    action: "spinLead",
+    ...payload,
+  });
+  if (res.result) return res.result;
+  if (res.label !== undefined) return { label: res.label, code: res.code ?? null };
+  // Fallback if backend didn't understand action
+  return weightedPick();
+}
+
