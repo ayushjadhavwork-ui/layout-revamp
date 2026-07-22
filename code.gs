@@ -12,9 +12,6 @@ function doGet(e) {
   if (action === "getReviews") {
     return jsonOut(getReviews(e.parameter.productId));
   }
-  if (action === "getSpinConfig") {
-    return jsonOut(getSpinConfig());
-  }
   return jsonOut({ error: "Unknown or missing action" });
 }
 
@@ -57,7 +54,8 @@ function validateCoupon(code) {
   if (!match) return { valid: false, message: "Invalid code" };
 
   const [, percent, active] = match;
-  if (String(active).toUpperCase() !== "TRUE") {
+  const isActive = active === true || Number(active) === 1 || String(active).trim().toUpperCase() === "TRUE";
+  if (!isActive) {
     return { valid: false, message: "This code is no longer active" };
   }
   return { valid: true, percent: Number(percent) };
@@ -98,12 +96,17 @@ function completeOrder(body) {
 
   let screenshotUrl = "";
   if (body.screenshot && body.screenshotName) {
-    const folder = getOrCreateFolder("The Layout — Payment Screenshots");
-    const base64 = body.screenshot.split(",")[1];
-    const blob = Utilities.newBlob(Utilities.base64Decode(base64), "image/png", body.screenshotName);
-    const file = folder.createFile(blob);
-    file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
-    screenshotUrl = file.getUrl();
+    try {
+      const folder = getOrCreateFolder("The Layout — Payment Screenshots");
+      const base64 = body.screenshot.split(",")[1];
+      const blob = Utilities.newBlob(Utilities.base64Decode(base64), "image/png", body.screenshotName);
+      const file = folder.createFile(blob);
+      file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+      screenshotUrl = file.getUrl();
+    } catch (err) {
+      // Don't let a Drive/permission failure block the order from being logged.
+      screenshotUrl = "ERROR: " + err.message;
+    }
   }
 
   sheet.appendRow([
@@ -148,6 +151,7 @@ function getReviews(productId) {
 function submitReview(body) {
   const sheet = ss().getSheetByName("Reviews");
   if (!sheet) return { ok: false, error: "Reviews sheet not found" };
+  ensureHeaders(sheet, ["id", "productId", "name", "rating", "text", "reviewerId", "timestamp"]);
 
   const id = Utilities.getUuid();
   sheet.appendRow([
@@ -180,43 +184,19 @@ function deleteReview(body) {
 /* ============================================================ */
 /* Spin the Wheel                                                */
 /* ============================================================ */
-function getSpinConfig() {
-  const sheet = ss().getSheetByName("Spin Config");
-  if (!sheet) return { segments: [], error: "Spin Config sheet not found" };
-
-  const data = sheet.getDataRange().getValues();
-  if (data.length < 2) return { segments: [], error: "Spin Config is empty" };
-
-  const [headers, ...rows] = data;
-  const idx = {
-    order: headers.indexOf("Order"),
-    label: headers.indexOf("Label"),
-    icon: headers.indexOf("Icon"),
-    code: headers.indexOf("Code"),
-    weight: headers.indexOf("Weight"),
-    active: headers.indexOf("Active"),
-    color: headers.indexOf("Color"),
-  };
-
-  const segments = rows
-    .filter((r) => String(r[idx.active]).toUpperCase() === "TRUE")
-    .map((r) => ({
-      order: Number(r[idx.order]) || 0,
-      label: String(r[idx.label] || "").trim(),
-      icon: String(r[idx.icon] || "").trim(),
-      code: String(r[idx.code] || "").trim() || null,
-      weight: Number(r[idx.weight]) || 1,
-      color: String(r[idx.color] || "").trim() || null,
-    }))
-    .sort((a, b) => a.order - b.order);
-
-  if (segments.length === 0) return { segments: [], error: "No active segments configured" };
-  return { segments };
-}
+// Must mirror SPIN_SEGMENTS in src/lib/gas.ts and SPIN_PRIZES in
+// src/components/site/spin-wheel.tsx — labels, codes, and weights.
+const SPIN_SEGMENTS = [
+  { label: "FREE 1 Polaroid Strip",       code: "SPINPOLA",   weight: 20 },
+  { label: "FREE Personalized Letter",    code: "SPINLETTER", weight: 20 },
+  { label: "10% OFF Your Magazine Order", code: "SPIN10",     weight: 25 },
+  { label: "FREE Sticker Pack",           code: "SPINSTICK",  weight: 20 },
+  { label: "Better Luck Next Time",       code: null,         weight: 15 },
+];
 
 function handleSpinLead(body) {
   const sheet = ss().getSheetByName("Spin Leads");
-  if (!sheet) return { success: false, error: "Spin Leads sheet not found — create this tab first" };
+  if (!sheet) return { ok: false, error: "Spin Leads sheet not found — create this tab first" };
 
   const headers = ["Timestamp", "Email", "Marketing Opt-in", "Segment Won", "Coupon Code", "Session ID", "Redeemed", "Expires At"];
   ensureHeaders(sheet, headers);
@@ -226,7 +206,7 @@ function handleSpinLead(body) {
   const optIn = !!body.optIn;
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { success: false, error: "Invalid email" };
+    return { ok: false, error: "Invalid email" };
   }
 
   const lastRow = sheet.getLastRow();
@@ -240,31 +220,24 @@ function handleSpinLead(body) {
     for (let i = 0; i < rows.length; i++) {
       if (String(rows[i][emailCol]).toLowerCase() === email) {
         return {
-          success: true,
+          ok: true,
           alreadySpun: true,
-          segment: rows[i][segmentCol],
-          code: rows[i][codeCol],
+          result: { label: rows[i][segmentCol], code: rows[i][codeCol] || null },
           expiresAt: rows[i][expiryCol] ? new Date(rows[i][expiryCol]).toISOString() : null,
         };
       }
     }
   }
 
-  const config = getSpinConfig();
-  if (!config.segments || config.segments.length === 0) {
-    return { success: false, error: config.error || "Spin wheel is not configured" };
-  }
-
-  const won = pickWeighted(config.segments);
+  const won = pickWeighted(SPIN_SEGMENTS);
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   sheet.appendRow([new Date(), email, optIn, won.label, won.code || "", sessionId, false, expiresAt]);
 
   return {
-    success: true,
+    ok: true,
     alreadySpun: false,
-    segment: won.label,
-    code: won.code,
+    result: { label: won.label, code: won.code },
     expiresAt: expiresAt.toISOString(),
   };
 }
