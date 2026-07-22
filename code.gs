@@ -12,6 +12,9 @@ function doGet(e) {
   if (action === "getReviews") {
     return jsonOut(getReviews(e.parameter.productId));
   }
+  if (action === "getSpinConfig") {
+    return jsonOut(getSpinConfig());
+  }
   return jsonOut({ error: "Unknown or missing action" });
 }
 
@@ -184,19 +187,49 @@ function deleteReview(body) {
 /* ============================================================ */
 /* Spin the Wheel                                                */
 /* ============================================================ */
-// Must mirror SPIN_SEGMENTS in src/lib/gas.ts and SPIN_PRIZES in
-// src/components/site/spin-wheel.tsx — labels, codes, and weights.
-const SPIN_SEGMENTS = [
-  { label: "FREE 1 Polaroid Strip",       code: "SPINPOLA",   weight: 20 },
-  { label: "FREE Personalized Letter",    code: "SPINLETTER", weight: 20 },
-  { label: "10% OFF Your Magazine Order", code: "SPIN10",     weight: 25 },
-  { label: "FREE Sticker Pack",           code: "SPINSTICK",  weight: 20 },
-  { label: "Better Luck Next Time",       code: null,         weight: 15 },
-];
+// Single source of truth for both the wheel's visual segments and the
+// actual win odds — read fresh from the sheet on every call so the two
+// can never drift out of sync. Edit the "Spin Config" tab to add,
+// remove, reorder, reweight, or pause prizes; no redeploy needed.
+function getSpinConfig() {
+  const sheet = ss().getSheetByName("Spin Config");
+  if (!sheet) return { success: false, segments: [], error: "Spin wheel is not configured" };
+
+  const data = sheet.getDataRange().getValues();
+  if (data.length < 2) return { success: false, segments: [], error: "Spin wheel is not configured" };
+
+  const [headers, ...rows] = data;
+  const idx = {
+    order: headers.indexOf("Order"),
+    label: headers.indexOf("Label"),
+    icon: headers.indexOf("Icon"),
+    code: headers.indexOf("Code"),
+    weight: headers.indexOf("Weight"),
+    active: headers.indexOf("Active"),
+    color: headers.indexOf("Color"),
+  };
+  const isActive = (v) => v === true || Number(v) === 1 || String(v).trim().toUpperCase() === "TRUE";
+
+  const segments = rows
+    .filter((r) => isActive(r[idx.active]))
+    .map((r) => ({
+      order: Number(r[idx.order]) || 0,
+      label: String(r[idx.label] || "").trim(),
+      icon: String(r[idx.icon] || "").trim(),
+      code: String(r[idx.code] || "").trim() || null,
+      weight: Number(r[idx.weight]) || 1,
+      color: String(r[idx.color] || "").trim() || null,
+    }))
+    .filter((s) => s.label)
+    .sort((a, b) => a.order - b.order);
+
+  if (segments.length === 0) return { success: false, segments: [], error: "Spin wheel is not configured" };
+  return { success: true, segments };
+}
 
 function handleSpinLead(body) {
   const sheet = ss().getSheetByName("Spin Leads");
-  if (!sheet) return { ok: false, error: "Spin Leads sheet not found — create this tab first" };
+  if (!sheet) return { success: false, error: "Spin Leads sheet not found — create this tab first" };
 
   const headers = ["Timestamp", "Email", "Marketing Opt-in", "Segment Won", "Coupon Code", "Session ID", "Redeemed", "Expires At"];
   ensureHeaders(sheet, headers);
@@ -206,7 +239,7 @@ function handleSpinLead(body) {
   const optIn = !!body.optIn;
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    return { ok: false, error: "Invalid email" };
+    return { success: false, error: "Invalid email" };
   }
 
   const lastRow = sheet.getLastRow();
@@ -220,7 +253,7 @@ function handleSpinLead(body) {
     for (let i = 0; i < rows.length; i++) {
       if (String(rows[i][emailCol]).toLowerCase() === email) {
         return {
-          ok: true,
+          success: true,
           alreadySpun: true,
           result: { label: rows[i][segmentCol], code: rows[i][codeCol] || null },
           expiresAt: rows[i][expiryCol] ? new Date(rows[i][expiryCol]).toISOString() : null,
@@ -229,13 +262,18 @@ function handleSpinLead(body) {
     }
   }
 
-  const won = pickWeighted(SPIN_SEGMENTS);
+  const config = getSpinConfig();
+  if (!config.success) {
+    return { success: false, error: config.error };
+  }
+
+  const won = pickWeighted(config.segments);
   const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
 
   sheet.appendRow([new Date(), email, optIn, won.label, won.code || "", sessionId, false, expiresAt]);
 
   return {
-    ok: true,
+    success: true,
     alreadySpun: false,
     result: { label: won.label, code: won.code },
     expiresAt: expiresAt.toISOString(),

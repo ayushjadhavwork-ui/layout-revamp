@@ -132,49 +132,52 @@ strips the prefix, saves the file to a Drive folder called
 
 ## 7. Spin-the-Wheel lead capture
 
-The homepage popup posts `{ action: "spinLead", email, optIn, sessionId }`.
-The server MUST pick the winning segment (never trust the client). Add a
-tab and a handler:
+The wheel's prizes are entirely sheet-driven — there is nothing to edit in
+code to add, remove, reorder, reweight, or pause a prize. `Code.gs` already
+implements `getSpinConfig` and `handleSpinLead`; you only need to create the
+two tabs below.
+
+### Tab: `Spin Config`
+| Order | Label | Icon | Code | Weight | Active | Color |
+|-------|-------|------|------|--------|--------|-------|
+| 1 | FREE 1 Polaroid Strip | polaroid | SPINPOLA | 20 | TRUE | |
+| 2 | FREE Personalized Letter | envelope | SPINLETTER | 20 | TRUE | |
+| 3 | 10% OFF Your Magazine Order | tag | SPIN10 | 25 | TRUE | |
+| 4 | FREE Sticker Pack | sticker | SPINSTICK | 20 | TRUE | |
+| 5 | Better Luck Next Time | clover | | 15 | TRUE | |
+
+- **Order**: controls slice position clockwise from the top (1, 2, 3…).
+- **Label**: shown on the wheel slice and the result screen.
+- **Icon**: a key the frontend maps to an icon — `polaroid`, `envelope`,
+  `tag`, `sticker`, `clover`. An unrecognized key falls back to a default
+  gift icon (and logs a console warning) instead of breaking anything.
+- **Code**: coupon code to grant; leave blank for a non-prize segment
+  ("Better luck next time").
+- **Weight**: relative odds, any positive number — doesn't need to sum to
+  100.
+- **Active**: `TRUE`/`FALSE` (or `1`/`0`) — `FALSE` rows are excluded from
+  both the wheel and the win-picking logic, so you can pause a prize
+  without deleting its row/history.
+- **Color**: optional hex code for the slice fill. Leave blank to let the
+  frontend cycle through its default palette.
+
+Add, remove, reorder, or edit rows any time — the site picks up changes on
+the next page load, no redeploy required.
 
 ### Tab: `Spin Leads`
-| timestamp | email | optIn | prize | code | sessionId | redeemed | expiresAt |
+| Timestamp | Email | Marketing Opt-in | Segment Won | Coupon Code | Session ID | Redeemed | Expires At |
 
-### Add to `Code.gs`
+(Headers auto-created on first write.)
 
-```js
-function handleSpinLead(payload) {
-  const segments = [
-    { label: 'FREE 1 Polaroid Strip',       code: 'SPINPOLA',   weight: 20 },
-    { label: 'FREE Personalized Letter',    code: 'SPINLETTER', weight: 20 },
-    { label: '10% OFF Your Magazine Order', code: 'SPIN10',     weight: 25 },
-    { label: 'FREE Sticker Pack',           code: 'SPINSTICK',  weight: 20 },
-    { label: 'Better Luck Next Time',       code: null,         weight: 15 },
-  ];
-  const total = segments.reduce((s, x) => s + x.weight, 0);
-  let n = Math.random() * total;
-  let won = segments[segments.length - 1];
-  for (const s of segments) { if ((n -= s.weight) <= 0) { won = s; break; } }
+The homepage popup posts `{ action: "spinLead", email, optIn, sessionId }`;
+the server enforces one spin per email and picks the winning segment
+server-side (never trust the client) by reading the same `Spin Config` tab
+the wheel rendered from, so the visible odds and the actual odds can never
+drift apart. If `Spin Config` is missing, empty, or has no active rows,
+both `getSpinConfig` and `handleSpinLead` return
+`{ success: false, error: "Spin wheel is not configured" }` instead of
+crashing — the frontend responds by hiding the spin trigger entirely
+rather than showing a broken wheel.
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
-  let sheet = ss.getSheetByName('Spin Leads');
-  if (!sheet) {
-    sheet = ss.insertSheet('Spin Leads');
-    sheet.appendRow(['timestamp','email','optIn','prize','code','sessionId','redeemed','expiresAt']);
-  }
-  const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-  sheet.appendRow([
-    new Date(), payload.email || '', !!payload.optIn,
-    won.label, won.code || '', payload.sessionId || '', false, expiresAt,
-  ]);
-  return { ok: true, result: { label: won.label, code: won.code } };
-}
-```
-
-In `doPost`, route the `spinLead` action to `handleSpinLead(payload)`.
-The frontend gracefully falls back to a local weighted pick if the backend
-is not configured, so the popup works end-to-end during development.
-
-To change the odds or add/remove prizes, update **three** places (they must
-match): this Apps Script segments array, `SPIN_PRIZES` in
-`src/components/site/spin-wheel.tsx`, and `SPIN_SEGMENTS` in
-`src/lib/gas.ts`.
+The frontend falls back to a small local mock config if `GAS_URL` is not
+yet configured, so the popup still works end-to-end during development.

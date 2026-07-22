@@ -1,33 +1,29 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  X, Gift, Mail, Tag, Sticker, Clover, Copy, Check, Sparkles,
+  X, Gift, Mail, Tag, Sticker, Clover, Copy, Check, Image as ImageIcon,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import logoAsset from "@/assets/logo.png.asset.json";
 import { SITE } from "@/lib/site-content";
-import { spinLead, type SpinResult } from "@/lib/gas";
+import { getSpinConfig, spinLead, type SpinResult, type SpinSegment } from "@/lib/gas";
 
 /* ────────────────────────────────────────────────────────────
-   Prize config — edit weights to change odds (must not equal).
-   To add/remove/rename prizes, mirror the change in Code.gs.
+   Prize config now lives entirely in the "Spin Config" Google
+   Sheet tab (see getSpinConfig() in Code.gs) — nothing here is
+   hardcoded. Icon is a string key from the sheet; this map is
+   the only place that has to know what it looks like.
    ──────────────────────────────────────────────────────────── */
-export type Prize = {
-  label: string;
-  icon: "polaroid" | "letter" | "tag" | "sticker" | "clover";
-  code: string | null;
-  weight: number;
-  wedgeColor: string; // solid pink shade
-  textColor: string;
+const ICON_MAP: Record<string, LucideIcon> = {
+  polaroid: ImageIcon,
+  envelope: Mail,
+  tag: Tag,
+  sticker: Sticker,
+  clover: Clover,
 };
-
-export const SPIN_PRIZES: Prize[] = [
-  { label: "FREE 1 Polaroid Strip",       icon: "polaroid", code: "SPINPOLA",   weight: 20, wedgeColor: "#f7c4d3", textColor: "#7d2b45" },
-  { label: "FREE Personalized Letter",    icon: "letter",   code: "SPINLETTER", weight: 20, wedgeColor: "#fbe0e8", textColor: "#7d2b45" },
-  { label: "10% OFF Your Magazine Order", icon: "tag",      code: "SPIN10",     weight: 25, wedgeColor: "#f7c4d3", textColor: "#7d2b45" },
-  { label: "FREE Sticker Pack",           icon: "sticker",  code: "SPINSTICK",  weight: 20, wedgeColor: "#fbe0e8", textColor: "#7d2b45" },
-  { label: "Better Luck Next Time",       icon: "clover",   code: null,         weight: 15, wedgeColor: "#f7c4d3", textColor: "#7d2b45" },
-];
+const DEFAULT_PALETTE = ["#f7c4d3", "#fbe0e8"];
+const TEXT_COLOR = "#7d2b45";
 
 const STORAGE_KEY = "spinWheelState";     // persistent status
 const SESSION_DISMISS = "spinWheelDismissed"; // per-session
@@ -53,18 +49,17 @@ function saveState(s: StoredState) {
   try { localStorage.setItem(STORAGE_KEY, JSON.stringify(s)); } catch {}
 }
 
-function IconFor({ kind, className }: { kind: Prize["icon"]; className?: string }) {
-  switch (kind) {
-    case "polaroid": return <Sticker className={className} strokeWidth={1.4} />;
-    case "letter":   return <Mail className={className} strokeWidth={1.4} />;
-    case "tag":      return <Tag className={className} strokeWidth={1.4} />;
-    case "sticker":  return <Sparkles className={className} strokeWidth={1.4} />;
-    case "clover":   return <Clover className={className} strokeWidth={1.4} />;
+function IconFor({ kind, className }: { kind: string; className?: string }) {
+  const Icon = ICON_MAP[kind];
+  if (!Icon) {
+    console.warn(`[SpinWheel] Unknown icon key "${kind}" in Spin Config sheet — using default.`);
+    return <Gift className={className} strokeWidth={1.4} />;
   }
+  return <Icon className={className} strokeWidth={1.4} />;
 }
 
 /* ────────────────────────────────────────────────────────────
-   Wheel — SVG, 5 segments
+   Wheel — SVG, segments driven entirely by sheet config
    ──────────────────────────────────────────────────────────── */
 function polar(cx: number, cy: number, r: number, angleDeg: number) {
   const a = ((angleDeg - 90) * Math.PI) / 180;
@@ -77,12 +72,25 @@ function wedgePath(cx: number, cy: number, r: number, startDeg: number, endDeg: 
   return `M ${cx} ${cy} L ${start.x} ${start.y} A ${r} ${r} 0 ${large} 0 ${end.x} ${end.y} Z`;
 }
 
-function Wheel({ rotation, spinning }: { rotation: number; spinning: boolean }) {
+function WheelSkeleton() {
+  return (
+    <div
+      className="mx-auto grid place-items-center rounded-full bg-pink-mist/30 animate-pulse"
+      style={{ width: 320, height: 320 }}
+    >
+      <span className="text-[0.65rem] uppercase tracking-[0.3em] text-rose-wine/50">Loading…</span>
+    </div>
+  );
+}
+
+function Wheel({
+  segments, rotation, spinning,
+}: { segments: SpinSegment[]; rotation: number; spinning: boolean }) {
   const size = 320;
   const r = 150;
   const cx = size / 2;
   const cy = size / 2;
-  const seg = 360 / SPIN_PRIZES.length; // 72
+  const seg = 360 / segments.length; // equal visual size — weight only affects actual odds
 
   return (
     <div className="relative mx-auto" style={{ width: size, height: size }}>
@@ -113,15 +121,16 @@ function Wheel({ rotation, spinning }: { rotation: number; spinning: boolean }) 
         {/* Ring */}
         <circle cx={cx} cy={cy} r={r + 6} fill="#f4a4b7" />
         <circle cx={cx} cy={cy} r={r + 2} fill="#fff" />
-        {SPIN_PRIZES.map((p, i) => {
+        {segments.map((p, i) => {
           const startDeg = i * seg;
           const endDeg = (i + 1) * seg;
           const midDeg = startDeg + seg / 2;
           const iconPos = polar(cx, cy, r * 0.62, midDeg);
           const textPos = polar(cx, cy, r * 0.4, midDeg);
+          const wedgeColor = p.color || DEFAULT_PALETTE[i % DEFAULT_PALETTE.length];
           return (
-            <g key={i}>
-              <path d={wedgePath(cx, cy, r, startDeg, endDeg)} fill={p.wedgeColor} stroke="#fff" strokeWidth={1.5} />
+            <g key={`${p.order}-${p.label}`}>
+              <path d={wedgePath(cx, cy, r, startDeg, endDeg)} fill={wedgeColor} stroke="#fff" strokeWidth={1.5} />
               {/* icon */}
               <foreignObject
                 x={iconPos.x - 14}
@@ -130,7 +139,7 @@ function Wheel({ rotation, spinning }: { rotation: number; spinning: boolean }) 
                 height={28}
                 style={{ transform: `rotate(${midDeg}deg)`, transformOrigin: `${iconPos.x}px ${iconPos.y}px` }}
               >
-                <div style={{ width: 28, height: 28, color: p.textColor }} className="grid place-items-center">
+                <div style={{ width: 28, height: 28, color: TEXT_COLOR }} className="grid place-items-center">
                   <IconFor kind={p.icon} className="h-5 w-5" />
                 </div>
               </foreignObject>
@@ -143,7 +152,7 @@ function Wheel({ rotation, spinning }: { rotation: number; spinning: boolean }) 
                 style={{ transform: `rotate(${midDeg}deg)`, transformOrigin: `${textPos.x}px ${textPos.y}px` }}
               >
                 <div
-                  style={{ color: p.textColor }}
+                  style={{ color: TEXT_COLOR }}
                   className="w-full h-full flex items-center justify-center text-center text-[9px] font-semibold leading-tight uppercase tracking-wide px-1"
                 >
                   {p.label}
@@ -175,6 +184,10 @@ export function SpinWheel() {
   const [open, setOpen] = useState(false);
   const [floatingHidden, setFloatingHidden] = useState(false);
 
+  // Sheet-driven config
+  const [segments, setSegments] = useState<SpinSegment[] | null>(null); // null = still loading
+  const [configError, setConfigError] = useState(false);
+
   // Wheel spin runtime
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
@@ -185,7 +198,7 @@ export function SpinWheel() {
   const [copied, setCopied] = useState(false);
   const openTimer = useRef<number | null>(null);
 
-  // Hydrate from storage
+  // Hydrate from storage + fetch sheet config once per page load
   useEffect(() => {
     setMounted(true);
     const s = loadState();
@@ -196,6 +209,17 @@ export function SpinWheel() {
     if (s.status === "unseen") {
       openTimer.current = window.setTimeout(() => setOpen(true), 4000);
     }
+
+    getSpinConfig()
+      .then((cfg) => {
+        if (!cfg.success || cfg.segments.length === 0) {
+          setConfigError(true);
+        } else {
+          setSegments(cfg.segments);
+        }
+      })
+      .catch(() => setConfigError(true));
+
     return () => { if (openTimer.current) window.clearTimeout(openTimer.current); };
   }, []);
 
@@ -225,13 +249,13 @@ export function SpinWheel() {
   };
 
   const winningIndex = useMemo(() => {
-    if (!result) return -1;
-    return SPIN_PRIZES.findIndex((p) => p.label === result.label);
-  }, [result]);
+    if (!result || !segments) return -1;
+    return segments.findIndex((p) => p.label === result.label);
+  }, [result, segments]);
 
-  const runSpinAnimation = (idx: number) => {
+  const runSpinAnimation = (idx: number, count: number) => {
     if (idx < 0) return;
-    const seg = 360 / SPIN_PRIZES.length;
+    const seg = 360 / count;
     const centerAngle = idx * seg + seg / 2;
     // Rotate so segment center is at top (0deg pointer).
     // Wheel rotation R such that (R + centerAngle) mod 360 === 0.
@@ -243,6 +267,7 @@ export function SpinWheel() {
   };
 
   const handleSpin = async () => {
+    if (!segments) return;
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
       return toast.error("Enter a valid email");
     }
@@ -250,9 +275,9 @@ export function SpinWheel() {
     setSubmitting(true);
     try {
       const res = await spinLead({ email: email.trim(), optIn, sessionId: crypto.randomUUID() });
-      const idx = SPIN_PRIZES.findIndex((p) => p.label === res.label);
+      const idx = segments.findIndex((p) => p.label === res.label);
       if (idx < 0) throw new Error("Bad server response");
-      runSpinAnimation(idx);
+      runSpinAnimation(idx, segments.length);
       // Reveal after animation
       window.setTimeout(() => {
         setResult(res);
@@ -262,7 +287,7 @@ export function SpinWheel() {
       }, 4600);
     } catch (err) {
       console.error(err);
-      toast.error("Could not spin — try again.");
+      toast.error(err instanceof Error ? err.message : "Could not spin — try again.");
       setSubmitting(false);
     }
   };
@@ -280,8 +305,12 @@ export function SpinWheel() {
   };
 
   if (!mounted) return null;
+  // Backend not configured / sheet empty — don't show a broken trigger or wheel at all.
+  if (configError) return null;
 
-  const showFloating = !floatingHidden && (state.status === "closed" || state.status === "dismissed" || state.status === "spun");
+  const loadingConfig = segments === null;
+  const showFloating = !floatingHidden && !loadingConfig
+    && (state.status === "closed" || state.status === "dismissed" || state.status === "spun");
   const alreadySpun = state.status === "spun" && result;
 
   return (
@@ -298,7 +327,11 @@ export function SpinWheel() {
               <X className="h-4 w-4" />
             </button>
 
-            <Wheel rotation={rotation} spinning={spinning} />
+            {loadingConfig || !segments ? (
+              <WheelSkeleton />
+            ) : (
+              <Wheel segments={segments} rotation={rotation} spinning={spinning} />
+            )}
 
             <div className="mt-4 text-center">
               <p className="text-[0.65rem] uppercase tracking-[0.35em] text-blush-rose">{SITE.brand.name}</p>
@@ -310,10 +343,10 @@ export function SpinWheel() {
               </p>
             </div>
 
-            {alreadySpun ? (
-              <ResultCard result={result!} onCopy={copyCode} copied={copied} />
+            {loadingConfig ? null : alreadySpun ? (
+              <ResultCard result={result!} segments={segments!} onCopy={copyCode} copied={copied} />
             ) : result ? (
-              <ResultCard result={result} onCopy={copyCode} copied={copied} />
+              <ResultCard result={result} segments={segments!} onCopy={copyCode} copied={copied} />
             ) : (
               <form
                 onSubmit={(e) => { e.preventDefault(); handleSpin(); }}
@@ -384,12 +417,14 @@ export function SpinWheel() {
   );
 }
 
-function ResultCard({ result, onCopy, copied }: { result: SpinResult; onCopy: () => void; copied: boolean }) {
-  const prize = SPIN_PRIZES.find((p) => p.label === result.label);
+function ResultCard({
+  result, segments, onCopy, copied,
+}: { result: SpinResult; segments: SpinSegment[]; onCopy: () => void; copied: boolean }) {
+  const prize = segments.find((p) => p.label === result.label);
   return (
     <div className="mt-5 rounded-2xl bg-white/70 p-5 text-center shadow-sm ring-1 ring-pink-mist/50">
       <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-blush-rose/15 text-rose-wine">
-        {prize ? <IconFor kind={prize.icon} className="h-7 w-7" /> : <Sparkles className="h-7 w-7" />}
+        <IconFor kind={prize?.icon ?? ""} className="h-7 w-7" />
       </div>
       <p className="mt-3 font-display text-2xl text-rose-wine leading-tight">{result.label}</p>
       {result.code ? (

@@ -80,23 +80,62 @@ export function getReviewerId(): string {
 /* ─── Spin-the-Wheel lead capture ─────────────────────────── */
 export type SpinResult = { label: string; code: string | null };
 
-// Weights MUST mirror Code.gs and src/components/site/spin-wheel.tsx.
-const SPIN_SEGMENTS: { label: string; code: string | null; weight: number }[] = [
-  { label: "FREE 1 Polaroid Strip",       code: "SPINPOLA",   weight: 20 },
-  { label: "FREE Personalized Letter",    code: "SPINLETTER", weight: 20 },
-  { label: "10% OFF Your Magazine Order", code: "SPIN10",     weight: 25 },
-  { label: "FREE Sticker Pack",           code: "SPINSTICK",  weight: 20 },
-  { label: "Better Luck Next Time",       code: null,         weight: 15 },
+// The wheel's prizes live entirely in the "Spin Config" Google Sheet tab —
+// see getSpinConfig() in Code.gs. This is the single source of truth for
+// both the wheel's visual segments and the backend's actual win odds.
+export type SpinSegment = {
+  order: number;
+  label: string;
+  icon: string;
+  code: string | null;
+  weight: number;
+  color: string | null;
+};
+
+export type SpinConfigResult = { success: boolean; segments: SpinSegment[]; error?: string };
+
+// Only used when GAS_URL isn't configured yet (local dev without a backend).
+const MOCK_SPIN_SEGMENTS: SpinSegment[] = [
+  { order: 1, label: "FREE 1 Polaroid Strip",       icon: "polaroid", code: "SPINPOLA",   weight: 20, color: null },
+  { order: 2, label: "FREE Personalized Letter",    icon: "envelope", code: "SPINLETTER", weight: 20, color: null },
+  { order: 3, label: "10% OFF Your Magazine Order", icon: "tag",      code: "SPIN10",     weight: 25, color: null },
+  { order: 4, label: "FREE Sticker Pack",           icon: "sticker",  code: "SPINSTICK",  weight: 20, color: null },
+  { order: 5, label: "Better Luck Next Time",       icon: "clover",   code: null,         weight: 15, color: null },
 ];
 
-function weightedPick(): SpinResult {
-  const total = SPIN_SEGMENTS.reduce((s, x) => s + x.weight, 0);
+function weightedPick(segments: SpinSegment[]): SpinSegment {
+  const total = segments.reduce((s, x) => s + x.weight, 0);
   let n = Math.random() * total;
-  for (const s of SPIN_SEGMENTS) {
-    if ((n -= s.weight) <= 0) return { label: s.label, code: s.code };
+  for (const s of segments) {
+    if ((n -= s.weight) <= 0) return s;
   }
-  const last = SPIN_SEGMENTS[SPIN_SEGMENTS.length - 1];
-  return { label: last.label, code: last.code };
+  return segments[segments.length - 1];
+}
+
+// Cached for the lifetime of the page — cleared naturally on a fresh reload.
+let spinConfigPromise: Promise<SpinConfigResult> | null = null;
+
+export function getSpinConfig(): Promise<SpinConfigResult> {
+  if (!spinConfigPromise) spinConfigPromise = fetchSpinConfig();
+  return spinConfigPromise;
+}
+
+async function fetchSpinConfig(): Promise<SpinConfigResult> {
+  if (CONFIG.GAS_URL.startsWith("REPLACE")) {
+    console.warn("[GAS] URL not configured — using mock spin config");
+    return { success: true, segments: MOCK_SPIN_SEGMENTS };
+  }
+  try {
+    const url = `${CONFIG.GAS_URL}?action=getSpinConfig`;
+    const res = await fetch(url);
+    const data = await res.json();
+    if (!data.success || !Array.isArray(data.segments) || data.segments.length === 0) {
+      return { success: false, segments: [], error: data.error || "Spin wheel is not configured" };
+    }
+    return { success: true, segments: data.segments };
+  } catch {
+    return { success: false, segments: [], error: "Could not load spin wheel config" };
+  }
 }
 
 export async function spinLead(payload: {
@@ -104,15 +143,16 @@ export async function spinLead(payload: {
 }): Promise<SpinResult> {
   if (CONFIG.GAS_URL.startsWith("REPLACE")) {
     console.warn("[GAS] URL not configured — running spin locally", payload);
-    return weightedPick();
+    const won = weightedPick(MOCK_SPIN_SEGMENTS);
+    return { label: won.label, code: won.code };
   }
-  const res = await post<{ ok: boolean; label?: string; code?: string | null; result?: SpinResult }>({
+  const res = await post<{ success: boolean; alreadySpun?: boolean; result?: SpinResult; error?: string }>({
     action: "spinLead",
     ...payload,
   });
-  if (res.result) return res.result;
-  if (res.label !== undefined) return { label: res.label, code: res.code ?? null };
-  // Fallback if backend didn't understand action
-  return weightedPick();
+  if (!res.success || !res.result) {
+    throw new Error(res.error || "Could not spin — try again.");
+  }
+  return res.result;
 }
 
