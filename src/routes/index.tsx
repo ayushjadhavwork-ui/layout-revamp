@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
 import { ArrowUpRight, Sparkles, Instagram, Youtube, Heart } from "lucide-react";
 import { Toaster, toast } from "sonner";
@@ -276,7 +276,7 @@ function Home() {
   );
 }
 
-function Marquee() {
+export function Marquee() {
   const items = [...SITE.marquee, ...SITE.marquee];
   return (
     <div className="relative z-40 w-full overflow-hidden bg-rose-wine text-off-white">
@@ -332,10 +332,15 @@ function Reels() {
             </div>
           ))}
         </div>
-        <div className="mt-6 text-center">
+        <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
           <a href={SITE.links.instagram} target="_blank" rel="noreferrer" className="pill-btn pill-btn-hover">
             <Instagram className="h-4 w-4" /> Follow on Instagram
           </a>
+          {SITE.happyCustomers.length > 0 && (
+            <Link to="/happy-customers" className="pill-btn pill-btn-hover pill-primary">
+              <Heart className="h-4 w-4" /> Check out our happy customers
+            </Link>
+          )}
         </div>
       </div>
     </section>
@@ -436,7 +441,7 @@ function Milestone() {
 }
 
 
-function SectionHead({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
+export function SectionHead({ eyebrow, title, sub }: { eyebrow: string; title: string; sub?: string }) {
   return (
     <div className="mb-10 text-center">
       <p className="text-xs uppercase tracking-[0.4em] text-blush-rose">{eyebrow}</p>
@@ -629,7 +634,7 @@ function SocialIcon({ icon, href = "#" }: { icon: React.ReactNode; href?: string
   );
 }
 
-function Footer() {
+export function Footer() {
   return (
     <footer id="contact" className="relative z-10 px-4 pb-10">
       <div className="glass mx-auto max-w-6xl rounded-3xl px-6 py-10">

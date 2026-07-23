@@ -108,6 +108,25 @@ export const SITE = {
   ],
 
   // ────────────────────────────────────────────────────────────────
+  // HAPPY CUSTOMERS — screenshots of customer messages/reviews.
+  // Shown on the "/happy-customers" page (linked from the homepage).
+  //
+  // To add one: drop the screenshot image(s) into
+  // /public/media/happy-customers/ (any filename), then add an entry
+  // below. "images" can hold more than one screenshot per entry — e.g.
+  // a multi-message conversation — they'll be swipeable in a gallery.
+  // To remove one, delete its whole { ... } block. To pause the whole
+  // page, leave this array empty — the homepage button hides itself.
+  //
+  // Example:
+  // {
+  //   heading: "Aditi, Mumbai",
+  //   images: ["/media/happy-customers/1.jpg", "/media/happy-customers/2.jpg"],
+  // },
+  // ────────────────────────────────────────────────────────────────
+  happyCustomers: [] as { heading: string; images: string[] }[],
+
+  // ────────────────────────────────────────────────────────────────
   // PRODUCT IMAGES (for the e-commerce modal)
   // Keys must match ids in src/lib/catalog.ts.
   // Give each product an array of image URLs — 3-5 works best.
