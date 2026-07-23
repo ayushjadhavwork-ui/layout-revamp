@@ -693,11 +693,23 @@ function CustomImageSection() {
         2. Removed 'rounded' and 'shadow' classes.
         3. Kept the aspect ratio and object-cover so the text stays perfectly centered.
       */}
-      <img 
-        src="/media/bg/2.svg" 
-        alt="Showcase" 
+      <img
+        src="/media/bg/2.svg"
+        alt="Showcase"
         className="block w-full aspect-[4/3] md:aspect-auto object-cover object-center"
       />
+      {/* "Cherished Moments" banner — button sits just below the banner's
+          text, roughly 3/4 of the way down the image. */}
+      <div className="absolute inset-x-0 z-20 flex justify-center" style={{ top: "75%" }}>
+        <a
+          href={SITE.links.blog}
+          target="_blank"
+          rel="noreferrer"
+          className="pill-btn pill-btn-hover pill-primary"
+        >
+          View our blog posts <ArrowUpRight className="h-4 w-4" />
+        </a>
+      </div>
     </section>
   );
 }

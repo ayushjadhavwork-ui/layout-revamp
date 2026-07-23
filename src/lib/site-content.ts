@@ -72,6 +72,7 @@ export const SITE = {
     behindTheLayout: "https://www.instagram.com/the_layoutt",
     instagram:       "https://www.instagram.com/the_layoutt",
     youtube:         "https://www.youtube.com/@Layoutt",
+    blog:            "https://thelayouttco.myportfolio.com/behind-the-scenes-1",
   },
 
   // ────────────────────────────────────────────────────────────────
