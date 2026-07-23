@@ -68,6 +68,7 @@ export const deleteReview = (id: string, reviewerId: string) =>
   post<{ ok: boolean }>({ action: "deleteReview", id, reviewerId });
 
 export function getReviewerId(): string {
+  if (typeof window === "undefined") return ""; // SSR — resolved for real on client hydration
   const key = "reviewerId";
   let id = localStorage.getItem(key);
   if (!id) {

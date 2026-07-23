@@ -191,9 +191,22 @@ function deleteReview(body) {
 // actual win odds — read fresh from the sheet on every call so the two
 // can never drift out of sync. Edit the "Spin Config" tab to add,
 // remove, reorder, reweight, or pause prizes; no redeploy needed.
+//
+// Used only as a bootstrap default before the "Spin Config" tab exists,
+// so the wheel works out of the box. Once that tab exists, it fully
+// takes over — including the ability to intentionally empty/deactivate
+// every row to pause the whole feature.
+const DEFAULT_SPIN_SEGMENTS = [
+  { order: 1, label: "FREE 1 Polaroid Strip",       icon: "polaroid", code: "SPINPOLA",   weight: 20, color: null },
+  { order: 2, label: "FREE Personalized Letter",    icon: "envelope", code: "SPINLETTER", weight: 20, color: null },
+  { order: 3, label: "10% OFF Your Magazine Order", icon: "tag",      code: "SPIN10",     weight: 25, color: null },
+  { order: 4, label: "FREE Sticker Pack",           icon: "sticker",  code: "SPINSTICK",  weight: 20, color: null },
+  { order: 5, label: "Better Luck Next Time",       icon: "clover",   code: null,         weight: 15, color: null },
+];
+
 function getSpinConfig() {
   const sheet = ss().getSheetByName("Spin Config");
-  if (!sheet) return { success: false, segments: [], error: "Spin wheel is not configured" };
+  if (!sheet) return { success: true, segments: DEFAULT_SPIN_SEGMENTS, usingDefaults: true };
 
   const data = sheet.getDataRange().getValues();
   if (data.length < 2) return { success: false, segments: [], error: "Spin wheel is not configured" };

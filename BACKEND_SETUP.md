@@ -137,6 +137,12 @@ code to add, remove, reorder, reweight, or pause a prize. `Code.gs` already
 implements `getSpinConfig` and `handleSpinLead`; you only need to create the
 two tabs below.
 
+**You don't have to create `Spin Config` before the wheel works.** If that
+tab doesn't exist yet, the backend uses a built-in default prize list (the
+same one shown in the example rows below) so spins still work and get
+recorded in `Spin Leads` immediately. Once you create the tab, it fully
+takes over.
+
 ### Tab: `Spin Config`
 | Order | Label | Icon | Code | Weight | Active | Color |
 |-------|-------|------|------|--------|--------|-------|
@@ -173,11 +179,12 @@ The homepage popup posts `{ action: "spinLead", email, optIn, sessionId }`;
 the server enforces one spin per email and picks the winning segment
 server-side (never trust the client) by reading the same `Spin Config` tab
 the wheel rendered from, so the visible odds and the actual odds can never
-drift apart. If `Spin Config` is missing, empty, or has no active rows,
-both `getSpinConfig` and `handleSpinLead` return
+drift apart. If `Spin Config` exists but every row is inactive (or the
+sheet is emptied out), both `getSpinConfig` and `handleSpinLead` return
 `{ success: false, error: "Spin wheel is not configured" }` instead of
-crashing — the frontend responds by hiding the spin trigger entirely
-rather than showing a broken wheel.
+crashing — the frontend responds by hiding the spin trigger entirely. This
+is a deliberate kill-switch: emptying the sheet pauses the whole feature
+without touching code.
 
 The frontend falls back to a small local mock config if `GAS_URL` is not
 yet configured, so the popup still works end-to-end during development.

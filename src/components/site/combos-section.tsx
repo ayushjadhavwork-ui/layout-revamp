@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Heart, Sparkles, Rocket, Check, Package } from "lucide-react";
 import { toast } from "sonner";
-import { CATALOG, fmt } from "@/lib/catalog";
+import { CATALOG, fmt, comboRealTotal } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { SITE } from "@/lib/site-content";
 import { ModalShell } from "./shop";
@@ -9,33 +9,27 @@ import { ModalShell } from "./shop";
 type ComboMeta = {
   icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
   emoji: string;
-  original: number;
-  save: number;
   includes: string[];
   tag?: string;
 };
 
+// Pricing (original/save) is computed live from comboRealTotal() below —
+// never hand-typed, so it can't drift from the actual catalog prices.
 const COMBO_META: Record<string, ComboMeta> = {
   "combo-main": {
     icon: Heart,
     emoji: "💌",
-    original: 1099,
-    save: 50,
     includes: ["8-Page Custom Magazine", "Gift Wrap", "Personalized Letter"],
   },
   "combo-core": {
     icon: Sparkles,
     emoji: "📸",
-    original: 1450,
-    save: 71,
     tag: "MOST LOVED ♡",
     includes: ["12-Page Custom Magazine", "Classic Polaroid Pack (18 Photos)", "1 Polaroid Strip"],
   },
   "combo-soft": {
     icon: Rocket,
     emoji: "✨",
-    original: 1769,
-    save: 70,
     includes: ["16-Page Custom Magazine", "Memory Polaroid Pack (27 Photos)", "Gift Wrap", "Personalized Letter"],
   },
 };
@@ -47,8 +41,8 @@ function comboHero(id: string): string | undefined {
 export function CombosSection() {
   const [openId, setOpenId] = useState<string | null>(null);
   const cart = useStore((s) => s.cart);
-  const addItem = useStore((s) => s.addItem);
-  const removeItem = useStore((s) => s.removeItem);
+  const selectCombo = useStore((s) => s.selectCombo);
+  const deselectCombo = useStore((s) => s.deselectCombo);
 
   const items = CATALOG.combos;
 
@@ -76,13 +70,15 @@ export function CombosSection() {
             const Icon = meta?.icon ?? Package;
             const hero = comboHero(item.id);
             const featured = item.id === "combo-core";
+            const original = comboRealTotal(item.id);
+            const save = Math.max(0, original - item.price);
 
             const handleToggle = () => {
-              if (active && cartItem) {
-                removeItem(cartItem.key);
+              if (active) {
+                deselectCombo(item.id);
                 toast.success(`${item.name} removed`);
               } else {
-                addItem("combos", item, "");
+                selectCombo(item);
                 toast.success(`${item.name} added ✨`);
               }
             };
@@ -130,14 +126,14 @@ export function CombosSection() {
                 <div className="my-3 h-px w-16 mx-auto bg-pink-mist/40" />
 
                 <div className="flex items-center justify-center gap-2">
-                  <span className="font-display text-xs text-pink-mist/70 line-through">{fmt(meta?.original ?? item.price)}</span>
+                  <span className="font-display text-xs text-pink-mist/70 line-through">{fmt(original)}</span>
                   <span className="inline-block rounded-md px-4 py-1 font-display text-xl text-rose-wine bg-off-white">
                     {fmt(item.price)}
                   </span>
                 </div>
-                {meta?.save && (
+                {save > 0 && (
                   <p className="mt-1 text-[0.6rem] uppercase tracking-[0.25em] text-off-white/80">
-                    You save {fmt(meta.save)}
+                    You save {fmt(save)}
                   </p>
                 )}
 
@@ -181,7 +177,7 @@ function ComboModal({
 }: { open: boolean; comboId: string | null; onClose: () => void }) {
   const item = comboId ? CATALOG.combos.find((c) => c.id === comboId) ?? null : null;
   const cart = useStore((s) => s.cart);
-  const addItem = useStore((s) => s.addItem);
+  const selectCombo = useStore((s) => s.selectCombo);
 
   useEffect(() => { /* noop */ }, [open, item?.id]);
   if (!open || !item) return null;
@@ -190,6 +186,8 @@ function ComboModal({
   const Icon = meta?.icon ?? Package;
   const hero = comboHero(item.id);
   const inCart = cart.some((c) => c.category === "combos" && c.id === item.id);
+  const original = comboRealTotal(item.id);
+  const save = Math.max(0, original - item.price);
 
   return (
     <ModalShell onClose={onClose} maxW="max-w-3xl">
@@ -213,10 +211,10 @@ function ComboModal({
 
           <div className="mt-4 flex items-baseline gap-3">
             <p className="text-3xl font-semibold text-blush-rose">{fmt(item.price)}</p>
-            <p className="text-sm text-dusty-rose line-through">{fmt(meta?.original ?? item.price)}</p>
-            {meta?.save && (
+            <p className="text-sm text-dusty-rose line-through">{fmt(original)}</p>
+            {save > 0 && (
               <span className="rounded-full bg-blush-rose/15 px-2.5 py-0.5 text-xs font-semibold text-rose-wine">
-                Save {fmt(meta.save)}
+                Save {fmt(save)}
               </span>
             )}
           </div>
@@ -234,7 +232,7 @@ function ComboModal({
           </div>
 
           <button
-            onClick={() => { addItem("combos", item, ""); toast.success(`${item.name} added ✨`); onClose(); }}
+            onClick={() => { selectCombo(item); toast.success(`${item.name} added ✨`); onClose(); }}
             disabled={inCart}
             className="pill-btn pill-btn-hover pill-primary mt-6 w-full !py-3 !text-base disabled:opacity-60"
           >

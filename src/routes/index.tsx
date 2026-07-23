@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
-import { ArrowUpRight, Sparkles, Instagram, Twitter, Linkedin, Heart } from "lucide-react";
+import { ArrowUpRight, Sparkles, Instagram, Youtube, Heart } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import logoAsset from "@/assets/logo.png.asset.json";
 import { CATALOG, type Category, type Product } from "@/lib/catalog";
@@ -174,6 +174,13 @@ function Home() {
           </div>
         </div>
 
+        <div id="combos" className="relative z-10 px-4 py-20">
+          <div className="mx-auto max-w-6xl">
+            <SectionHead eyebrow="Curated" title="Combos" sub="Bundled favourites at a soft price — pick one and it builds the rest for you." />
+            <CombosSection />
+          </div>
+        </div>
+
         <div id="templates" className="relative z-10 px-4 py-20">
           <div className="mx-auto max-w-6xl">
             <SectionHead eyebrow="Step 2" title="Pick your templates" sub="Choose the exact number your package allows. Click a card for details." />
@@ -184,10 +191,6 @@ function Home() {
 
         <div id="extras" className="relative z-10 px-4 py-20">
           <div className="mx-auto max-w-6xl space-y-16">
-            <div>
-              <SectionHead eyebrow="Curated" title="Combos" sub="Bundled favourites at a soft price — pick one and go." />
-              <CombosSection />
-            </div>
             <div>
               <SectionHead eyebrow="Step 3" title="Add-ons" sub="Little extras that make the keepsake feel personal." />
               <AddonsSection />
@@ -588,8 +591,7 @@ function Founders() {
                   <p className="mt-3 text-sm text-neutral-700">{f.bio}</p>
                   <div className="mt-4 flex gap-2">
                     <SocialIcon icon={<Instagram className="h-4 w-4" />} href={SITE.links.instagram} />
-                    <SocialIcon icon={<Twitter className="h-4 w-4" />} href={SITE.links.twitter} />
-                    <SocialIcon icon={<Linkedin className="h-4 w-4" />} href={SITE.links.linkedin} />
+                    <SocialIcon icon={<Youtube className="h-4 w-4" />} href={SITE.links.youtube} />
                   </div>
                 </div>
               </div>
@@ -641,8 +643,7 @@ function Footer() {
           </div>
           <div className="flex gap-2">
             <SocialIcon icon={<Instagram className="h-4 w-4" />} href={SITE.links.instagram} />
-            <SocialIcon icon={<Twitter className="h-4 w-4" />} href={SITE.links.twitter} />
-            <SocialIcon icon={<Linkedin className="h-4 w-4" />} href={SITE.links.linkedin} />
+            <SocialIcon icon={<Youtube className="h-4 w-4" />} href={SITE.links.youtube} />
           </div>
         </div>
         <p className="mt-8 text-center text-xs text-dusty-rose">© {new Date().getFullYear()} The Layout. All rights reserved.</p>

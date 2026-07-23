@@ -102,6 +102,39 @@ export const STRIP_TIERS: Record<number, number> = {
 };
 export const STRIP_MAX = 5;
 
+// ===========================================================
+// COMBO RECIPES — what a combo auto-selects when chosen.
+// Templates are picked at random (up to the size's limit) since a combo
+// is meant to be a one-click "just build it for me" bundle.
+// ===========================================================
+export type ComboRecipe = {
+  sizeId?: string;
+  addonIds?: string[];
+  polaroidId?: string;
+  stripCount?: number;
+};
+
+export const COMBO_RECIPES: Record<string, ComboRecipe> = {
+  "combo-main": { sizeId: "sz-8", addonIds: ["add-wrap", "add-letter"] },
+  "combo-core": { sizeId: "sz-12", polaroidId: "pol-classic", stripCount: 1 },
+  "combo-soft": { sizeId: "sz-16", polaroidId: "pol-memory", addonIds: ["add-wrap", "add-letter"] },
+};
+
+// Real sum of what a combo's included items would cost bought separately —
+// the "slashed" total shown next to the combo's flat price.
+export function comboRealTotal(comboId: string): number {
+  const recipe = COMBO_RECIPES[comboId];
+  if (!recipe) return 0;
+  let total = 0;
+  if (recipe.sizeId) total += CATALOG.sizes.find((s) => s.id === recipe.sizeId)?.price ?? 0;
+  for (const id of recipe.addonIds ?? []) {
+    total += CATALOG.addons.find((a) => a.id === id)?.price ?? 0;
+  }
+  if (recipe.polaroidId) total += CATALOG.polaroids.find((p) => p.id === recipe.polaroidId)?.price ?? 0;
+  if (recipe.stripCount) total += STRIP_TIERS[recipe.stripCount] ?? 0;
+  return total;
+}
+
 
 export const fmt = (n: number) =>
   `${CONFIG.CURRENCY}${n.toLocaleString("en-IN")}`;

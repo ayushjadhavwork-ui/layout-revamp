@@ -71,8 +71,7 @@ export const SITE = {
   links: {
     behindTheLayout: "https://www.instagram.com/the_layoutt",
     instagram:       "https://www.instagram.com/the_layoutt",
-    linkedin:        "https://www.linkedin.com/company/the_layoutt",
-    twitter:         "https://twitter.com/the_layoutt",
+    youtube:         "https://www.youtube.com/@Layoutt",
   },
 
   // ────────────────────────────────────────────────────────────────

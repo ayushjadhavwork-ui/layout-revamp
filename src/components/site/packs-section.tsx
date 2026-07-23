@@ -1,10 +1,12 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Camera, Check } from "lucide-react";
 import { toast } from "sonner";
 import { CATALOG, fmt } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { SITE } from "@/lib/site-content";
 import { ModalShell } from "./shop";
+import { useProductReviews } from "@/lib/use-product-reviews";
+import { ReviewsPanel, ReviewStars } from "./reviews-panel";
 
 import miniPhoto from "@/assets/polaroids/mini.jpg";
 import classicPhoto from "@/assets/polaroids/classic.jpg";
@@ -195,43 +197,22 @@ function PackModal({
   const item = packId ? CATALOG.polaroids.find((p) => p.id === packId) ?? null : null;
   const addItem = useStore((s) => s.addItem);
   const cart = useStore((s) => s.cart);
-
-  const [reviews, setReviews] = useState<{ name: string; rating: number; text: string }[]>([]);
-  const [rvName, setRvName] = useState("");
-  const [rvText, setRvText] = useState("");
-  const [rvRating, setRvRating] = useState(5);
-
-  useEffect(() => {
-    if (open) {
-      setReviews([
-        { name: "Sana P.", rating: 5, text: "Print quality is gorgeous — looks like a real Polaroid." },
-        { name: "Aditya R.", rating: 5, text: "Loved how they came stacked and wrapped. Perfect gift." },
-      ]);
-      setRvName(""); setRvText(""); setRvRating(5);
-    }
-  }, [open, item?.id]);
+  const {
+    reviews, loading, posting, avg, reviewerId,
+    rvName, setRvName, rvText, setRvText, rvRating, setRvRating,
+    submitReview, deleteReview,
+  } = useProductReviews(item?.id ?? null);
 
   if (!open || !item) return null;
 
   const photo = packPhoto(item.id);
   const meta = PACK_META[item.id];
   const inCart = cart.some((c) => c.category === "polaroids" && c.id === item.id);
-  const avg = reviews.length
-    ? Math.round((reviews.reduce((a, r) => a + r.rating, 0) / reviews.length) * 10) / 10
-    : 5;
 
   const handleAdd = () => {
     addItem("polaroids", item, "");
     toast.success(`${item.name} added to cart`);
     onClose();
-  };
-
-  const submitReview = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!rvName.trim() || !rvText.trim()) return toast.error("Add your name and review.");
-    setReviews((r) => [{ name: rvName.trim(), rating: rvRating, text: rvText.trim() }, ...r]);
-    setRvName(""); setRvText(""); setRvRating(5);
-    toast.success("Review posted");
   };
 
   return (
@@ -262,10 +243,7 @@ function PackModal({
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">Polaroid Pack</p>
           <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">{item.name}</h3>
           <p className="mt-1 text-sm uppercase tracking-[0.2em] text-dusty-rose">{meta?.count}</p>
-          <div className="mt-3 flex items-center gap-2 text-sm">
-            <span className="text-blush-rose">{"★".repeat(Math.round(avg))}{"☆".repeat(5 - Math.round(avg))}</span>
-            <span className="text-dusty-rose">{avg} · {reviews.length} review{reviews.length === 1 ? "" : "s"}</span>
-          </div>
+          <ReviewStars avg={avg} count={reviews.length} />
           <p className="mt-4 text-3xl font-semibold text-blush-rose">{fmt(item.price)}</p>
           <div className="mt-4 h-px bg-rose-wine/10" />
           <p className="mt-4 text-sm leading-relaxed text-neutral-700">{item.desc}</p>
@@ -286,47 +264,12 @@ function PackModal({
       </div>
 
       {/* Reviews */}
-      <div className="mt-8 border-t border-white/60 pt-6">
-        <h4 className="font-display text-2xl text-rose-wine">Customer reviews</h4>
-        <form onSubmit={submitReview} className="mt-4 rounded-2xl bg-white/50 p-4 space-y-2">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-            <input
-              value={rvName}
-              onChange={(e) => setRvName(e.target.value)}
-              placeholder="Your name"
-              className="rounded-xl border border-rose-wine/20 bg-white/70 px-3 py-2 text-sm outline-none focus:border-rose-wine"
-              maxLength={60}
-            />
-            <select
-              value={rvRating}
-              onChange={(e) => setRvRating(Number(e.target.value))}
-              className="rounded-xl border border-rose-wine/20 bg-white/70 px-3 py-2 text-sm outline-none focus:border-rose-wine"
-            >
-              {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} star{n === 1 ? "" : "s"}</option>)}
-            </select>
-          </div>
-          <textarea
-            value={rvText}
-            onChange={(e) => setRvText(e.target.value)}
-            rows={2}
-            placeholder="Share your experience…"
-            className="w-full rounded-xl border border-rose-wine/20 bg-white/70 px-3 py-2 text-sm outline-none focus:border-rose-wine"
-            maxLength={400}
-          />
-          <button type="submit" className="pill-btn pill-btn-hover !py-2 !px-4 !text-xs">Post review</button>
-        </form>
-        <ul className="mt-4 space-y-3 max-h-56 overflow-y-auto pr-1">
-          {reviews.map((r, i) => (
-            <li key={i} className="rounded-2xl bg-white/40 p-3">
-              <div className="flex items-center justify-between">
-                <p className="font-medium text-rose-wine text-sm">{r.name}</p>
-                <span className="text-xs text-blush-rose">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
-              </div>
-              <p className="mt-1 text-sm text-neutral-700">{r.text}</p>
-            </li>
-          ))}
-        </ul>
-      </div>
+      <ReviewsPanel
+        reviews={reviews} loading={loading} posting={posting} reviewerId={reviewerId}
+        rvName={rvName} setRvName={setRvName} rvText={rvText} setRvText={setRvText}
+        rvRating={rvRating} setRvRating={setRvRating}
+        onSubmit={submitReview} onDelete={deleteReview}
+      />
     </ModalShell>
   );
 }

@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { X, ShoppingBag, Trash2, Plus, Check, ArrowUpRight, ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";;
 import { toast } from "sonner";
-import { CATALOG, CONFIG, fmt, type Category, type Product } from "@/lib/catalog";
+import { CATALOG, CONFIG, fmt, comboRealTotal, type Category, type Product } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
-import { validateCoupon, logCart, completeOrder, getReviews, submitReview as submitReviewApi, deleteReview, getReviewerId, type Review } from "@/lib/gas";
+import { validateCoupon, logCart, completeOrder } from "@/lib/gas";
 import { SITE } from "@/lib/site-content";
 import { createPortal } from "react-dom";
+import { useProductReviews } from "@/lib/use-product-reviews";
+import { ReviewsPanel, ReviewStars } from "./reviews-panel";
 
 /* ================================================================ */
 /* PRODUCT GRID + CARD                       */
@@ -167,12 +169,11 @@ export function ProductModal({
   const [note, setNote] = useState("");
   const [slide, setSlide] = useState(0);
   const [lightboxOpen, setLightboxOpen] = useState(false);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [loadingReviews, setLoadingReviews] = useState(false);
-  const [posting, setPosting] = useState(false);
-  const [rvName, setRvName] = useState("");
-  const [rvText, setRvText] = useState("");
-  const [rvRating, setRvRating] = useState(5);
+  const {
+    reviews, loading: loadingReviews, posting, avg: avgRating, reviewerId,
+    rvName, setRvName, rvText, setRvText, rvRating, setRvRating,
+    submitReview: handleSubmitReview, deleteReview: handleDeleteReview,
+  } = useProductReviews(product?.id ?? null);
 
   const setSize = useStore((s) => s.setSize);
   const toggleTemplate = useStore((s) => s.toggleTemplate);
@@ -185,12 +186,6 @@ export function ProductModal({
       setNote("");
       setSlide(0);
       setLightboxOpen(false);
-      setReviews([]);
-      setLoadingReviews(true);
-      getReviews(product.id)
-        .then(setReviews)
-        .catch(() => toast.error("Could not load reviews."))
-        .finally(() => setLoadingReviews(false));
     }
   }, [open, product?.id]);
 
@@ -211,10 +206,6 @@ export function ProductModal({
   const goPrev = () => setSlide((currentSlide - 1 + slideCount) % slideCount);
   const goNext = () => setSlide((currentSlide + 1) % slideCount);
 
-  const avgRating = reviews.length
-    ? Math.round((reviews.reduce((a, r) => a + r.rating, 0) / reviews.length) * 10) / 10
-    : 5;
-
   const handleAdd = () => {
     if (isSize) {
       setSize(product.id);
@@ -232,51 +223,6 @@ export function ProductModal({
   };
 
 
-
-  const handleSubmitReview = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!rvName.trim() || !rvText.trim()) return toast.error("Add your name and review.");
-    if (!product) return;
-    setPosting(true);
-
-    const reviewerId = getReviewerId();
-
-    try {
-      const res = await submitReviewApi({
-
-        productId: product.id,
-        name: rvName.trim(),
-        rating: rvRating,
-        text: rvText.trim(),
-        reviewerId,
-      });
-
-      if (!res.ok) throw new Error();
-      setReviews((r) => [
-        { id: res.id!, productId: product.id, name: rvName.trim(), rating: rvRating, text: rvText.trim(), reviewerId, timestamp: new Date().toISOString() },
-        ...r,
-      ]);
-      setRvName(""); setRvText(""); setRvRating(5);
-      toast.success("Review posted");
-    } catch {
-      toast.error("Could not post review — try again.");
-    } finally {
-      setPosting(false);
-    }
-  };
-
-  const handleDeleteReview = async (review: Review) => {
-    const reviewerId = getReviewerId();
-    try {
-      const res = await deleteReview(review.id, reviewerId);
-      if (!res.ok) throw new Error();
-      setReviews((r) => r.filter((x) => x.id !== review.id));
-      toast.success("Review deleted");
-    } catch {
-      toast.error("Could not delete — this may not be your review.");
-    }
-
-  };
 
   return (
     <>
@@ -386,10 +332,7 @@ export function ProductModal({
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">{category}</p>
             <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">{product.name}</h3>
 
-            <div className="mt-3 flex items-center gap-2 text-sm">
-              <span className="text-blush-rose">{"★".repeat(Math.round(avgRating))}{"☆".repeat(5 - Math.round(avgRating))}</span>
-              <span className="text-dusty-rose">{avgRating} · {reviews.length} review{reviews.length === 1 ? "" : "s"}</span>
-            </div>
+            <ReviewStars avg={avgRating} count={reviews.length} />
 
             <p className="mt-4 text-3xl font-semibold text-blush-rose">
               {isTemplate ? "Included with package" : product.price ? fmt(product.price) : "Free"}
@@ -419,69 +362,12 @@ export function ProductModal({
           </div>
         </div>
 
-        {/* ================= REVIEWS (unchanged) ================= */}
-        <div className="mt-8 border-t border-white/60 pt-6">
-          <h4 className="font-display text-2xl text-rose-wine">Customer reviews</h4>
-          <form onSubmit={handleSubmitReview} className="mt-4 rounded-2xl bg-white/50 p-4 space-y-2">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <input
-                value={rvName}
-                onChange={(e) => setRvName(e.target.value)}
-                placeholder="Your name"
-                className="rounded-xl border border-rose-wine/20 bg-white/70 px-3 py-2 text-sm outline-none focus:border-rose-wine"
-                maxLength={60}
-              />
-              <select
-                value={rvRating}
-                onChange={(e) => setRvRating(Number(e.target.value))}
-                className="rounded-xl border border-rose-wine/20 bg-white/70 px-3 py-2 text-sm outline-none focus:border-rose-wine"
-              >
-                {[5,4,3,2,1].map((n) => <option key={n} value={n}>{n} star{n === 1 ? "" : "s"}</option>)}
-              </select>
-            </div>
-            <textarea
-              value={rvText}
-              onChange={(e) => setRvText(e.target.value)}
-              rows={2}
-              placeholder="Share your experience…"
-              className="w-full rounded-xl border border-rose-wine/20 bg-white/70 px-3 py-2 text-sm outline-none focus:border-rose-wine"
-              maxLength={400}
-            />
-            <button type="submit" disabled={posting} className="pill-btn pill-btn-hover !py-2 !px-4 !text-xs disabled:opacity-50">
-              {posting ? "Posting…" : "Post review"}
-            </button>
-          </form>
-          <ul className="mt-4 space-y-3 max-h-56 overflow-y-auto pr-1">
-            {loadingReviews && <p className="text-sm text-dusty-rose text-center py-4">Loading reviews…</p>}
-            {!loadingReviews && reviews.length === 0 && (
-              <p className="text-sm text-dusty-rose text-center py-4">No reviews yet — be the first!</p>
-            )}
-            {reviews.map((r) => {
-              const isMine = r.reviewerId === getReviewerId();
-              return (
-                <li key={r.id} className="rounded-2xl bg-white/40 p-3">
-                  <div className="flex items-center justify-between">
-                    <p className="font-medium text-rose-wine text-sm">{r.name}</p>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-blush-rose">{"★".repeat(r.rating)}{"☆".repeat(5 - r.rating)}</span>
-                      {isMine && (
-                        <button
-                          onClick={() => handleDeleteReview(r)}
-                          className="text-neutral-400 hover:text-rose-wine"
-                          aria-label="Delete review"
-                        >
-                          <Trash2 className="h-3.5 w-3.5" />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                  <p className="mt-1 text-sm text-neutral-700">{r.text}</p>
-                </li>
-              );
-            })}
-          </ul>
-
-        </div>
+        <ReviewsPanel
+          reviews={reviews} loading={loadingReviews} posting={posting} reviewerId={reviewerId}
+          rvName={rvName} setRvName={setRvName} rvText={rvText} setRvText={setRvText}
+          rvRating={rvRating} setRvRating={setRvRating}
+          onSubmit={handleSubmitReview} onDelete={handleDeleteReview}
+        />
       </ModalShell>
 
 {/* ================= FULLSCREEN LIGHTBOX ================= */}
@@ -558,11 +444,16 @@ export function CartDrawer({
 }) {
   const cart = useStore((s) => s.cart);
   const removeItem = useStore((s) => s.removeItem);
+  const deselectCombo = useStore((s) => s.deselectCombo);
   const subtotal = useStore((s) => s.subtotal());
   const discount = useStore((s) => s.discount());
   const total = useStore((s) => s.total());
   const coupon = useStore((s) => s.coupon);
   const setCoupon = useStore((s) => s.setCoupon);
+
+  const activeCombo = cart.find((c) => c.category === "combos");
+  const comboOriginal = activeCombo ? comboRealTotal(activeCombo.id) : 0;
+  const comboSavings = activeCombo ? Math.max(0, comboOriginal - activeCombo.price) : 0;
 
   const [promo, setPromo] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
@@ -616,20 +507,35 @@ export function CartDrawer({
                 </div>
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-rose-wine">{item.name}</p>
-                  <p className="text-xs uppercase tracking-wider text-dusty-rose">{item.category}</p>
+                  <p className="text-xs uppercase tracking-wider text-dusty-rose">
+                    {item.category}{item.comboId ? " · in combo" : ""}
+                  </p>
                   {item.note && <p className="mt-1 text-xs text-neutral-600 italic">"{item.note}"</p>}
                 </div>
                 <div className="text-right">
                   <p className="text-sm font-semibold text-blush-rose">{item.price ? fmt(item.price) : "—"}</p>
-                  <button onClick={() => removeItem(item.key)} className="mt-1 text-neutral-400 hover:text-rose-wine">
-                    <Trash2 className="h-4 w-4" />
-                  </button>
+                  {item.comboId ? (
+                    <span className="mt-1 block text-[0.65rem] text-dusty-rose">included</span>
+                  ) : (
+                    <button
+                      onClick={() => (item.category === "combos" ? deselectCombo(item.id) : removeItem(item.key))}
+                      className="mt-1 text-neutral-400 hover:text-rose-wine"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
 
           <div className="mt-4 space-y-2 border-t border-white/60 pt-4 text-sm">
+            {activeCombo && comboSavings > 0 && (
+              <div className="flex justify-between text-xs text-dusty-rose">
+                <span>{activeCombo.name} value</span>
+                <span className="line-through">{fmt(comboOriginal)}</span>
+              </div>
+            )}
             <div className="flex justify-between"><span>Subtotal</span><span>{fmt(subtotal)}</span></div>
             <div className="flex gap-2">
               <input
