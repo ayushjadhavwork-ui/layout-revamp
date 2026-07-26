@@ -433,31 +433,14 @@ export function ProductModal({
 /*                          CART DRAWER                             */
 /* ================================================================ */
 
-export function CartDrawer({
-  open,
-  onClose,
-  onCheckout,
-}: {
-  open: boolean;
-  onClose: () => void;
-  onCheckout: () => void;
-}) {
-  const cart = useStore((s) => s.cart);
-  const removeItem = useStore((s) => s.removeItem);
-  const deselectCombo = useStore((s) => s.deselectCombo);
-  const subtotal = useStore((s) => s.subtotal());
-  const discount = useStore((s) => s.discount());
-  const total = useStore((s) => s.total());
+// Shared promo-code entry point — used in the cart drawer AND surfaced again
+// during checkout (customer info + payment steps), since a customer who
+// clicks "Complete my order" without ever opening the cart drawer would
+// otherwise never see anywhere to apply a coupon.
+export function PromoCodeBox() {
   const coupon = useStore((s) => s.coupon);
   const setCoupon = useStore((s) => s.setCoupon);
   const applyCouponFreebie = useStore((s) => s.applyCouponFreebie);
-
-  const activeCombo = cart.find((c) => c.category === "combos");
-  const comboOriginal = activeCombo ? comboRealTotal(activeCombo.id) : 0;
-  const comboSavings = activeCombo ? Math.max(0, comboOriginal - activeCombo.price) : 0;
-
-  const promoItems = cart.filter((c) => c.category === "promotions");
-  const mainItems = cart.filter((c) => c.category !== "promotions");
 
   const [promo, setPromo] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
@@ -492,6 +475,51 @@ export function CartDrawer({
       setChecking(false);
     }
   };
+
+  return (
+    <div>
+      <div className="flex gap-2">
+        <input
+          value={promo}
+          onChange={(e) => setPromo(e.target.value)}
+          placeholder="Promo code"
+          className="flex-1 rounded-full border border-rose-wine/20 bg-white/60 px-4 py-2 text-sm outline-none focus:border-rose-wine"
+        />
+        <button type="button" onClick={applyPromo} disabled={checking} className="pill-btn pill-btn-hover">
+          {checking ? "…" : "Apply"}
+        </button>
+      </div>
+      {msg ? (
+        <p className={`mt-2 text-xs ${coupon ? "text-green-700" : "text-rose-wine"}`}>{msg}</p>
+      ) : coupon ? (
+        <p className="mt-2 text-xs text-green-700">Code "{coupon.code}" applied — {coupon.percent}% off.</p>
+      ) : null}
+    </div>
+  );
+}
+
+export function CartDrawer({
+  open,
+  onClose,
+  onCheckout,
+}: {
+  open: boolean;
+  onClose: () => void;
+  onCheckout: () => void;
+}) {
+  const cart = useStore((s) => s.cart);
+  const removeItem = useStore((s) => s.removeItem);
+  const deselectCombo = useStore((s) => s.deselectCombo);
+  const subtotal = useStore((s) => s.subtotal());
+  const discount = useStore((s) => s.discount());
+  const total = useStore((s) => s.total());
+
+  const activeCombo = cart.find((c) => c.category === "combos");
+  const comboOriginal = activeCombo ? comboRealTotal(activeCombo.id) : 0;
+  const comboSavings = activeCombo ? Math.max(0, comboOriginal - activeCombo.price) : 0;
+
+  const promoItems = cart.filter((c) => c.category === "promotions");
+  const mainItems = cart.filter((c) => c.category !== "promotions");
 
   if (!open) return null;
 
@@ -578,18 +606,7 @@ export function CartDrawer({
               </div>
             )}
             <div className="flex justify-between"><span>Subtotal</span><span>{fmt(subtotal)}</span></div>
-            <div className="flex gap-2">
-              <input
-                value={promo}
-                onChange={(e) => setPromo(e.target.value)}
-                placeholder="Promo code"
-                className="flex-1 rounded-full border border-rose-wine/20 bg-white/60 px-4 py-2 text-sm outline-none focus:border-rose-wine"
-              />
-              <button onClick={applyPromo} disabled={checking} className="pill-btn pill-btn-hover">
-                {checking ? "…" : "Apply"}
-              </button>
-            </div>
-            {msg && <p className={`text-xs ${coupon ? "text-green-700" : "text-rose-wine"}`}>{msg}</p>}
+            <PromoCodeBox />
             <div className="flex justify-between"><span>Discount</span><span>−{fmt(discount)}</span></div>
             <DeliveryEta />
             <div className="flex justify-between border-t border-white/60 pt-2 text-lg font-semibold">
@@ -626,6 +643,8 @@ export function CustomerInfoModal({
   const setCustomer = useStore((s) => s.setCustomer);
   const setCartId = useStore((s) => s.setCartId);
   const cart = useStore((s) => s.cart);
+  const subtotal = useStore((s) => s.subtotal());
+  const discount = useStore((s) => s.discount());
   const total = useStore((s) => s.total());
   const [submitting, setSubmitting] = useState(false);
 
@@ -660,6 +679,17 @@ export function CustomerInfoModal({
     <ModalShell onClose={onClose} maxW="max-w-lg">
       <h3 className="font-display text-3xl text-rose-wine">A few details first</h3>
       <p className="mt-1 text-sm text-dusty-rose">We need this to process and ship your order.</p>
+
+      <div className="mt-4 rounded-xl bg-white/60 p-3 ring-1 ring-rose-wine/10">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-wine mb-2">Have a promo code?</p>
+        <PromoCodeBox />
+        <div className="mt-3 space-y-1 border-t border-rose-wine/10 pt-2 text-sm">
+          <div className="flex justify-between text-dusty-rose"><span>Subtotal</span><span>{fmt(subtotal)}</span></div>
+          {discount > 0 && <div className="flex justify-between text-dusty-rose"><span>Discount</span><span>−{fmt(discount)}</span></div>}
+          <div className="flex justify-between font-semibold text-rose-wine"><span>Total</span><span>{fmt(total)}</span></div>
+        </div>
+      </div>
+
       <form onSubmit={handle} className="mt-5 space-y-3">
         <Field label="Full name" name="name" required maxLength={100} />
         <div className="grid grid-cols-2 gap-3">
@@ -731,6 +761,12 @@ export function PaymentModal({
     <ModalShell onClose={onClose} maxW="max-w-lg">
       <h3 className="font-display text-3xl text-rose-wine">Complete payment</h3>
       <p className="mt-1 text-sm text-neutral-700">Scan the UPI QR, then upload your payment screenshot.</p>
+
+      <div className="mt-4 rounded-xl bg-white/60 p-3 ring-1 ring-rose-wine/10">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-wine mb-2">Have a promo code?</p>
+        <PromoCodeBox />
+      </div>
+
       <div className="mt-5 flex flex-col items-center">
         <img src={qr} alt="UPI QR" className="h-56 w-56 rounded-2xl bg-white p-3 shadow-lg" />
         <p className="mt-3">Pay <span className="font-semibold text-blush-rose">{fmt(total)}</span> to <span className="font-medium">{CONFIG.UPI_ID}</span></p>

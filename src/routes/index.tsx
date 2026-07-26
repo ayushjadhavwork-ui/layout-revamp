@@ -258,6 +258,7 @@ function Home() {
       </section>         
 
       <Reels />
+      <HappyCustomersBanner />
       <Faq />
       <Policy />
 
@@ -363,8 +364,37 @@ function Reels() {
           <a href={SITE.links.instagram} target="_blank" rel="noreferrer" className="pill-btn pill-btn-hover">
             <Instagram className="h-4 w-4" /> Follow on Instagram
           </a>
-          <a href={SITE.links.customerReviews} target="_blank" rel="noreferrer" className="pill-btn pill-btn-hover pill-primary">
-            <Heart className="h-4 w-4" /> Check out our happy customers
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function HappyCustomersBanner() {
+  return (
+    <section className="relative z-10 px-4 py-16">
+      <div className="mx-auto max-w-4xl">
+        <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-rose-wine via-blush-rose to-rose-wine px-8 py-14 text-center shadow-2xl ring-1 ring-pink-mist/30">
+          <div className="pointer-events-none absolute inset-0 opacity-[0.15]" aria-hidden>
+            <Heart className="absolute -left-6 -top-6 h-32 w-32 rotate-[-12deg] fill-off-white text-off-white" />
+            <Heart className="absolute -right-8 -bottom-8 h-40 w-40 rotate-[10deg] fill-off-white text-off-white" />
+          </div>
+          <span className="relative inline-flex items-center gap-2 rounded-full bg-off-white/15 px-4 py-1.5 text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-off-white ring-1 ring-off-white/30">
+            ✧ Real stories, real love ✧
+          </span>
+          <h3 className="relative mt-5 font-display text-4xl md:text-5xl text-off-white leading-tight">
+            Loved by hundreds of<br className="hidden sm:block" /> happy customers
+          </h3>
+          <p className="relative mt-4 max-w-xl mx-auto text-pink-mist/90">
+            See the real messages, reactions and reviews from people who've received their Layout keepsake ♡
+          </p>
+          <a
+            href={SITE.links.customerReviews}
+            target="_blank"
+            rel="noreferrer"
+            className="relative mt-7 inline-flex items-center gap-2 rounded-full bg-off-white px-7 py-3.5 text-sm font-semibold uppercase tracking-[0.2em] text-rose-wine shadow-lg transition hover:scale-[1.05] hover:shadow-xl"
+          >
+            <Heart className="h-4 w-4 fill-rose-wine" /> Check out our happy customers
           </a>
         </div>
       </div>

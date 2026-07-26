@@ -39,7 +39,6 @@ export const SITE = {
   // TOP-BAR MARQUEE STRIP
   // ────────────────────────────────────────────────────────────────
   marquee: [
-    "Use code LAYOUT10 for 10% off ✨",
     "Free standard shipping on all orders",
     "Handcrafted in small batches",
     "New templates dropped this month",
