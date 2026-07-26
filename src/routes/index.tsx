@@ -1,4 +1,4 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
 import { useState, useEffect, useRef } from "react";
 import { ArrowUpRight, Sparkles, Instagram, Youtube, Heart } from "lucide-react";
 import { Toaster, toast } from "sonner";
@@ -363,11 +363,9 @@ function Reels() {
           <a href={SITE.links.instagram} target="_blank" rel="noreferrer" className="pill-btn pill-btn-hover">
             <Instagram className="h-4 w-4" /> Follow on Instagram
           </a>
-          {SITE.happyCustomers.length > 0 && (
-            <Link to="/happy-customers" className="pill-btn pill-btn-hover pill-primary">
-              <Heart className="h-4 w-4" /> Check out our happy customers
-            </Link>
-          )}
+          <a href={SITE.links.customerReviews} target="_blank" rel="noreferrer" className="pill-btn pill-btn-hover pill-primary">
+            <Heart className="h-4 w-4" /> Check out our happy customers
+          </a>
         </div>
       </div>
     </section>
@@ -389,9 +387,9 @@ function Nav({ onCart }: { onCart: () => void }) {
             </li>
           ))}
           <li>
-            <Link to="/happy-customers" className="hover:text-rose-wine transition-colors">
+            <a href={SITE.links.customerReviews} target="_blank" rel="noreferrer" className="hover:text-rose-wine transition-colors">
               Happy Customers
-            </Link>
+            </a>
           </li>
           <li>
             <a href={SITE.links.blog} target="_blank" rel="noreferrer" className="hover:text-rose-wine transition-colors">
