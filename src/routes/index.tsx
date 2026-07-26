@@ -177,7 +177,7 @@ function Home() {
 
         <div id="combos" className="relative z-10 px-4 py-20">
           <div className="mx-auto max-w-6xl">
-            <SectionHead eyebrow="Curated" title="Combos" sub="Bundled favourites at a soft price — pick one and it builds the rest for you." />
+            <SectionHead eyebrow="Curated" title="Combos" sub="Bundled favourites at a soft price — pick one, then choose your own templates below." />
             <CombosSection />
           </div>
         </div>

@@ -135,6 +135,19 @@ strips the prefix, saves the file to a Drive folder called
   Deploy → Manage deployments → New version.
 - **Drive permission error on screenshots** — re-run the deployment flow
   and grant Drive access when prompted.
+- **Still failing after granting Drive access + redeploying** — check
+  whether `appsscript.json` has a manually-added `oauthScopes` array. Once
+  that key exists, Apps Script stops auto-detecting scopes from your code
+  and grants *only* what's listed — so a missing or too-narrow entry (e.g.
+  `drive.file` instead of `drive`; `getFoldersByName` needs the full
+  `https://www.googleapis.com/auth/drive` scope since it searches all of
+  Drive, not just app-created files) will keep Drive calls failing even
+  though "Google Drive" shows up as an authorized permission. Easiest fix:
+  delete the `oauthScopes` key entirely and let Apps Script auto-manage
+  scopes, then re-authorize (run any function that calls `DriveApp` once
+  manually from the editor) and deploy a new version. The exact failure
+  reason is always in the `screenshotUrl` column as `ERROR: <message>` —
+  check that first before guessing.
 
 ---
 

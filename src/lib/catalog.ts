@@ -113,15 +113,13 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
   ],
 };
 
-// Design options for the Newspaper Magazine's two landscape spreads — purely
-// cosmetic picks (not separately priced), shown as a small gallery the
-// customer chooses 2 from. Override previews via SITE.productImages["news-tpl-N"].
-export const NEWSPAPER_TEMPLATES: Product[] = Array.from({ length: 6 }, (_, i) => ({
-  id: `news-tpl-${i + 1}`,
-  name: `Layout ${i + 1}`,
-  price: 0,
-  desc: "Landscape broadsheet spread.",
-}));
+// The Newspaper Magazine's two landscape spreads — fixed, not user-pickable.
+// Both come together as one whole ₹250 product; these exist purely to show
+// a preview of each spread. Override previews via SITE.productImages["news-tpl-1"/"news-tpl-2"].
+export const NEWSPAPER_TEMPLATES: Product[] = [
+  { id: "news-tpl-1", name: "Layout 1", price: 0, desc: "Landscape broadsheet spread." },
+  { id: "news-tpl-2", name: "Layout 2", price: 0, desc: "Landscape broadsheet spread." },
+];
 
 // Maps a Spin-the-Wheel coupon code to the free product it grants when
 // applied in the cart — see applyCouponFreebie() in store.ts.

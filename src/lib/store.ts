@@ -137,13 +137,9 @@ export const useStore = create<State>((set, get) => ({
   toggleTemplate: (id) => {
     const s = get();
     if (!s.selectedSizeId) return false;
-    // A manual template change breaks an active combo cleanly rather than
-    // leaving its auto-picked size/templates half-detached from the cart.
-    const hadCombo = s.cart.some((c) => c.category === "combos");
-    if (hadCombo) {
-      set({ selectedSizeId: null, selectedTemplateIds: [], cart: dropCombo(s.cart).filter((c) => c.category !== "sizes" && c.category !== "templates") });
-      return false;
-    }
+    // Templates stay user-pickable even with a combo active — the combo
+    // only fixes the page size (and thus the template limit); which specific
+    // right/left spreads fill those slots is always the customer's choice.
     const limit = get().templateLimit();
     const already = s.selectedTemplateIds.includes(id);
     if (!already && s.selectedTemplateIds.length >= limit) return false;
@@ -173,9 +169,6 @@ export const useStore = create<State>((set, get) => ({
     }
     const picked = pool.slice(0, limit);
     const pickedIds = picked.map((t) => t.id);
-    // Preserve combo linkage so re-rolling a combo's templates doesn't
-    // orphan them from the combo they belong to.
-    const comboId = s.cart.find((c) => c.category === "templates")?.comboId;
     set({
       selectedTemplateIds: pickedIds,
       cart: [
@@ -185,7 +178,6 @@ export const useStore = create<State>((set, get) => ({
           category: "templates" as Category,
           id: tpl.id,
           name: tpl.name,
-          comboId,
           price: 0,
         })),
       ],
@@ -255,9 +247,12 @@ export const useStore = create<State>((set, get) => ({
   setCartId: (cartId) => set({ cartId }),
 
   // Combos are a one-click bundle: picking one auto-selects its included
-  // size/templates/add-ons/polaroids/strips (random where there's a choice)
-  // and adds them to the cart at price 0 — the combo's own line carries the
-  // real charge, so the total is the combo price, not size+addons+combo.
+  // size/add-ons/polaroids/strips (random where there's a choice) and adds
+  // them to the cart at price 0 — the combo's own line carries the real
+  // charge, so the total is the combo price, not size+addons+combo. Templates
+  // are the one exception: the combo only fixes how many the customer gets
+  // (via the size's templateLimit) — which ones is always their own pick,
+  // made afterwards in the Templates section same as a non-combo order.
   selectCombo: (combo) => {
     const recipe = COMBO_RECIPES[combo.id];
     set((s) => {
@@ -267,7 +262,7 @@ export const useStore = create<State>((set, get) => ({
       const cart = s.cart.filter((c) => c.category !== "combos" && !c.comboId && !COMBO_MANAGED.includes(c.category));
       const linked: CartItem[] = [];
       let selectedSizeId = s.selectedSizeId;
-      let selectedTemplateIds = s.selectedTemplateIds;
+      let selectedTemplateIds: string[] = [];
       let stripSelections = s.stripSelections;
 
       if (recipe?.sizeId) {
@@ -275,18 +270,6 @@ export const useStore = create<State>((set, get) => ({
         if (size) {
           selectedSizeId = size.id;
           linked.push({ key: `combo:${combo.id}:size`, category: "sizes", id: size.id, name: size.name, price: 0, comboId: combo.id });
-
-          const limit = size.templateLimit ?? 0;
-          const pool = [...CATALOG.templates];
-          for (let i = pool.length - 1; i > 0; i--) {
-            const j = Math.floor(Math.random() * (i + 1));
-            [pool[i], pool[j]] = [pool[j], pool[i]];
-          }
-          const picked = pool.slice(0, limit);
-          selectedTemplateIds = picked.map((t) => t.id);
-          picked.forEach((t) =>
-            linked.push({ key: `combo:${combo.id}:tpl:${t.id}`, category: "templates", id: t.id, name: t.name, price: 0, comboId: combo.id })
-          );
         }
       }
 
@@ -326,7 +309,11 @@ export const useStore = create<State>((set, get) => ({
   },
 
   deselectCombo: (comboId) => set((s) => ({
-    cart: s.cart.filter((c) => !(c.category === "combos" && c.id === comboId) && c.comboId !== comboId),
+    // Templates the customer picked while the combo was active never carry
+    // comboId (they're freely chosen, not auto-linked) — but they're
+    // meaningless without the size context the combo provided, so clear
+    // them too rather than leaving orphaned template lines in the cart.
+    cart: s.cart.filter((c) => !(c.category === "combos" && c.id === comboId) && c.comboId !== comboId && c.category !== "templates"),
     selectedSizeId: null,
     selectedTemplateIds: [],
     stripSelections: [],

@@ -114,7 +114,10 @@ function completeOrder(body) {
   if (body.screenshot && body.screenshotName) {
     try {
       const folder = getOrCreateFolder("The Layout — Payment Screenshots");
-      const base64 = body.screenshot.split(",")[1];
+      // Accept either a full data URI ("data:image/png;base64,...") or a
+      // bare base64 string, in case the caller ever sends one without a prefix.
+      const raw = String(body.screenshot);
+      const base64 = raw.includes(",") ? raw.split(",")[1] : raw;
       const blob = Utilities.newBlob(Utilities.base64Decode(base64), "image/png", body.screenshotName);
       const file = folder.createFile(blob);
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
