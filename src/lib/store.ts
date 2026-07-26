@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { CATALOG, STRIP_TIERS, STRIP_MAX, COMBO_RECIPES, type Product, type Category } from "./catalog";
+import { CATALOG, STRIP_TIERS, STRIP_MAX, COMBO_RECIPES, COUPON_FREEBIES, type Product, type Category } from "./catalog";
 
 
 export type CartItem = {
@@ -13,6 +13,10 @@ export type CartItem = {
   // (the combo's own line carries the real charge) and can only be
   // removed by deselecting the combo itself.
   comboId?: string;
+  // Set when this line is a free item granted by a redeemed coupon code
+  // (see applyCouponFreebie) — tracks which code granted it so a new coupon
+  // can cleanly swap it out.
+  promoCode?: string;
 };
 
 type State = {
@@ -31,6 +35,7 @@ type State = {
   randomizeTemplates: () => number; // returns count picked
   toggleStrip: (id: string) => boolean; // returns success; false if cap reached
   setCoupon: (c: State["coupon"]) => void;
+  applyCouponFreebie: (code: string) => void;
   setCustomer: (c: State["customer"]) => void;
   setCartId: (id: string | null) => void;
   selectCombo: (combo: Product) => void;
@@ -52,6 +57,17 @@ const key = (cat: Category, id: string) => `${cat}:${id}`;
 // charging the combo price alongside a separately-priced duplicate item.
 const dropCombo = (cart: CartItem[]) => cart.filter((c) => c.category !== "combos" && !c.comboId);
 
+// Categories no combo recipe ever touches — picking these alongside an active
+// combo (delivery, the unrelated Newspaper Magazine product, or a coupon
+// freebie) must not blow away the combo.
+const COMBO_INDEPENDENT: Category[] = ["delivery", "newspaper", "promotions"];
+
+// Categories a combo recipe can auto-populate — selecting a combo must clear
+// any of these picked manually beforehand, or their real price would sit in
+// the cart alongside the combo's flat price (double-charging the customer
+// for e.g. the page size their combo already includes).
+const COMBO_MANAGED: Category[] = ["sizes", "templates", "addons", "polaroids", "strips"];
+
 export const useStore = create<State>((set, get) => ({
   cart: [],
   selectedSizeId: null,
@@ -64,9 +80,9 @@ export const useStore = create<State>((set, get) => ({
 
   addItem: (category, product, note) => {
     // Single-choice categories (only one active at a time)
-    const singleChoice: Category[] = ["addons", "polaroids", "strips", "delivery", "sizes", "combos"];
+    const singleChoice: Category[] = ["addons", "polaroids", "strips", "delivery", "sizes", "combos", "newspaper"];
     set((s) => {
-      let cart = category === "combos" ? s.cart : dropCombo(s.cart);
+      let cart = (category === "combos" || COMBO_INDEPENDENT.includes(category)) ? s.cart : dropCombo(s.cart);
       if (singleChoice.includes(category)) {
         cart = cart.filter((c) => c.category !== category);
       }
@@ -79,21 +95,30 @@ export const useStore = create<State>((set, get) => ({
   },
 
 
-  removeItem: (k) => set((s) => {
-    const item = s.cart.find((c) => c.key === k);
-    const patch: Partial<State> = { cart: s.cart.filter((c) => c.key !== k) };
-    if (item?.category === "sizes") {
-      patch.selectedSizeId = null;
-      patch.selectedTemplateIds = [];
+  removeItem: (k) => {
+    const item = get().cart.find((c) => c.key === k);
+    // A combo-linked line (comboId set) can't be removed on its own without
+    // leaving the combo half-detached from the cart — removing any of its
+    // pieces removes the whole combo cleanly instead.
+    if (item?.comboId) {
+      get().deselectCombo(item.comboId);
+      return;
     }
-    if (item?.category === "templates") {
-      patch.selectedTemplateIds = s.selectedTemplateIds.filter((id) => id !== item.id);
-    }
-    if (item?.category === "strips") {
-      patch.stripSelections = [];
-    }
-    return patch as State;
-  }),
+    set((s) => {
+      const patch: Partial<State> = { cart: s.cart.filter((c) => c.key !== k) };
+      if (item?.category === "sizes") {
+        patch.selectedSizeId = null;
+        patch.selectedTemplateIds = [];
+      }
+      if (item?.category === "templates") {
+        patch.selectedTemplateIds = s.selectedTemplateIds.filter((id) => id !== item.id);
+      }
+      if (item?.category === "strips") {
+        patch.stripSelections = [];
+      }
+      return patch as State;
+    });
+  },
 
 
   setSize: (sizeId) => {
@@ -208,6 +233,24 @@ export const useStore = create<State>((set, get) => ({
   },
 
   setCoupon: (coupon) => set({ coupon }),
+
+  // Some Spin-the-Wheel codes (SPINPOLA/SPINLETTER/SPINSTICK) grant a free
+  // item rather than a % discount. Only one redeemed coupon is active at a
+  // time, so swap out any previously-granted freebie for the new one.
+  applyCouponFreebie: (code) => set((s) => {
+    const cart = s.cart.filter((c) => !c.promoCode);
+    const productId = COUPON_FREEBIES[code.trim().toUpperCase()];
+    if (!productId) return { cart };
+    const product = CATALOG.promotions.find((p) => p.id === productId);
+    if (!product) return { cart };
+    return {
+      cart: [
+        ...cart,
+        { key: `promo:${productId}`, category: "promotions", id: product.id, name: product.name, price: 0, promoCode: code },
+      ],
+    };
+  }),
+
   setCustomer: (customer) => set({ customer }),
   setCartId: (cartId) => set({ cartId }),
 
@@ -218,8 +261,10 @@ export const useStore = create<State>((set, get) => ({
   selectCombo: (combo) => {
     const recipe = COMBO_RECIPES[combo.id];
     set((s) => {
-      // Only one combo (and its linked items) can be active at a time.
-      const cart = s.cart.filter((c) => c.category !== "combos" && !c.comboId);
+      // Only one combo (and its linked items) can be active at a time, and
+      // any manually-picked size/template/addon/polaroid/strip must go too —
+      // otherwise its real price sits in the cart on top of the combo price.
+      const cart = s.cart.filter((c) => c.category !== "combos" && !c.comboId && !COMBO_MANAGED.includes(c.category));
       const linked: CartItem[] = [];
       let selectedSizeId = s.selectedSizeId;
       let selectedTemplateIds = s.selectedTemplateIds;

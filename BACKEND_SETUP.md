@@ -21,6 +21,14 @@ tabs and header rows (row 1). Header names must match exactly.
 - `percent`: number, e.g. `10` for 10%
 - `active`: `TRUE` or `FALSE`
 
+**You don't need a row here for SPINPOLA / SPINLETTER / SPINSTICK.**
+`validateCoupon` now falls back to the `Spin Config` tab (see §7) when a code
+isn't found in `Coupons` — any active spin-wheel prize code is automatically
+a valid 0%-off coupon, and the frontend grants the matching free item
+(polaroid strip / letter / sticker pack) instead of a discount. Only add a
+`Coupons` row for a code if you want it to give a real % discount (like
+`LAYOUT10` or `SPIN10`).
+
 ### Tab: `Cart Logs`
 | cartId | name | phone | email | address | cart | total | timestamp |
 

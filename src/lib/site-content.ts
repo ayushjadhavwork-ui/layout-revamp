@@ -73,7 +73,39 @@ export const SITE = {
     instagram:       "https://www.instagram.com/the_layoutt",
     youtube:         "https://www.youtube.com/@Layoutt",
     blog:            "https://thelayouttco.myportfolio.com/behind-the-scenes-1",
+    whatsapp:        "https://wa.me/919137353151",
   },
+
+  // ────────────────────────────────────────────────────────────────
+  // FAQ — shown at the bottom of the page, above the payment & return
+  // policy. Add, remove, or edit questions freely.
+  // ────────────────────────────────────────────────────────────────
+  faq: [
+    {
+      q: "How long does it take to make my magazine?",
+      a: "After you complete the order form and submit all required details, we typically take 2–3 business days to design and prepare your magazine.",
+    },
+    {
+      q: "Will I receive a preview before printing?",
+      a: "Yes, a digital preview will be shared for approval before printing on your WhatsApp number.",
+    },
+    {
+      q: "How do I know my order is confirmed after the payment?",
+      a: "We will contact you on WhatsApp within 6 hours of the payment.",
+    },
+    {
+      q: "Where can I upload the images and text contents?",
+      a: "We will send you the Google Drive link and Google Forms link for images and texts on WhatsApp.",
+    },
+    {
+      q: "Do you ship across India?",
+      a: "Yes, we deliver all across India only.",
+    },
+    {
+      q: "Can I cancel my order?",
+      a: "Because every magazine is custom-made and designed specifically for you, orders cannot be cancelled, returned, or refunded once payment has been completed.",
+    },
+  ] as { q: string; a: string }[],
 
   // ────────────────────────────────────────────────────────────────
   // JOURNEY / STATS  ← edit numbers or labels freely

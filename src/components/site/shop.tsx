@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { X, ShoppingBag, Trash2, Plus, Check, ArrowUpRight, ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";;
 import { toast } from "sonner";
-import { CATALOG, CONFIG, fmt, comboRealTotal, type Category, type Product } from "@/lib/catalog";
+import { CATALOG, CONFIG, fmt, comboRealTotal, COUPON_FREEBIES, type Category, type Product } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { validateCoupon, logCart, completeOrder } from "@/lib/gas";
 import { SITE } from "@/lib/site-content";
@@ -450,10 +450,14 @@ export function CartDrawer({
   const total = useStore((s) => s.total());
   const coupon = useStore((s) => s.coupon);
   const setCoupon = useStore((s) => s.setCoupon);
+  const applyCouponFreebie = useStore((s) => s.applyCouponFreebie);
 
   const activeCombo = cart.find((c) => c.category === "combos");
   const comboOriginal = activeCombo ? comboRealTotal(activeCombo.id) : 0;
   const comboSavings = activeCombo ? Math.max(0, comboOriginal - activeCombo.price) : 0;
+
+  const promoItems = cart.filter((c) => c.category === "promotions");
+  const mainItems = cart.filter((c) => c.category !== "promotions");
 
   const [promo, setPromo] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
@@ -465,10 +469,19 @@ export function CartDrawer({
     setMsg(null);
     try {
       const res = await validateCoupon(promo);
-      if (res.valid && res.percent) {
-        setCoupon({ code: promo.trim().toUpperCase(), percent: res.percent });
-        setMsg(`Coupon applied — ${res.percent}% off`);
-        toast.success(`${res.percent}% off applied`);
+      const code = promo.trim().toUpperCase();
+      if (res.valid) {
+        setCoupon({ code, percent: res.percent || 0 });
+        const freebieId = COUPON_FREEBIES[code];
+        if (freebieId) {
+          applyCouponFreebie(code);
+          const product = CATALOG.promotions.find((p) => p.id === freebieId);
+          setMsg(`Coupon applied — ${product?.name ?? "free gift"} added to cart 🎁`);
+          toast.success(`${product?.name ?? "Free gift"} added to your cart`);
+        } else {
+          setMsg(`Coupon applied — ${res.percent}% off`);
+          toast.success(`${res.percent}% off applied`);
+        }
       } else {
         setCoupon(null);
         setMsg(res.message || "Invalid code");
@@ -500,7 +513,7 @@ export function CartDrawer({
 
             {cart.length > 0 && <CartSummaryPanel />}
 
-            {cart.map((item) => (
+            {mainItems.map((item) => (
               <div key={item.key} className="flex items-start gap-3 rounded-2xl bg-white/50 p-3">
                 <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-pink-mist to-blush-rose font-display text-white">
                   {item.name.charAt(0)}
@@ -527,6 +540,34 @@ export function CartDrawer({
                 </div>
               </div>
             ))}
+
+            {promoItems.length > 0 && (
+              <div className="rounded-2xl bg-blush-rose/10 p-3 ring-1 ring-blush-rose/20">
+                <p className="mb-2 text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-blush-rose">
+                  🎁 Promotions
+                </p>
+                <div className="space-y-2">
+                  {promoItems.map((item) => (
+                    <div key={item.key} className="flex items-center justify-between gap-3">
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-medium text-rose-wine">{item.name}</p>
+                        <p className="text-[0.65rem] text-dusty-rose">redeemed with {item.promoCode}</p>
+                      </div>
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-xs font-semibold text-blush-rose">Free</span>
+                        <button
+                          onClick={() => removeItem(item.key)}
+                          className="text-neutral-400 hover:text-rose-wine"
+                          aria-label={`Remove ${item.name}`}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="mt-4 space-y-2 border-t border-white/60 pt-4 text-sm">

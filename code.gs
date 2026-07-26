@@ -46,22 +46,35 @@ function doPost(e) {
 /* Coupons                                                       */
 /* ============================================================ */
 function validateCoupon(code) {
+  const trimmed = String(code || "").trim().toUpperCase();
+  if (!trimmed) return { valid: false, message: "Invalid code" };
+
   const sheet = ss().getSheetByName("Coupons");
-  if (!sheet) return { valid: false, message: "Coupons sheet not found" };
+  if (sheet) {
+    const rows = sheet.getDataRange().getValues().slice(1); // skip header
+    const match = rows.find((row) => String(row[0]).trim().toUpperCase() === trimmed);
 
-  const rows = sheet.getDataRange().getValues().slice(1); // skip header
-  const match = rows.find(
-    (row) => String(row[0]).trim().toUpperCase() === String(code || "").trim().toUpperCase()
-  );
-
-  if (!match) return { valid: false, message: "Invalid code" };
-
-  const [, percent, active] = match;
-  const isActive = active === true || Number(active) === 1 || String(active).trim().toUpperCase() === "TRUE";
-  if (!isActive) {
-    return { valid: false, message: "This code is no longer active" };
+    if (match) {
+      const [, percent, active] = match;
+      const isActive = active === true || Number(active) === 1 || String(active).trim().toUpperCase() === "TRUE";
+      if (!isActive) {
+        return { valid: false, message: "This code is no longer active" };
+      }
+      return { valid: true, percent: Number(percent) };
+    }
   }
-  return { valid: true, percent: Number(percent) };
+
+  // Not a manually-managed % coupon — check whether it's a live Spin-the-Wheel
+  // prize code instead. Free-item prizes (e.g. SPINPOLA) carry 0% off; the
+  // frontend grants the actual free item based on the code, so this only
+  // needs to confirm the code is currently a real, active prize.
+  const spin = getSpinConfig();
+  if (spin.success) {
+    const won = spin.segments.find((s) => String(s.code || "").trim().toUpperCase() === trimmed);
+    if (won) return { valid: true, percent: 0 };
+  }
+
+  return { valid: false, message: "Invalid code" };
 }
 
 /* ============================================================ */

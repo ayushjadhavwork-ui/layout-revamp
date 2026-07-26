@@ -18,7 +18,9 @@ import { TemplatesSection } from "@/components/site/templates-section";
 import { SizesSection } from "@/components/site/sizes-section";
 import { AddonsSection } from "@/components/site/addons-section";
 import { CombosSection } from "@/components/site/combos-section";
+import { NewspaperSection } from "@/components/site/newspaper-section";
 import { SpinWheel } from "@/components/site/spin-wheel";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
 
 export const Route = createFileRoute("/")({
@@ -32,7 +34,6 @@ export const Route = createFileRoute("/")({
 });
 
 const NAV = [
-  { label: "How", href: "#how" },
   { label: "Build", href: "#build" },
   { label: "Templates", href: "#templates" },
   { label: "Founders", href: "#founders" },
@@ -189,6 +190,13 @@ function Home() {
           </div>
         </div>
 
+        <div id="newspaper" className="relative z-10 px-4 py-20">
+          <div className="mx-auto max-w-6xl">
+            <SectionHead eyebrow="Something different" title="Newspaper Magazine" sub="A special standalone keepsake — not part of the package above." />
+            <NewspaperSection />
+          </div>
+        </div>
+
         <div id="extras" className="relative z-10 px-4 py-20">
           <div className="mx-auto max-w-6xl space-y-16">
             <div>
@@ -250,6 +258,7 @@ function Home() {
       </section>         
 
       <Reels />
+      <Faq />
       <Policy />
 
 
@@ -272,7 +281,25 @@ function Home() {
           Cart · {cartCount}
         </button>
       )}
+
+      <WhatsAppButton />
     </div>
+  );
+}
+
+function WhatsAppButton() {
+  return (
+    <a
+      href={SITE.links.whatsapp}
+      target="_blank"
+      rel="noreferrer"
+      aria-label="Chat with us on WhatsApp"
+      className="fixed bottom-6 left-4 z-30 grid h-14 w-14 place-items-center rounded-full bg-[#25D366] shadow-xl ring-2 ring-white hover:scale-105 transition"
+    >
+      <svg viewBox="0 0 32 32" className="h-7 w-7 fill-white" aria-hidden>
+        <path d="M16.004 3C9.377 3 4 8.373 4 15c0 2.34.652 4.527 1.785 6.395L4 29l7.805-1.746A11.94 11.94 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Zm6.994 16.98c-.297.836-1.47 1.53-2.418 1.734-.645.137-1.488.246-4.328-.93-3.63-1.5-5.965-5.19-6.148-5.43-.176-.242-1.469-1.957-1.469-3.734 0-1.777.93-2.648 1.262-3.012.297-.324.645-.406.86-.406.215 0 .43.004.617.012.199.008.465-.075.727.555.297.688.988 2.375 1.074 2.547.086.172.145.375.03.617-.116.242-.174.39-.343.602-.172.211-.363.473-.516.633-.172.18-.352.375-.152.734.199.36.887 1.465 1.906 2.375 1.31 1.168 2.414 1.53 2.777 1.703.363.172.574.145.786-.086.211-.234.906-1.055 1.148-1.418.242-.363.484-.297.816-.18.332.117 2.117.996 2.48 1.176.363.18.605.27.695.418.09.15.09.867-.207 1.703Z"/>
+      </svg>
+    </a>
   );
 }
 
@@ -361,6 +388,16 @@ function Nav({ onCart }: { onCart: () => void }) {
               <a href={n.href} className="hover:text-rose-wine transition-colors">{n.label}</a>
             </li>
           ))}
+          <li>
+            <Link to="/happy-customers" className="hover:text-rose-wine transition-colors">
+              Happy Customers
+            </Link>
+          </li>
+          <li>
+            <a href={SITE.links.blog} target="_blank" rel="noreferrer" className="hover:text-rose-wine transition-colors">
+              Blog
+            </a>
+          </li>
         </ul>
         <CartButton onOpen={onCart} />
       </nav>
@@ -605,6 +642,30 @@ function Founders() {
         </div>
       </div>
     </div>
+  );
+}
+
+function Faq() {
+  return (
+    <section id="faq" className="relative z-10 px-4 py-20">
+      <div className="mx-auto max-w-3xl">
+        <SectionHead eyebrow="Questions" title="FAQ" sub="Everything you need to know before you order." />
+        <div className="glass rounded-3xl p-6 md:p-10">
+          <Accordion type="single" collapsible className="w-full">
+            {SITE.faq.map((item, i) => (
+              <AccordionItem key={i} value={`faq-${i}`} className="border-rose-wine/10">
+                <AccordionTrigger className="text-left font-display text-lg text-rose-wine hover:no-underline">
+                  {item.q}
+                </AccordionTrigger>
+                <AccordionContent className="text-sm leading-relaxed text-neutral-700">
+                  {item.a}
+                </AccordionContent>
+              </AccordionItem>
+            ))}
+          </Accordion>
+        </div>
+      </div>
+    </section>
   );
 }
 

@@ -17,7 +17,9 @@ export type Category =
   | "combos"
   | "polaroids"
   | "strips"
-  | "delivery";
+  | "delivery"
+  | "newspaper"
+  | "promotions";
 
 
 export type Product = {
@@ -90,6 +92,43 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
     { id: "del-std", name: "Standard Delivery", price: 0,   desc: "Free — arrives in 7-8 days." },
     { id: "del-exp", name: "Express Shipping",  price: 149, desc: "Priority — arrives in 3-4 days." },
   ],
+
+  // A small, standalone product — not part of the magazine builder or any
+  // combo. Two landscape spreads, flat price.
+  newspaper: [
+    {
+      id: "news-mag",
+      name: "Newspaper Magazine",
+      price: 250,
+      desc: "A special broadsheet-style keepsake with space for two landscape spreads.",
+    },
+  ],
+
+  // Free items granted by redeeming a Spin-the-Wheel coupon code — never sold
+  // directly, only ever added by applyCouponFreebie() in store.ts.
+  promotions: [
+    { id: "promo-strip",   name: "Free Polaroid Strip",       price: 0, desc: "Redeemed via spin-the-wheel coupon." },
+    { id: "promo-letter",  name: "Free Personalized Letter",  price: 0, desc: "Redeemed via spin-the-wheel coupon." },
+    { id: "promo-sticker", name: "Free Sticker Pack",         price: 0, desc: "Redeemed via spin-the-wheel coupon." },
+  ],
+};
+
+// Design options for the Newspaper Magazine's two landscape spreads — purely
+// cosmetic picks (not separately priced), shown as a small gallery the
+// customer chooses 2 from. Override previews via SITE.productImages["news-tpl-N"].
+export const NEWSPAPER_TEMPLATES: Product[] = Array.from({ length: 6 }, (_, i) => ({
+  id: `news-tpl-${i + 1}`,
+  name: `Layout ${i + 1}`,
+  price: 0,
+  desc: "Landscape broadsheet spread.",
+}));
+
+// Maps a Spin-the-Wheel coupon code to the free product it grants when
+// applied in the cart — see applyCouponFreebie() in store.ts.
+export const COUPON_FREEBIES: Record<string, string> = {
+  SPINPOLA: "promo-strip",
+  SPINLETTER: "promo-letter",
+  SPINSTICK: "promo-sticker",
 };
 
 // Tier pricing for polaroid strips, indexed by number of strips selected (1..5).
