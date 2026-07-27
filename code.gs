@@ -452,26 +452,8 @@ function handleSpinLead(body) {
     return { success: false, error: "Invalid email" };
   }
 
-  const lastRow = sheet.getLastRow();
-  if (lastRow >= 2) {
-    const rows = sheet.getRange(2, 1, lastRow - 1, headers.length).getValues();
-    const emailCol = headers.indexOf("Email");
-    const segmentCol = headers.indexOf("Segment Won");
-    const codeCol = headers.indexOf("Coupon Code");
-    const expiryCol = headers.indexOf("Expires At");
-
-    for (let i = 0; i < rows.length; i++) {
-      if (String(rows[i][emailCol]).toLowerCase() === email) {
-        return {
-          success: true,
-          alreadySpun: true,
-          result: { label: rows[i][segmentCol], code: rows[i][codeCol] || null },
-          expiresAt: rows[i][expiryCol] ? new Date(rows[i][expiryCol]).toISOString() : null,
-        };
-      }
-    }
-  }
-
+  // No per-email lock — every visit is a fresh chance to spin, so we always
+  // roll a new prize and log a new row rather than replaying a past result.
   const config = getSpinConfig();
   if (!config.success) {
     return { success: false, error: config.error };

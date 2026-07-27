@@ -198,12 +198,13 @@ export function SpinWheel() {
   const [copied, setCopied] = useState(false);
   const openTimer = useRef<number | null>(null);
 
-  // Hydrate from storage + fetch sheet config once per page load
+  // Hydrate from storage + fetch sheet config once per page load. A past
+  // "spun" status is never restored — every visit gets a fresh chance to
+  // spin, so a prior win only affects this tab until it's reloaded.
   useEffect(() => {
     setMounted(true);
     const s = loadState();
-    setState(s);
-    if (s.status === "spun" && s.result) setResult(s.result);
+    setState(s.status === "spun" ? { status: "closed" } : s);
     setFloatingHidden(sessionStorage.getItem(SESSION_DISMISS) === "1");
 
     if (s.status === "unseen") {
@@ -383,7 +384,7 @@ export function SpinWheel() {
 
             <p className="mt-4 text-center text-[0.65rem] text-dusty-rose">
               <span className="rounded-full border border-pink-mist/70 px-3 py-1 inline-block">
-                One spin per customer • Valid for 24 hours • Cannot be combined with other offers
+                One spin per visit • Coupon valid for 24 hours • Cannot be combined with other offers
               </span>
             </p>
 
