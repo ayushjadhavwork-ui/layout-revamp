@@ -250,27 +250,28 @@ function buildInvoiceHtml_(order) {
 
   return (
     "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>" +
-    "body { font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; margin: 0; padding: 40px; }" +
+    "body { font-family: Arial, Helvetica, sans-serif; color: #1a1a1a; margin: 0; padding: 40px; background: #fce9ef; }" +
     ".header { display: table; width: 100%; }" +
     ".header-left, .header-right { display: table-cell; vertical-align: top; }" +
     ".header-right { text-align: right; }" +
-    ".brand { font-size: 14px; font-weight: bold; }" +
-    ".invoice-no { font-size: 14px; font-weight: bold; }" +
-    ".invoice-date { font-size: 12px; color: #666; }" +
-    ".rule { border-top: 3px solid #6b7280; margin: 16px 0 24px; }" +
-    "h1.title { font-size: 32px; margin: 0 0 24px; font-weight: 400; }" +
+    ".brand { font-size: 14px; font-weight: bold; color: #c1476d; }" +
+    ".invoice-no { font-size: 14px; font-weight: bold; color: #c1476d; }" +
+    ".invoice-date { font-size: 12px; color: #ba7080; }" +
+    ".rule { border-top: 3px solid #e5a8ba; margin: 16px 0 24px; }" +
+    "h1.title { font-size: 32px; margin: 0 0 24px; font-weight: 400; color: #c1476d; }" +
     ".meta { display: table; width: 100%; margin-bottom: 24px; }" +
     ".meta-col { display: table-cell; width: 33%; vertical-align: top; padding-right: 16px; }" +
-    ".meta-label { font-size: 10px; font-weight: bold; letter-spacing: 1px; color: #666; margin-bottom: 4px; }" +
+    ".meta-label { font-size: 10px; font-weight: bold; letter-spacing: 1px; color: #ba7080; margin-bottom: 4px; }" +
     ".meta-value { font-size: 12px; line-height: 1.5; }" +
-    "table.items { width: 100%; border-collapse: collapse; margin-bottom: 8px; }" +
-    "table.items th { background: #f3f4f6; text-align: left; font-size: 10px; letter-spacing: 1px; padding: 8px; }" +
+    "table.items { width: 100%; border-collapse: collapse; margin-bottom: 8px; background: #fffafc; }" +
+    "table.items th { background: #f4c6d3; text-align: left; font-size: 10px; letter-spacing: 1px; padding: 8px; color: #7d2b45; }" +
     "table.items th.num, table.items td.num { text-align: right; }" +
-    "table.items td { padding: 10px 8px; font-size: 12px; border-bottom: 1px solid #eee; vertical-align: top; }" +
-    ".item-note { color: #888; font-size: 10px; margin-top: 2px; }" +
-    ".total-row td { font-weight: bold; font-size: 14px; border-top: 2px solid #333; padding-top: 12px; border-bottom: none; }" +
+    "table.items td { padding: 10px 8px; font-size: 12px; border-bottom: 1px solid #f6dde5; vertical-align: top; }" +
+    ".item-note { color: #ba7080; font-size: 10px; margin-top: 2px; }" +
+    ".total-row td { font-weight: bold; font-size: 14px; border-top: 2px solid #c1476d; padding-top: 12px; border-bottom: none; }" +
     ".footer { margin-top: 24px; font-size: 11px; color: #444; line-height: 1.6; }" +
     ".terms-title { font-weight: bold; }" +
+    ".footer-logo { text-align: center; margin-top: 32px; }" +
     "</style></head><body>" +
     "<div class=\"header\">" +
     "<div class=\"header-left\">" + logoTag + "<div class=\"brand\">The Layout</div></div>" +
@@ -300,12 +301,13 @@ function buildInvoiceHtml_(order) {
     "responsible for verifying all details before approving the final design. Delivery timelines are estimates and " +
     "may vary. This invoice serves as proof of purchase.</p>" +
     "</div>" +
+    "<div class=\"footer-logo\">" + getLogoImgTag_() + "</div>" +
     "</body></html>"
   );
 }
 
 function getLogoImgTag_() {
-  return '<img src="data:image/png;base64,' + INVOICE_LOGO_BASE64 + '" alt="The Layout" style="height:40px;width:40px;object-fit:contain;margin-bottom:6px;" />';
+  return '<img src="data:image/png;base64,' + INVOICE_LOGO_BASE64 + '" alt="The Layout" style="height:64px;width:64px;object-fit:contain;margin-bottom:6px;" />';
 }
 
 function formatINR_(n) {
