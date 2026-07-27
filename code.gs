@@ -113,6 +113,7 @@ function completeOrder(body) {
   ensureHeaders(sheet, [
     "orderId", "cartId", "name", "phone", "email", "address",
     "cart", "total", "coupon", "screenshotUrl", "timestamp", "invoiceUrl",
+    "paymentVerified",
   ]);
 
   let screenshotUrl = "";
@@ -168,6 +169,7 @@ function completeOrder(body) {
     screenshotUrl,
     body.ts,
     invoiceUrl,
+    "Pending...",
   ]);
 
   return { ok: true, orderId: body.orderId };
