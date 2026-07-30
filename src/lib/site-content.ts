@@ -36,6 +36,14 @@ export const SITE = {
   showreelVideo: "/showreel.mp4",
 
   // ────────────────────────────────────────────────────────────────
+  // COMMERCE — cart rules
+  // ────────────────────────────────────────────────────────────────
+  commerce: {
+    // Minimum cart total (in ₹) required before checkout is allowed.
+    minOrderValue: 249,
+  },
+
+  // ────────────────────────────────────────────────────────────────
   // TOP-BAR MARQUEE STRIP
   // ────────────────────────────────────────────────────────────────
   marquee: [

@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from "react";
 import { ArrowUpRight, Sparkles, Instagram, Youtube, Heart } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import logoAsset from "@/assets/logo.png.asset.json";
-import { CATALOG, type Category, type Product } from "@/lib/catalog";
+import { CATALOG, CONFIG, type Category, type Product } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { SITE } from "@/lib/site-content";
 import { TiledSection } from "@/components/site/TiledSection";
@@ -113,6 +113,7 @@ function Home() {
   const clear = useStore((s) => s.clear);
   const customer = useStore((s) => s.customer);
   const cartCount = useStore((s) => s.cart.length);
+  const total = useStore((s) => s.total());
 
   const openProduct = (cat: Category) => (p: Product) => {
     setModalCat(cat);
@@ -122,6 +123,10 @@ function Home() {
   const startCheckout = () => {
     if (cartCount === 0) {
       toast.error("Add something to your cart first.");
+      return;
+    }
+    if (total < SITE.commerce.minOrderValue) {
+      toast.error(`Minimum order value is ${CONFIG.CURRENCY}${SITE.commerce.minOrderValue}. Add ${CONFIG.CURRENCY}${SITE.commerce.minOrderValue - total} more.`);
       return;
     }
     setCartOpen(false);

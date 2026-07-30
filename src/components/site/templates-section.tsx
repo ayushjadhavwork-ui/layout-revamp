@@ -116,7 +116,7 @@ export function TemplatesSection() {
                   </span>
                 )}
 
-                <div className="relative w-full aspect-[4/3] overflow-hidden rounded-md bg-white/5">
+                <div className="relative w-full aspect-[2480/1754] overflow-hidden rounded-md bg-white/5">
                   {hero ? (
                     <img
                       src={hero}
@@ -218,7 +218,7 @@ function TemplateModal({
             {hero ? (
               <img src={hero} alt={label} className="w-full h-auto object-contain" />
             ) : (
-              <div className="aspect-[4/3] relative">
+              <div className="aspect-[2480/1754] relative">
                 <TemplatePlaceholder n={templateIndex + 1} />
               </div>
             )}

@@ -513,6 +513,8 @@ export function CartDrawer({
   const subtotal = useStore((s) => s.subtotal());
   const discount = useStore((s) => s.discount());
   const total = useStore((s) => s.total());
+  const minOrder = SITE.commerce.minOrderValue;
+  const belowMin = cart.length > 0 && total < minOrder;
 
   const activeCombo = cart.find((c) => c.category === "combos");
   const comboOriginal = activeCombo ? comboRealTotal(activeCombo.id) : 0;
@@ -612,11 +614,16 @@ export function CartDrawer({
             <div className="flex justify-between border-t border-white/60 pt-2 text-lg font-semibold">
               <span>Total</span><span className="text-blush-rose">{fmt(total)}</span>
             </div>
+            {belowMin && (
+              <p className="text-center text-xs text-rose-wine">
+                Add {fmt(minOrder - total)} more to reach the {fmt(minOrder)} minimum order value.
+              </p>
+            )}
           </div>
 
           <button
             onClick={onCheckout}
-            disabled={cart.length === 0}
+            disabled={cart.length === 0 || belowMin}
             className="pill-btn pill-btn-hover pill-primary mt-5 w-full disabled:opacity-50"
           >
             Checkout <ArrowUpRight className="h-4 w-4" />
