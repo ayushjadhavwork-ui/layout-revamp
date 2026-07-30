@@ -198,6 +198,7 @@ export const SITE = {
     // "tpl-1":  ["/media/products/templates/1.jpg"],
     // "tpl-2":  ["/media/products/templates/2.jpg"],
     // ...
+     "tpl-1": ["/media/products/Tem-1.jpeg"],
     "tpl-24": ["/media/products/24.jpg","/media/products/24.jpg"],
 
     // ── Package / sizes (optional cover imagery) ─────────────────
