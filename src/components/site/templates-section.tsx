@@ -106,9 +106,10 @@ export function TemplatesSection() {
             return (
               <div
                 key={item.id}
-                className={`relative rounded-xl p-3 md:p-4 flex flex-col items-center text-center transition bg-black/15 ${
+                onClick={() => handleToggle(item.id, label)}
+                className={`relative rounded-xl p-3 md:p-4 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
                   active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
-                } ${disabled ? "opacity-50" : ""}`}
+                } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {active && (
                   <span className="absolute top-2 right-2 grid h-6 w-6 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10">
@@ -116,7 +117,10 @@ export function TemplatesSection() {
                   </span>
                 )}
 
-                <div className="relative w-full aspect-[2480/1754] overflow-hidden rounded-md bg-white/5">
+                <div
+                  onClick={(e) => { e.stopPropagation(); setOpenId(item.id); }}
+                  className="relative w-full aspect-[2480/1754] overflow-hidden rounded-md bg-white/5 cursor-zoom-in"
+                >
                   {hero ? (
                     <img
                       src={hero}
@@ -133,7 +137,7 @@ export function TemplatesSection() {
                   {label}
                 </p>
 
-                <div className="mt-3 flex gap-1.5 w-full">
+                <div className="mt-3 flex gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
                   <button
                     type="button"
                     disabled={disabled}

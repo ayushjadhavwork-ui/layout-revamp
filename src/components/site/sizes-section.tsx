@@ -16,7 +16,7 @@ function SizePlaceholder({ label }: { label: string }) {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-pink-mist/30 via-blush-rose/25 to-rose-wine/25 text-off-white">
       <span className="font-display text-3xl md:text-4xl">{label}</span>
-      <span className="mt-1 text-[0.55rem] uppercase tracking-[0.35em] opacity-80">Magazine pages</span>
+      <span className="mt-1 w-full px-1 text-center text-[0.5rem] sm:text-[0.55rem] uppercase tracking-[0.05em] sm:tracking-[0.35em] opacity-80">Magazine pages</span>
     </div>
   );
 }
@@ -55,7 +55,8 @@ export function SizesSection() {
             return (
               <div
                 key={item.id}
-                className={`relative rounded-md sm:rounded-xl p-1.5 sm:p-4 md:p-5 flex flex-col items-center text-center transition bg-black/15 ${
+                onClick={() => handleToggle(item.id, item.name)}
+                className={`relative rounded-md sm:rounded-xl p-1.5 sm:p-4 md:p-5 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
                   active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
                 }`}
               >
@@ -65,7 +66,10 @@ export function SizesSection() {
                   </span>
                 )}
 
-                <div className="relative w-full aspect-[4/5] overflow-hidden rounded-sm sm:rounded-md bg-white/5">
+                <div
+                  onClick={(e) => { e.stopPropagation(); setOpenId(item.id); }}
+                  className="relative w-full aspect-[4/5] overflow-hidden rounded-sm sm:rounded-md bg-white/5 cursor-zoom-in"
+                >
                   {hero ? (
                     <img src={hero} alt={item.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
                   ) : (
@@ -86,7 +90,7 @@ export function SizesSection() {
                   {fmt(item.price)}
                 </p>
 
-                <div className="mt-1.5 sm:mt-4 flex gap-1 sm:gap-1.5 w-full">
+                <div className="mt-1.5 sm:mt-4 flex gap-1 sm:gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
                   <button
                     type="button"
                     onClick={() => handleToggle(item.id, item.name)}

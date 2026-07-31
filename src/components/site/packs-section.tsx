@@ -113,7 +113,8 @@ export function PacksSection() {
             return (
               <div
                 key={item.id}
-                className={`relative rounded-md sm:rounded-xl p-1.5 sm:p-4 md:p-5 flex flex-col items-center text-center transition bg-black/15 ${
+                onClick={handleToggle}
+                className={`relative rounded-md sm:rounded-xl p-1.5 sm:p-4 md:p-5 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
                   active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
                 }`}
               >
@@ -130,7 +131,10 @@ export function PacksSection() {
                   {item.name}
                 </h4>
 
-                <div className="mt-1.5 sm:mt-4 w-full">
+                <div
+                  onClick={(e) => { e.stopPropagation(); setOpenId(item.id); }}
+                  className="mt-1.5 sm:mt-4 w-full cursor-zoom-in"
+                >
                   <PolaroidTile photo={packPhoto(item.id)} active={active} />
                 </div>
 
@@ -143,7 +147,7 @@ export function PacksSection() {
                   {fmt(item.price)}
                 </p>
 
-                <div className="mt-1.5 sm:mt-4 flex gap-1 sm:gap-1.5 w-full">
+                <div className="mt-1.5 sm:mt-4 flex gap-1 sm:gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
                   <button
                     type="button"
                     onClick={handleToggle}

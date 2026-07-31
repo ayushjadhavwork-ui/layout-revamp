@@ -68,7 +68,7 @@ export function NewspaperSection() {
               key={tpl.id}
               className="relative rounded-xl overflow-hidden bg-black/15 ring-1 ring-pink-mist/30"
             >
-              <div className="relative w-full aspect-[4/3]">
+              <div className="relative w-full aspect-[2480/1754]">
                 {hero ? (
                   <img src={hero} alt={tpl.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
                 ) : (

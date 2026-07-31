@@ -94,16 +94,22 @@ export function ProductGrid({
               const thumb = photos[0];
               
               return (
-                <div className="mb-3 flex h-48 w-full relative items-center justify-center rounded-xl bg-white border border-rose-wine/10 font-display text-4xl text-rose-wine pointer-events-none overflow-hidden">
+                <div
+                  onClick={(e) => { e.stopPropagation(); onOpen(item); }}
+                  className="group/thumb mb-3 flex h-48 w-full relative items-center justify-center rounded-xl bg-white border border-rose-wine/10 font-display text-4xl text-rose-wine overflow-hidden cursor-zoom-in"
+                >
                   {thumb ? (
-                    <img 
-                      src={thumb} 
-                      alt={item.name} 
-                      className="absolute inset-0 h-full w-full object-contain p-2" 
+                    <img
+                      src={thumb}
+                      alt={item.name}
+                      className="absolute inset-0 h-full w-full object-contain p-2"
                     />
                   ) : (
                     item.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "✦"
                   )}
+                  <span className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[0.65rem] font-medium text-rose-wine opacity-0 shadow-sm transition group-hover/thumb:opacity-100">
+                    View full image
+                  </span>
                 </div>
             );
             })()}
@@ -837,8 +843,12 @@ export function ModalShell({ children, onClose, maxW = "max-w-2xl" }: { children
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-rose-wine/30 backdrop-blur-sm" onClick={onClose} />
       <div className={`glass relative z-10 w-full ${maxW} rounded-3xl p-6 md:p-8 max-h-[90vh] overflow-y-auto overscroll-contain`}>
-        <button onClick={onClose} className="absolute right-4 top-4 rounded-full p-2 hover:bg-rose-wine/10" aria-label="Close">
-          <X className="h-5 w-5 text-rose-wine" />
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 z-20 grid h-9 w-9 place-items-center rounded-full bg-white/95 text-rose-wine shadow-md ring-1 ring-rose-wine/10 hover:bg-white"
+          aria-label="Close"
+        >
+          <X className="h-5 w-5" />
         </button>
         {children}
       </div>

@@ -181,21 +181,21 @@ function Home() {
 
 
       <TiledSection tiles={SITE.backgrounds.customize}>
-        <div id="build" className="relative z-10 px-4 py-20">
+        <div id="build" className="relative z-10 px-4 py-12 sm:py-20">
           <div className="mx-auto max-w-6xl">
             <SectionHead eyebrow="Step 1" title="Choose your package" sub="Pricing scales with page count. Front & back covers included." />
             <SizesSection />
           </div>
         </div>
 
-        <div id="combos" className="relative z-10 px-4 py-20">
+        <div id="combos" className="relative z-10 px-4 py-12 sm:py-20">
           <div className="mx-auto max-w-6xl">
             <SectionHead eyebrow="Curated" title="Combos" sub="Bundled favourites at a soft price — pick one, then choose your own templates below." />
             <CombosSection />
           </div>
         </div>
 
-        <div id="templates" className="relative z-10 px-4 py-20">
+        <div id="templates" className="relative z-10 px-4 py-12 sm:py-20">
           <div className="mx-auto max-w-6xl">
             <SectionHead eyebrow="Step 2" title="Pick your templates" sub="Choose the exact number your package allows. Click a card for details." />
             <StepIndicator />
@@ -203,15 +203,15 @@ function Home() {
           </div>
         </div>
 
-        <div id="newspaper" className="relative z-10 px-4 py-20">
+        <div id="newspaper" className="relative z-10 px-4 py-12 sm:py-20">
           <div className="mx-auto max-w-6xl">
             <SectionHead eyebrow="Something different" title="Newspaper Magazine" sub="A special standalone keepsake — not part of the package above." />
             <NewspaperSection />
           </div>
         </div>
 
-        <div id="extras" className="relative z-10 px-4 py-20">
-          <div className="mx-auto max-w-6xl space-y-16">
+        <div id="extras" className="relative z-10 px-4 py-12 sm:py-20">
+          <div className="mx-auto max-w-6xl space-y-10 sm:space-y-16">
             <div>
               <SectionHead eyebrow="Step 3" title="Add-ons" sub="Little extras that make the keepsake feel personal." />
               <AddonsSection />
@@ -227,12 +227,12 @@ function Home() {
             </div>
             <div>
               <SectionHead eyebrow="Step 6" title="Delivery" />
-              <ProductGrid category="delivery" items={CATALOG.delivery} onOpen={openProduct("delivery")} cols="sm:grid-cols-2" />
+              <ProductGrid category="delivery" items={CATALOG.delivery} onOpen={openProduct("delivery")} cols="lg:grid-cols-2" />
             </div>
           </div>
         </div>
 
-      <section className="relative z-10 px-4 pb-16">
+      <section className="relative z-10 px-4 pb-10 sm:pb-16">
         <div className="mx-auto max-w-4xl">
           <div className="glass rounded-3xl p-8 md:p-10 text-center">
             <h3 className="font-display text-3xl md:text-4xl text-rose-wine">Ready to place your order?</h3>
@@ -358,7 +358,7 @@ function useInstagramEmbeds() {
 function Reels() {
   useInstagramEmbeds();
   return (
-    <section id="reels" className="relative z-10 px-4 py-20">
+    <section id="reels" className="relative z-10 px-4 py-12 sm:py-20">
       <div className="mx-auto max-w-6xl">
         <SectionHead eyebrow="From our feed" title="Reels & stories" sub="Peek into recent projects, unboxings and behind-the-scenes moments." />
         <div className="flex gap-6 overflow-x-auto pb-6 snap-x snap-mandatory">
@@ -385,7 +385,7 @@ function Reels() {
 
 function HappyCustomersBanner() {
   return (
-    <section className="relative z-10 px-4 py-16">
+    <section className="relative z-10 px-4 py-10 sm:py-16">
       <div className="mx-auto max-w-4xl">
         <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-rose-wine via-blush-rose to-rose-wine px-8 py-14 text-center shadow-2xl ring-1 ring-pink-mist/30">
           <div className="pointer-events-none absolute inset-0 opacity-[0.15]" aria-hidden>
@@ -491,8 +491,8 @@ function Showreel() {
 function Milestone() {
   useInstagramEmbeds();
   return (
-    <section className="relative z-10 px-4 py-20">
-      <div className="mx-auto grid max-w-6xl items-center gap-10 md:grid-cols-2">
+    <section className="relative z-10 px-4 py-12 sm:py-20">
+      <div className="mx-auto grid max-w-6xl items-center gap-6 sm:gap-10 md:grid-cols-2">
         <div className="glass rounded-3xl p-3 overflow-hidden">
           <blockquote
             className="instagram-media"
@@ -501,15 +501,15 @@ function Milestone() {
             style={{ background: "#fff", border: 0, margin: 0, minWidth: "300px", width: "100%" }}
           />
         </div>
-        <div>
+        <div className="text-center md:text-left">
           <p className="text-xs uppercase tracking-[0.4em] text-blush-rose">A moment we'll never forget</p>
-          <h2 className="mt-3 font-display text-5xl md:text-6xl text-rose-wine leading-[0.95]">
+          <h2 className="mt-3 font-display text-4xl sm:text-5xl md:text-6xl text-rose-wine leading-[0.95]">
             {SITE.milestoneReel.heading}
           </h2>
-          <p className="mt-6 text-neutral-700 leading-relaxed">
+          <p className="mt-4 sm:mt-6 text-neutral-700 leading-relaxed">
             {SITE.milestoneReel.body} <Heart className="inline h-5 w-5 fill-rose-wine text-rose-wine" />
           </p>
-          <a href={SITE.milestoneReel.url} target="_blank" rel="noreferrer" className="pill-btn pill-btn-hover pill-primary mt-6">
+          <a href={SITE.milestoneReel.url} target="_blank" rel="noreferrer" className="pill-btn pill-btn-hover pill-primary mt-6 mx-auto md:mx-0">
             Watch on Instagram <Instagram className="h-4 w-4" />
           </a>
         </div>
@@ -529,22 +529,36 @@ export function SectionHead({ eyebrow, title, sub }: { eyebrow: string; title: s
   );
 }
 
-function HowToOrder() {
+function StepCard({ s, className = "" }: { s: (typeof STEPS)[number]; className?: string }) {
   return (
-    <div id="how" className="relative z-10 px-4 py-20">
+    <div className={`step-card !p-2.5 sm:!p-4 lg:!p-6 ${className}`}>
+      <div className="mb-1.5 sm:mb-4 flex items-center justify-between">
+        <span className="font-display text-lg sm:text-2xl lg:text-4xl text-rose-wine/70">0{s.n}</span>
+        <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-blush-rose shrink-0" />
+      </div>
+      <h4 className="font-display text-xs sm:text-lg lg:text-2xl text-rose-wine leading-tight">{s.t}</h4>
+      <p className="mt-1 sm:mt-2 text-[0.6rem] sm:text-xs lg:text-sm text-neutral-700 leading-snug">{s.d}</p>
+    </div>
+  );
+}
+
+function HowToOrder() {
+  const firstRow = STEPS.slice(0, 3);
+  const lastRow = STEPS.slice(3);
+  return (
+    <div id="how" className="relative z-10 px-4 py-12 sm:py-20">
       <div className="mx-auto max-w-6xl">
         <SectionHead eyebrow="Process" title="How to order" sub="Five simple steps from idea to doorstep." />
         <div className="grid grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
-          {STEPS.map((s) => (
-            <div key={s.n} className="step-card !p-2.5 sm:!p-4 lg:!p-6">
-              <div className="mb-1.5 sm:mb-4 flex items-center justify-between">
-                <span className="font-display text-lg sm:text-2xl lg:text-4xl text-rose-wine/70">0{s.n}</span>
-                <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-blush-rose shrink-0" />
-              </div>
-              <h4 className="font-display text-xs sm:text-lg lg:text-2xl text-rose-wine leading-tight">{s.t}</h4>
-              <p className="mt-1 sm:mt-2 text-[0.6rem] sm:text-xs lg:text-sm text-neutral-700 leading-snug">{s.d}</p>
-            </div>
-          ))}
+          {firstRow.map((s) => <StepCard key={s.n} s={s} />)}
+          {/* Incomplete last row (2 cards in a 3-col grid) centers as a pair on
+              mobile/tablet instead of hugging the left edge; at lg the wrapper
+              becomes `contents` so these rejoin the single 5-col row normally. */}
+          <div className="col-span-3 flex justify-center gap-2 sm:gap-4 lg:contents">
+            {lastRow.map((s) => (
+              <StepCard key={s.n} s={s} className="w-[calc(33.333%-0.4rem)] sm:w-[calc(33.333%-0.75rem)] lg:w-auto" />
+            ))}
+          </div>
         </div>
       </div>
     </div>
@@ -567,7 +581,7 @@ function Mandatory() {
   const photo = active ? SITE.productImages?.[`mandatory-${openIdx! + 1}`]?.[0] : undefined;
 
   return (
-    <div className="relative z-10 px-4 py-20">
+    <div className="relative z-10 px-4 py-12 sm:py-20">
       <div className="mx-auto max-w-6xl">
         <SectionHead eyebrow="Included by default" title="Mandatory pages" sub="Tap any page to view it in isolation." />
         <div className="grid grid-cols-4 gap-1.5 sm:gap-4 md:gap-5">
@@ -635,10 +649,10 @@ function Mandatory() {
 
 function Timeline() {
   return (
-    <div id="timeline" className="relative z-10 px-4 py-20">
+    <div id="timeline" className="relative z-10 px-4 py-12 sm:py-20">
       <div className="mx-auto max-w-6xl">
         <SectionHead eyebrow="Timeline" title="From design to your hands" />
-        <div className="grid gap-4 md:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3">
           {TIMELINE.map((t, i) => (
             <div key={t.t} className="step-card">
               <span className="font-display text-4xl text-rose-wine/60">0{i + 1}</span>
@@ -654,7 +668,7 @@ function Timeline() {
 
 function Founders() {
   return (
-    <div id="founders" className="relative z-10 px-4 py-20">
+    <div id="founders" className="relative z-10 px-4 py-12 sm:py-20">
       <div className="mx-auto max-w-6xl">
         <SectionHead eyebrow="The team" title="Meet the founders" />
         <div className="grid gap-6 md:grid-cols-2">
@@ -688,7 +702,7 @@ function Founders() {
 
 function Faq() {
   return (
-    <section id="faq" className="relative z-10 px-4 py-20">
+    <section id="faq" className="relative z-10 px-4 py-12 sm:py-20">
       <div className="mx-auto max-w-3xl">
         <SectionHead eyebrow="Questions" title="FAQ" sub="Everything you need to know before you order." />
         <div className="glass rounded-3xl p-6 md:p-10">
@@ -712,7 +726,7 @@ function Faq() {
 
 function Policy() {
   return (
-    <section id="policy" className="relative z-10 px-4 py-20">
+    <section id="policy" className="relative z-10 px-4 py-12 sm:py-20">
       <div className="mx-auto max-w-4xl">
         <div className="glass rounded-3xl p-8 md:p-10">
           <h2 className="font-display text-4xl text-rose-wine">Payment & return policy</h2>
@@ -762,7 +776,7 @@ export function Footer() {
 function Journey() {
   const { title, subtitle, blocks, color } = SITE.stats;
   return (
-    <div id="journey" className="relative z-10 px-4 py-20">
+    <div id="journey" className="relative z-10 px-4 py-12 sm:py-20">
       <div className="mx-auto max-w-6xl">
         <div className="mb-10 text-center">
           <h2 className="font-display text-3xl md:text-4xl font-light tracking-wide text-rose-wine">
@@ -770,7 +784,7 @@ function Journey() {
           </h2>
           <p className="mt-2 text-sm text-dusty-rose">{subtitle}</p>
         </div>
-        <div className="grid gap-4 sm:grid-cols-3">
+        <div className="grid gap-4 lg:grid-cols-3">
           {blocks.map((s) => (
             <div
               key={s.small}
@@ -803,7 +817,7 @@ function CustomImageSection() {
       <img
         src="/media/bg/2.svg"
         alt="Showcase"
-        className="block w-full aspect-[4/3] md:aspect-auto object-cover object-center"
+        className="block w-full h-auto object-center"
       />
       {/* "Cherished Moments" banner — button sits just below the banner's
           text, roughly 3/4 of the way down the image. */}

@@ -65,7 +65,8 @@ export function AddonsSection() {
             return (
               <div
                 key={item.id}
-                className={`relative rounded-md sm:rounded-xl p-1.5 sm:p-5 md:p-6 flex flex-col items-center text-center transition bg-black/15 ${
+                onClick={handleToggle}
+                className={`relative rounded-md sm:rounded-xl p-1.5 sm:p-5 md:p-6 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
                   active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
                 } ${isCombo ? "md:scale-[1.02]" : ""}`}
               >
@@ -87,7 +88,10 @@ export function AddonsSection() {
                   </span>
                 )}
 
-                <div className="mt-1.5 sm:mt-4 relative w-full aspect-square overflow-hidden rounded-sm sm:rounded-md bg-white/5 grid place-items-center">
+                <div
+                  onClick={(e) => { e.stopPropagation(); setOpenId(item.id); }}
+                  className="mt-1.5 sm:mt-4 relative w-full aspect-square overflow-hidden rounded-sm sm:rounded-md bg-white/5 grid place-items-center cursor-zoom-in"
+                >
                   {hero ? (
                     <img src={hero} alt={item.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
                   ) : (
@@ -117,7 +121,7 @@ export function AddonsSection() {
                   </p>
                 )}
 
-                <div className="mt-1.5 sm:mt-4 flex gap-1 sm:gap-1.5 w-full">
+                <div className="mt-1.5 sm:mt-4 flex gap-1 sm:gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
                   <button
                     type="button"
                     onClick={handleToggle}

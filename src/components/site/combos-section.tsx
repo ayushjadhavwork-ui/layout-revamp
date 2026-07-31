@@ -86,7 +86,8 @@ export function CombosSection() {
             return (
               <div
                 key={item.id}
-                className={`relative rounded-md sm:rounded-2xl p-1.5 sm:p-5 md:p-6 flex flex-col text-center transition bg-black/15 backdrop-blur-sm ${
+                onClick={handleToggle}
+                className={`relative rounded-md sm:rounded-2xl p-1.5 sm:p-5 md:p-6 flex flex-col text-center transition bg-black/15 backdrop-blur-sm cursor-pointer select-none ${
                   active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
                 } ${featured ? "md:scale-[1.04] md:-my-2 bg-black/25" : ""}`}
               >
@@ -102,7 +103,10 @@ export function CombosSection() {
                   </span>
                 )}
 
-                <div className="mt-1 sm:mt-2 mx-auto relative w-full aspect-[4/3] overflow-hidden rounded-sm sm:rounded-xl bg-white/5 grid place-items-center">
+                <div
+                  onClick={(e) => { e.stopPropagation(); setOpenId(item.id); }}
+                  className="mt-1 sm:mt-2 mx-auto relative w-full aspect-[4/3] overflow-hidden rounded-sm sm:rounded-xl bg-white/5 grid place-items-center cursor-zoom-in"
+                >
                   {hero ? (
                     <img src={hero} alt={item.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
                   ) : (
@@ -113,7 +117,7 @@ export function CombosSection() {
                   )}
                 </div>
 
-                <h4 className="mt-1 sm:mt-4 font-display uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[0.6rem] sm:text-sm md:text-base text-off-white leading-tight">
+                <h4 className="mt-1 sm:mt-4 flex min-h-[2.4em] sm:min-h-0 items-center justify-center font-display uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[0.6rem] sm:text-sm md:text-base text-off-white leading-tight sm:line-clamp-1">
                   {item.name}
                 </h4>
 
@@ -137,7 +141,7 @@ export function CombosSection() {
                   </p>
                 )}
 
-                <div className="mt-1.5 sm:mt-4 flex gap-1 sm:gap-1.5 w-full">
+                <div className="mt-1.5 sm:mt-4 flex gap-1 sm:gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
                   <button
                     type="button"
                     onClick={handleToggle}

@@ -62,7 +62,7 @@ function StripsPricingTable({ count }: { count: number }) {
                   : "bg-white/70 text-rose-wine ring-1 ring-rose-wine/10"
               }`}
             >
-              <p className="text-[0.6rem] uppercase tracking-[0.2em] opacity-80">
+              <p className="flex min-h-[2.3em] items-center justify-center text-[0.6rem] uppercase tracking-[0.2em] opacity-80">
                 {n} strip{n === 1 ? "" : "s"}
               </p>
               <p className="font-display text-base font-semibold">{fmt(STRIP_TIERS[n])}</p>
@@ -110,15 +110,16 @@ export function StripsSection() {
             return (
               <div
                 key={item.id}
-                className={`group relative flex flex-col rounded-md sm:rounded-2xl overflow-hidden transition ${
+                onClick={() => handleToggle(item.id, item.name)}
+                className={`group relative flex flex-col rounded-md sm:rounded-2xl overflow-hidden transition cursor-pointer select-none ${
                   active ? "ring-2 ring-rose-wine shadow-lg" : "ring-1 ring-rose-wine/10"
                 }`}
               >
                 <button
                   type="button"
-                  onClick={() => handleToggle(item.id, item.name)}
-                  className="relative w-full aspect-[303/1000] bg-white overflow-hidden cursor-pointer p-0.5 sm:p-3"
-                  aria-label={`Select ${item.name}`}
+                  onClick={(e) => { e.stopPropagation(); setOpenId(item.id); }}
+                  className="relative w-full aspect-[303/1000] bg-white overflow-hidden cursor-zoom-in p-0.5 sm:p-3"
+                  aria-label={`View ${item.name}`}
                 >
                   {hero ? (
                     <img
@@ -143,7 +144,7 @@ export function StripsSection() {
                   <h4 className="font-display text-[0.6rem] sm:text-base text-rose-wine leading-tight text-center truncate">
                     {item.name}
                   </h4>
-                  <div className="flex gap-0.5 sm:gap-1.5">
+                  <div className="flex gap-0.5 sm:gap-1.5" onClick={(e) => e.stopPropagation()}>
                     <button
                       type="button"
                       onClick={() => handleToggle(item.id, item.name)}
