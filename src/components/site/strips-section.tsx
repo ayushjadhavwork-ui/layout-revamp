@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Check } from "lucide-react";
+import { Check, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { CATALOG, STRIP_TIERS, STRIP_MAX, fmt } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
@@ -101,7 +101,7 @@ export function StripsSection() {
       <StripsPricingTable count={count} />
 
       <div className="mt-6">
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+        <div className="grid grid-cols-5 gap-1 sm:gap-4">
           {items.map((item, idx) => {
             const active = selections.includes(item.id);
             const photos = SITE.productImages?.[item.id] ?? [];
@@ -110,14 +110,14 @@ export function StripsSection() {
             return (
               <div
                 key={item.id}
-                className={`group relative flex flex-col rounded-2xl overflow-hidden transition ${
+                className={`group relative flex flex-col rounded-md sm:rounded-2xl overflow-hidden transition ${
                   active ? "ring-2 ring-rose-wine shadow-lg" : "ring-1 ring-rose-wine/10"
                 }`}
               >
                 <button
                   type="button"
                   onClick={() => handleToggle(item.id, item.name)}
-                  className="relative w-full aspect-[3/8] bg-white overflow-hidden cursor-pointer p-3"
+                  className="relative w-full aspect-[303/1000] bg-white overflow-hidden cursor-pointer p-0.5 sm:p-3"
                   aria-label={`Select ${item.name}`}
                 >
                   {hero ? (
@@ -133,27 +133,27 @@ export function StripsSection() {
                     </div>
                   )}
                   {active && (
-                    <span className="absolute top-2 right-2 grid h-7 w-7 place-items-center rounded-full bg-rose-wine text-white shadow-md">
-                      <Check className="h-4 w-4" />
+                    <span className="absolute top-1 right-1 sm:top-2 sm:right-2 grid h-4 w-4 sm:h-7 sm:w-7 place-items-center rounded-full bg-rose-wine text-white shadow-md">
+                      <Check className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
                     </span>
                   )}
                 </button>
 
-                <div className="p-3 bg-white/80 backdrop-blur-sm flex flex-col gap-2">
-                  <h4 className="font-display text-base text-rose-wine leading-tight text-center">
+                <div className="p-1 sm:p-3 bg-white/80 backdrop-blur-sm flex flex-col gap-1 sm:gap-2">
+                  <h4 className="font-display text-[0.6rem] sm:text-base text-rose-wine leading-tight text-center truncate">
                     {item.name}
                   </h4>
-                  <div className="flex gap-1.5">
+                  <div className="flex gap-0.5 sm:gap-1.5">
                     <button
                       type="button"
                       onClick={() => handleToggle(item.id, item.name)}
-                      className={`pill-btn !py-1.5 !px-2 !text-[0.7rem] flex-1 ${
+                      className={`pill-btn !py-0.5 sm:!py-1.5 !px-1 sm:!px-2 !text-[0.5rem] sm:!text-[0.7rem] flex-1 ${
                         active ? "!bg-rose-wine !text-white !border-rose-wine" : "pill-btn-hover"
                       }`}
                     >
                       {active ? (
                         <span className="flex items-center justify-center gap-1">
-                          <Check className="h-3 w-3" /> Selected
+                          <Check className="h-3 w-3 hidden sm:inline" /> Selected
                         </span>
                       ) : (
                         "Select"
@@ -162,9 +162,11 @@ export function StripsSection() {
                     <button
                       type="button"
                       onClick={() => setOpenId(item.id)}
-                      className="pill-btn pill-btn-hover !py-1.5 !px-2 !text-[0.7rem]"
+                      aria-label={`View ${item.name}`}
+                      className="pill-btn pill-btn-hover !py-0.5 sm:!py-1.5 !px-1 sm:!px-2 !text-[0.5rem] sm:!text-[0.7rem]"
                     >
-                      View
+                      <Eye className="h-3 w-3 sm:hidden" />
+                      <span className="hidden sm:inline">View</span>
                     </button>
                   </div>
                 </div>
@@ -228,7 +230,7 @@ function StripModal({
     <ModalShell onClose={onClose} maxW="max-w-4xl">
       <div className="grid gap-6 md:grid-cols-12">
         <div className="md:col-span-5 flex justify-center">
-          <div className="w-full max-w-[220px] aspect-[3/8] max-h-[560px] rounded-xl overflow-hidden bg-white border border-rose-wine/10 shadow-xl relative p-4">
+          <div className="w-full max-w-[220px] aspect-[303/1000] max-h-[560px] rounded-xl overflow-hidden bg-white border border-rose-wine/10 shadow-xl relative p-4">
             {hero ? (
               <img src={hero} alt={item.name} className="block w-full h-full object-contain" />
             ) : (

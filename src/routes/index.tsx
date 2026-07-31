@@ -114,6 +114,9 @@ function Home() {
   const customer = useStore((s) => s.customer);
   const cartCount = useStore((s) => s.cart.length);
   const total = useStore((s) => s.total());
+  const selectedSizeId = useStore((s) => s.selectedSizeId);
+  const selectedTemplateIds = useStore((s) => s.selectedTemplateIds);
+  const templateLimit = useStore((s) => s.templateLimit());
 
   const openProduct = (cat: Category) => (p: Product) => {
     setModalCat(cat);
@@ -123,6 +126,11 @@ function Home() {
   const startCheckout = () => {
     if (cartCount === 0) {
       toast.error("Add something to your cart first.");
+      return;
+    }
+    if (selectedSizeId && selectedTemplateIds.length < templateLimit) {
+      toast.error(`Pick your ${templateLimit} template${templateLimit === 1 ? "" : "s"} before ordering — ${selectedTemplateIds.length}/${templateLimit} selected.`);
+      document.getElementById("templates")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     if (total < SITE.commerce.minOrderValue) {
@@ -410,23 +418,23 @@ function HappyCustomersBanner() {
 function Nav({ onCart }: { onCart: () => void }) {
   return (
     <header className="sticky top-0 z-40 px-4 pt-4">
-      <nav className="glass mx-auto flex max-w-6xl items-center justify-between rounded-full px-5 py-3">
-        <a href="#top" className="flex items-center gap-3 min-w-0">
-          <img src={logoAsset.url} alt="The Layout" className="h-9 w-9 shrink-0 object-contain" />
-          <span className="font-display text-2xl text-rose-wine truncate">The Layout</span>
+      <nav className="glass mx-auto flex max-w-6xl items-center gap-2 sm:gap-4 rounded-full px-3 sm:px-5 py-2.5 sm:py-3">
+        <a href="#top" className="flex items-center gap-3 shrink-0">
+          <img src={logoAsset.url} alt="The Layout" className="h-8 w-8 sm:h-9 sm:w-9 shrink-0 object-contain" />
+          <span className="hidden sm:inline font-display text-2xl text-rose-wine truncate">The Layout</span>
         </a>
-        <ul className="hidden items-center gap-6 text-sm text-neutral-700 md:flex">
+        <ul className="flex flex-1 min-w-0 items-center gap-3 sm:gap-6 overflow-x-auto whitespace-nowrap text-xs sm:text-sm text-neutral-700 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {NAV.map((n) => (
-            <li key={n.href}>
+            <li key={n.href} className="shrink-0">
               <a href={n.href} className="hover:text-rose-wine transition-colors">{n.label}</a>
             </li>
           ))}
-          <li>
+          <li className="shrink-0">
             <a href={SITE.links.customerReviews} target="_blank" rel="noreferrer" className="hover:text-rose-wine transition-colors">
               Happy Customers
             </a>
           </li>
-          <li>
+          <li className="shrink-0">
             <a href={SITE.links.blog} target="_blank" rel="noreferrer" className="hover:text-rose-wine transition-colors">
               Blog
             </a>
@@ -526,15 +534,15 @@ function HowToOrder() {
     <div id="how" className="relative z-10 px-4 py-20">
       <div className="mx-auto max-w-6xl">
         <SectionHead eyebrow="Process" title="How to order" sub="Five simple steps from idea to doorstep." />
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+        <div className="grid grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
           {STEPS.map((s) => (
-            <div key={s.n} className="step-card">
-              <div className="mb-4 flex items-center justify-between">
-                <span className="font-display text-4xl text-rose-wine/70">0{s.n}</span>
-                <span className="h-2 w-2 rounded-full bg-blush-rose" />
+            <div key={s.n} className="step-card !p-2.5 sm:!p-4 lg:!p-6">
+              <div className="mb-1.5 sm:mb-4 flex items-center justify-between">
+                <span className="font-display text-lg sm:text-2xl lg:text-4xl text-rose-wine/70">0{s.n}</span>
+                <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-blush-rose shrink-0" />
               </div>
-              <h4 className="font-display text-2xl text-rose-wine">{s.t}</h4>
-              <p className="mt-2 text-sm text-neutral-700">{s.d}</p>
+              <h4 className="font-display text-xs sm:text-lg lg:text-2xl text-rose-wine leading-tight">{s.t}</h4>
+              <p className="mt-1 sm:mt-2 text-[0.6rem] sm:text-xs lg:text-sm text-neutral-700 leading-snug">{s.d}</p>
             </div>
           ))}
         </div>
@@ -562,7 +570,7 @@ function Mandatory() {
     <div className="relative z-10 px-4 py-20">
       <div className="mx-auto max-w-6xl">
         <SectionHead eyebrow="Included by default" title="Mandatory pages" sub="Tap any page to view it in isolation." />
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-4 md:gap-5">
           {MANDATORY.map((m, i) => {
             const hero = SITE.productImages?.[`mandatory-${i + 1}`]?.[0];
             return (
@@ -570,19 +578,19 @@ function Mandatory() {
                 key={m.t}
                 type="button"
                 onClick={() => setOpenIdx(i)}
-                className="group text-left rounded-2xl overflow-hidden bg-white shadow-md ring-1 ring-rose-wine/10 hover:shadow-xl hover:-translate-y-0.5 transition"
+                className="group text-left rounded-md sm:rounded-2xl overflow-hidden bg-white shadow-md ring-1 ring-rose-wine/10 hover:shadow-xl hover:-translate-y-0.5 transition"
               >
-                <div className="relative aspect-[7/10] overflow-hidden bg-neutral-100">
+                <div className="relative aspect-[2480/3508] overflow-hidden bg-neutral-100">
                   {hero ? (
                     <img src={hero} alt={m.t} loading="lazy" className="absolute inset-0 h-full w-full object-cover object-center" />
                   ) : (
                     <MandatoryPlaceholder label={m.t} />
                   )}
                 </div>
-                <div className="p-4 text-center">
-                  <h4 className="font-display text-xl text-rose-wine">{m.t}</h4>
-                  <p className="mt-1 text-xs text-neutral-600 line-clamp-2">{m.d}</p>
-                  <span className="mt-3 inline-block text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-blush-rose group-hover:text-rose-wine">
+                <div className="p-1 sm:p-3 md:p-4 text-center">
+                  <h4 className="font-display text-[0.65rem] sm:text-base md:text-xl text-rose-wine leading-tight">{m.t}</h4>
+                  <p className="mt-1 hidden sm:block text-xs text-neutral-600 line-clamp-2">{m.d}</p>
+                  <span className="mt-1 sm:mt-3 hidden sm:inline-block text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-blush-rose group-hover:text-rose-wine">
                     View page →
                   </span>
                 </div>
@@ -596,7 +604,7 @@ function Mandatory() {
         <ModalShell onClose={() => setOpenIdx(null)} maxW="max-w-3xl">
           <div className="grid gap-6 md:grid-cols-12">
             <div className="md:col-span-6 flex justify-center">
-              <div className="w-full max-w-[340px] aspect-[7/10] rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10 relative">
+              <div className="w-full max-w-[340px] aspect-[2480/3508] rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10 relative">
                 {photo ? (
                   <img src={photo} alt={active.t} className="absolute inset-0 h-full w-full object-cover object-center" />
                 ) : (

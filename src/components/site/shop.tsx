@@ -513,8 +513,12 @@ export function CartDrawer({
   const subtotal = useStore((s) => s.subtotal());
   const discount = useStore((s) => s.discount());
   const total = useStore((s) => s.total());
+  const selectedSizeId = useStore((s) => s.selectedSizeId);
+  const selectedTemplateIds = useStore((s) => s.selectedTemplateIds);
+  const templateLimit = useStore((s) => s.templateLimit());
   const minOrder = SITE.commerce.minOrderValue;
   const belowMin = cart.length > 0 && total < minOrder;
+  const templatesIncomplete = !!selectedSizeId && selectedTemplateIds.length < templateLimit;
 
   const activeCombo = cart.find((c) => c.category === "combos");
   const comboOriginal = activeCombo ? comboRealTotal(activeCombo.id) : 0;
@@ -619,11 +623,16 @@ export function CartDrawer({
                 Add {fmt(minOrder - total)} more to reach the {fmt(minOrder)} minimum order value.
               </p>
             )}
+            {templatesIncomplete && (
+              <p className="text-center text-xs text-rose-wine">
+                Select {templateLimit - selectedTemplateIds.length} more template{templateLimit - selectedTemplateIds.length === 1 ? "" : "s"} for your magazine ({selectedTemplateIds.length}/{templateLimit} picked) before checking out.
+              </p>
+            )}
           </div>
 
           <button
             onClick={onCheckout}
-            disabled={cart.length === 0 || belowMin}
+            disabled={cart.length === 0 || belowMin || templatesIncomplete}
             className="pill-btn pill-btn-hover pill-primary mt-5 w-full disabled:opacity-50"
           >
             Checkout <ArrowUpRight className="h-4 w-4" />
@@ -859,7 +868,7 @@ function Field({
 export function CartButton({ onOpen }: { onOpen: () => void }) {
   const count = useStore((s) => s.cart.length);
   return (
-    <button onClick={onOpen} className="pill-btn pill-btn-hover relative">
+    <button onClick={onOpen} className="pill-btn pill-btn-hover relative shrink-0">
       <ShoppingBag className="h-4 w-4" />
       <span className="hidden sm:inline">Cart</span>
       <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-rose-wine px-1.5 text-xs font-semibold text-white">

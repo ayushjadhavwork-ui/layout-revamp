@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Heart, Sparkles, Rocket, Check, Package } from "lucide-react";
+import { Heart, Sparkles, Rocket, Check, Package, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { CATALOG, fmt, comboRealTotal } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
@@ -62,7 +62,7 @@ export function CombosSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-5">
           {items.map((item) => {
             const cartItem = cart.find((c) => c.category === "combos" && c.id === item.id);
             const active = !!cartItem;
@@ -86,62 +86,62 @@ export function CombosSection() {
             return (
               <div
                 key={item.id}
-                className={`relative rounded-2xl p-5 md:p-6 flex flex-col text-center transition bg-black/15 backdrop-blur-sm ${
+                className={`relative rounded-md sm:rounded-2xl p-1.5 sm:p-5 md:p-6 flex flex-col text-center transition bg-black/15 backdrop-blur-sm ${
                   active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
                 } ${featured ? "md:scale-[1.04] md:-my-2 bg-black/25" : ""}`}
               >
                 {meta?.tag && (
-                  <span className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[0.6rem] font-semibold uppercase tracking-[0.25em] bg-off-white text-rose-wine shadow">
+                  <span className="absolute -top-2 sm:-top-3 left-1/2 -translate-x-1/2 px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[0.45rem] sm:text-[0.6rem] font-semibold uppercase tracking-[0.1em] sm:tracking-[0.25em] bg-off-white text-rose-wine shadow whitespace-nowrap">
                     {meta.tag}
                   </span>
                 )}
 
                 {active && (
-                  <span className="absolute top-3 right-3 grid h-6 w-6 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10">
-                    <Check className="h-3.5 w-3.5" />
+                  <span className="absolute top-1 right-1 sm:top-3 sm:right-3 grid h-4 w-4 sm:h-6 sm:w-6 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10">
+                    <Check className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5" />
                   </span>
                 )}
 
-                <div className="mt-2 mx-auto relative w-full aspect-[4/3] overflow-hidden rounded-xl bg-white/5 grid place-items-center">
+                <div className="mt-1 sm:mt-2 mx-auto relative w-full aspect-[4/3] overflow-hidden rounded-sm sm:rounded-xl bg-white/5 grid place-items-center">
                   {hero ? (
                     <img src={hero} alt={item.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
                   ) : (
-                    <div className="flex flex-col items-center gap-2 text-off-white/85">
-                      <span className="text-4xl md:text-5xl">{meta?.emoji ?? "🎁"}</span>
-                      <Icon className="h-10 w-10" strokeWidth={1.25} />
+                    <div className="flex flex-col items-center gap-1 sm:gap-2 text-off-white/85">
+                      <span className="text-lg sm:text-4xl md:text-5xl">{meta?.emoji ?? "🎁"}</span>
+                      <Icon className="hidden sm:block h-10 w-10" strokeWidth={1.25} />
                     </div>
                   )}
                 </div>
 
-                <h4 className="mt-4 font-display uppercase tracking-[0.2em] text-sm md:text-base text-off-white">
+                <h4 className="mt-1 sm:mt-4 font-display uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[0.6rem] sm:text-sm md:text-base text-off-white leading-tight">
                   {item.name}
                 </h4>
 
-                <ul className="mt-3 space-y-1 text-[0.7rem] text-pink-mist/90 leading-relaxed">
+                <ul className="mt-1 sm:mt-3 hidden sm:block space-y-1 text-[0.7rem] text-pink-mist/90 leading-relaxed">
                   {(meta?.includes ?? []).map((line) => (
                     <li key={line}>♡ {line}</li>
                   ))}
                 </ul>
 
-                <div className="my-3 h-px w-16 mx-auto bg-pink-mist/40" />
+                <div className="my-1 sm:my-3 h-px w-8 sm:w-16 mx-auto bg-pink-mist/40" />
 
-                <div className="flex items-center justify-center gap-2">
-                  <span className="font-display text-xs text-pink-mist/70 line-through">{fmt(original)}</span>
-                  <span className="inline-block rounded-md px-4 py-1 font-display text-xl text-rose-wine bg-off-white">
+                <div className="flex items-center justify-center gap-1 sm:gap-2">
+                  <span className="hidden sm:inline font-display text-xs text-pink-mist/70 line-through">{fmt(original)}</span>
+                  <span className="inline-block rounded sm:rounded-md px-1.5 sm:px-4 py-0.5 sm:py-1 font-display text-xs sm:text-xl text-rose-wine bg-off-white">
                     {fmt(item.price)}
                   </span>
                 </div>
                 {save > 0 && (
-                  <p className="mt-1 text-[0.6rem] uppercase tracking-[0.25em] text-off-white/80">
+                  <p className="mt-0.5 sm:mt-1 hidden sm:block text-[0.6rem] uppercase tracking-[0.25em] text-off-white/80">
                     You save {fmt(save)}
                   </p>
                 )}
 
-                <div className="mt-4 flex gap-1.5 w-full">
+                <div className="mt-1.5 sm:mt-4 flex gap-1 sm:gap-1.5 w-full">
                   <button
                     type="button"
                     onClick={handleToggle}
-                    className={`flex-1 rounded-full px-3 py-1.5 text-[0.7rem] font-medium transition border ${
+                    className={`flex-1 rounded-full px-1 sm:px-3 py-1 sm:py-1.5 text-[0.5rem] sm:text-[0.7rem] font-medium transition border ${
                       active
                         ? "bg-off-white text-rose-wine border-off-white"
                         : "bg-transparent text-off-white border-pink-mist/50 hover:bg-off-white/10"
@@ -152,9 +152,11 @@ export function CombosSection() {
                   <button
                     type="button"
                     onClick={() => setOpenId(item.id)}
-                    className="rounded-full px-3 py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
+                    aria-label={`View ${item.name}`}
+                    className="grid place-items-center rounded-full px-1.5 sm:px-3 py-1 sm:py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
                   >
-                    View
+                    <Eye className="h-3 w-3 sm:hidden" />
+                    <span className="hidden sm:inline">View</span>
                   </button>
                 </div>
               </div>

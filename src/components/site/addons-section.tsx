@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Gift, Mail, HeartHandshake, Check } from "lucide-react";
+import { Gift, Mail, HeartHandshake, Check, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { CATALOG, fmt } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
@@ -43,7 +43,7 @@ export function AddonsSection() {
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-5">
           {items.map((item) => {
             const cartItem = cart.find((c) => c.category === "addons" && c.id === item.id);
             const active = !!cartItem;
@@ -65,13 +65,13 @@ export function AddonsSection() {
             return (
               <div
                 key={item.id}
-                className={`relative rounded-xl p-5 md:p-6 flex flex-col items-center text-center transition bg-black/15 ${
+                className={`relative rounded-md sm:rounded-xl p-1.5 sm:p-5 md:p-6 flex flex-col items-center text-center transition bg-black/15 ${
                   active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
                 } ${isCombo ? "md:scale-[1.02]" : ""}`}
               >
                 {meta?.tag && (
                   <span
-                    className={`absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full text-[0.6rem] font-semibold uppercase tracking-[0.25em] ${
+                    className={`absolute -top-2 sm:-top-3 left-1/2 -translate-x-1/2 px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[0.45rem] sm:text-[0.6rem] font-semibold uppercase tracking-[0.1em] sm:tracking-[0.25em] whitespace-nowrap ${
                       isCombo
                         ? "bg-off-white text-rose-wine shadow"
                         : "bg-rose-wine text-off-white ring-1 ring-pink-mist/40"
@@ -82,46 +82,46 @@ export function AddonsSection() {
                 )}
 
                 {active && (
-                  <span className="absolute top-3 right-3 grid h-6 w-6 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10">
-                    <Check className="h-3.5 w-3.5" />
+                  <span className="absolute top-1 right-1 sm:top-3 sm:right-3 grid h-4 w-4 sm:h-6 sm:w-6 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10">
+                    <Check className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5" />
                   </span>
                 )}
 
-                <div className="mt-4 relative w-full aspect-square overflow-hidden rounded-md bg-white/5 grid place-items-center">
+                <div className="mt-1.5 sm:mt-4 relative w-full aspect-square overflow-hidden rounded-sm sm:rounded-md bg-white/5 grid place-items-center">
                   {hero ? (
                     <img src={hero} alt={item.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
                   ) : (
-                    <Icon className="h-20 w-20 md:h-24 md:w-24 text-off-white/80" strokeWidth={1.25} />
+                    <Icon className="h-8 w-8 sm:h-20 sm:w-20 md:h-24 md:w-24 text-off-white/80" strokeWidth={1.25} />
                   )}
                 </div>
 
-                <h4 className="mt-4 font-display uppercase tracking-[0.2em] text-sm text-off-white">
+                <h4 className="mt-1 sm:mt-4 font-display uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[0.6rem] sm:text-sm text-off-white leading-tight">
                   {item.name}
                 </h4>
 
-                <div className="my-3 h-px w-16 bg-pink-mist/40" />
-                <p className="text-[0.6rem] uppercase tracking-[0.3em] text-pink-mist">Selling price</p>
-                <div className="mt-1 flex items-center gap-2">
+                <div className="my-1 sm:my-3 h-px w-8 sm:w-16 bg-pink-mist/40" />
+                <p className="hidden sm:block text-[0.6rem] uppercase tracking-[0.3em] text-pink-mist">Selling price</p>
+                <div className="mt-0.5 sm:mt-1 flex items-center gap-1 sm:gap-2">
                   {meta?.savings && (
-                    <span className="font-display text-xs text-pink-mist/70 line-through">
+                    <span className="hidden sm:inline font-display text-xs text-pink-mist/70 line-through">
                       {fmt(198)}
                     </span>
                   )}
-                  <span className="inline-block rounded-md px-4 py-1 font-display text-xl text-rose-wine bg-off-white">
+                  <span className="inline-block rounded sm:rounded-md px-1.5 sm:px-4 py-0.5 sm:py-1 font-display text-xs sm:text-xl text-rose-wine bg-off-white">
                     {fmt(item.price)}
                   </span>
                 </div>
                 {meta?.savings && (
-                  <p className="mt-1 text-[0.6rem] uppercase tracking-[0.25em] text-off-white/80">
+                  <p className="mt-1 hidden sm:block text-[0.6rem] uppercase tracking-[0.25em] text-off-white/80">
                     {meta.savings}
                   </p>
                 )}
 
-                <div className="mt-4 flex gap-1.5 w-full">
+                <div className="mt-1.5 sm:mt-4 flex gap-1 sm:gap-1.5 w-full">
                   <button
                     type="button"
                     onClick={handleToggle}
-                    className={`flex-1 rounded-full px-3 py-1.5 text-[0.7rem] font-medium transition border ${
+                    className={`flex-1 rounded-full px-1 sm:px-3 py-1 sm:py-1.5 text-[0.5rem] sm:text-[0.7rem] font-medium transition border ${
                       active
                         ? "bg-off-white text-rose-wine border-off-white"
                         : "bg-transparent text-off-white border-pink-mist/50 hover:bg-off-white/10"
@@ -132,9 +132,11 @@ export function AddonsSection() {
                   <button
                     type="button"
                     onClick={() => setOpenId(item.id)}
-                    className="rounded-full px-3 py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
+                    aria-label={`View ${item.name}`}
+                    className="grid place-items-center rounded-full px-1.5 sm:px-3 py-1 sm:py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
                   >
-                    View
+                    <Eye className="h-3 w-3 sm:hidden" />
+                    <span className="hidden sm:inline">View</span>
                   </button>
                 </div>
               </div>
