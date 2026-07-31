@@ -198,8 +198,30 @@ export const SITE = {
     // "tpl-1":  ["/media/products/templates/1.jpg"],
     // "tpl-2":  ["/media/products/templates/2.jpg"],
     // ...
-     "tpl-1": ["/media/products/Tem-1.jpeg"],
-    "tpl-24": ["/media/products/24.jpg","/media/products/24.jpg"],
+      "tpl-1": ["/media/templates/1.jpg"],
+      "tpl-2": ["/media/templates/2.jpg"],
+      "tpl-3": ["/media/templates/3.jpg"],
+      "tpl-4": ["/media/templates/4.jpg"],
+      "tpl-5": ["/media/templates/5.jpg"],
+      "tpl-6": ["/media/templates/6.jpg"],
+      "tpl-7": ["/media/templates/7.jpg"],
+      "tpl-8": ["/media/templates/8.jpg"],
+      "tpl-9": ["/media/templates/9.jpg"],
+      "tpl-10": ["/media/templates/10.jpg"],
+      "tpl-11": ["/media/templates/11.jpg"],
+      "tpl-12": ["/media/templates/12.jpg"],
+      "tpl-13": ["/media/templates/13.jpg"],
+      "tpl-14": ["/media/templates/14.jpg"],
+      "tpl-15": ["/media/templates/15.jpg"],
+      "tpl-16": ["/media/templates/16.jpg"],
+      "tpl-17": ["/media/templates/17.jpg"],
+      "tpl-18": ["/media/templates/18.jpg"],
+      "tpl-19": ["/media/templates/19.jpg"],
+      "tpl-20": ["/media/templates/20.jpg"],
+      "tpl-21": ["/media/templates/21.jpg"],
+      "tpl-22": ["/media/templates/22.jpg"],
+      "tpl-23": ["/media/templates/23.jpg"],
+      "tpl-24": ["/media/templates/24.jpg"],
 
     // ── Package / sizes (optional cover imagery) ─────────────────
     // "sz-4":  ["/media/products/sizes/4.jpg"],
@@ -209,22 +231,22 @@ export const SITE = {
 
 
 
-    // Polaroid strips
-    "strip-1": ["/media/products/strips/1.jpeg"] as string[],
-    "strip-2": ["/media/products/strips/2.jpeg"] as string[],
-    "strip-3": ["/media/products/strips/3.jpeg"] as string[],
-    "strip-4": ["/media/products/strips/4.jpeg"] as string[],
-    "strip-5": ["/media/products/strips/5.jpeg"] as string[],
-    // Polaroid packs
-    "pol-mini":    [] as string[],
-    "pol-classic": [] as string[],
-    "pol-memory":  [] as string[],
-    "pol-premium": [] as string[],
+      // Polaroid strips
+      "strip-1": ["/media/strips/1.jpeg"] as string[],
+      "strip-2": ["/media/strips/2.jpeg"] as string[],
+      "strip-3": ["/media/strips/3.jpeg"] as string[],
+      "strip-4": ["/media/strips/4.jpeg"] as string[],
+      "strip-5": ["/media/strips/5.jpeg"] as string[],
+      // Polaroid packs
+      "pol-mini":    [] as string[],
+      "pol-classic": [] as string[],
+      "pol-memory":  [] as string[],
+      "pol-premium": [] as string[],
 
-    // Add-ons
-    "add-wrap":   [] as string[],
-    "add-letter": [] as string[],
-    "add-combo":  [] as string[],
+      // Add-ons
+      "add-wrap":   [] as string[],
+      "add-letter": [] as string[],
+      "add-combo":  [] as string[],
   } as Record<string, string[]>,
 
   // ────────────────────────────────────────────────────────────────
