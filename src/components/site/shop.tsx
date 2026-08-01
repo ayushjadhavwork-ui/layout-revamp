@@ -95,9 +95,10 @@ export function ProductGrid({
               
               return (
                 <div
-                  onClick={(e) => { e.stopPropagation(); onOpen(item); }}
-                  className="group/thumb mb-3 flex h-48 w-full relative items-center justify-center rounded-xl bg-white border border-rose-wine/10 font-display text-4xl text-rose-wine overflow-hidden cursor-zoom-in"
+                  onClick={(e) => { if (category === "delivery") return; e.stopPropagation(); onOpen(item); }}
+                  className={`group/thumb mb-3 flex h-48 w-full relative items-center justify-center rounded-xl bg-white border border-rose-wine/10 font-display text-4xl text-rose-wine overflow-hidden ${category === "delivery" ? "" : "cursor-zoom-in"}`}
                 >
+
                   {thumb ? (
                     <img
                       src={thumb}
