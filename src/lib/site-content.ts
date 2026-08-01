@@ -222,7 +222,7 @@ export const SITE = {
   // "tpl-<n>": ["/media/templates/<n>.jpg"] line into productImages
   // below (Template <n> just shows a placeholder until you do).
   // ────────────────────────────────────────────────────────────────
-  templateCount: 24,
+  templateCount: 24,       
 
   // ────────────────────────────────────────────────────────────────
   // PRODUCT IMAGES (for the e-commerce modal)
@@ -302,9 +302,9 @@ export const SITE = {
       "pol-premium": [] as string[],
 
       // Add-ons
-      "add-wrap":   [] as string[],
-      "add-letter": [] as string[],
-      "add-combo":  [] as string[],
+      "add-wrap":   ["/media/addons/wrap.png"] as string[],
+      "add-letter": ["/media/addons/letter.jpg"] as string[],
+      "add-combo":  ["/media/addons/combo.png"] as string[],
 
       // Combos (Curated bundles section) — optional cover imagery.
       // "combo-main": ["/media/combos/main.jpg"],
@@ -318,8 +318,8 @@ export const SITE = {
       // Newspaper Magazine — previews for its two fixed spreads (the
       // main "news-mag" product itself has no preview image slot; it
       // only ever shows the two spreads below).
-      // "news-tpl-1":  ["/media/newspaper/spread-1.jpg"],
-      // "news-tpl-2":  ["/media/newspaper/spread-2.jpg"],
+      "news-tpl-1":  ["/media/newspaper/1.jpg"],
+      "news-tpl-2":  ["/media/newspaper/2.jpg"],
   } as Record<string, string[]>,
 
   // ────────────────────────────────────────────────────────────────
