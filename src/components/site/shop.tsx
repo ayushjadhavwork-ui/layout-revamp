@@ -139,8 +139,9 @@ export function ProductGrid({
                 )}
               </button>
 
-              {/* View More always visible for shoppable items; templates/sizes only when active */}
-              {(active || (!isSize && !isTemplate)) && (
+              {/* View More always visible for shoppable items; templates/sizes only when active.
+                  Delivery options have no imagery or reviews, so no View More. */}
+              {category !== "delivery" && (active || (!isSize && !isTemplate)) && (
                 <button
                   onClick={() => onOpen(item)}
                   className="pill-btn pill-btn-hover !py-2 !px-3 !text-xs shrink-0"
