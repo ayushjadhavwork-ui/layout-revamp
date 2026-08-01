@@ -67,17 +67,17 @@ export function NewspaperSection() {
         </p>
       </div>
 
-      <div className="grid grid-cols-2 gap-4 max-w-2xl mx-auto">
+      <div className="grid grid-cols-2 gap-4 md:gap-5 max-w-2xl mx-auto">
         {NEWSPAPER_TEMPLATES.map((tpl, idx) => {
           const hero = SITE.productImages?.[tpl.id]?.[0];
           return (
             <div
               key={tpl.id}
-              className="relative rounded-xl overflow-hidden bg-black/15 ring-1 ring-pink-mist/30"
+              className="relative rounded-xl p-3 md:p-4 flex flex-col items-center text-center bg-black/15 ring-1 ring-pink-mist/30"
             >
               <div
                 onClick={() => setOpenSpreadId(tpl.id)}
-                className="relative w-full aspect-[2480/1754] cursor-zoom-in"
+                className="relative w-full aspect-[2480/1754] overflow-hidden rounded-md bg-white/5 cursor-zoom-in"
               >
                 {hero ? (
                   <img src={hero} alt={tpl.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
@@ -85,14 +85,16 @@ export function NewspaperSection() {
                   <LayoutPlaceholder n={idx + 1} />
                 )}
               </div>
-              <div className="flex flex-col items-center gap-2 py-2">
-                <p className="text-center font-display tracking-[0.2em] text-xs text-off-white">
-                  {tpl.name}
-                </p>
+
+              <p className="mt-3 font-display tracking-[0.2em] text-xs text-off-white">
+                {tpl.name}
+              </p>
+
+              <div className="mt-3 flex w-full justify-center">
                 <button
                   type="button"
                   onClick={() => setOpenSpreadId(tpl.id)}
-                  className="rounded-full px-3 py-1 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
+                  className="rounded-full px-3 py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
                 >
                   View
                 </button>
