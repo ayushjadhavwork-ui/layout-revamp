@@ -372,12 +372,15 @@ export function ProductModal({
           </div>
         </div>
 
-        <ReviewsPanel
-          reviews={reviews} loading={loadingReviews} posting={posting} reviewerId={reviewerId}
-          rvName={rvName} setRvName={setRvName} rvText={rvText} setRvText={setRvText}
-          rvRating={rvRating} setRvRating={setRvRating}
-          onSubmit={handleSubmitReview} onDelete={handleDeleteReview}
-        />
+        {/* Delivery options are not reviewable */}
+        {category !== "delivery" && (
+          <ReviewsPanel
+            reviews={reviews} loading={loadingReviews} posting={posting} reviewerId={reviewerId}
+            rvName={rvName} setRvName={setRvName} rvText={rvText} setRvText={setRvText}
+            rvRating={rvRating} setRvRating={setRvRating}
+            onSubmit={handleSubmitReview} onDelete={handleDeleteReview}
+          />
+        )}
       </ModalShell>
 
 {/* ================= FULLSCREEN LIGHTBOX ================= */}
