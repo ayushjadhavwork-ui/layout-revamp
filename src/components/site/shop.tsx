@@ -95,9 +95,10 @@ export function ProductGrid({
               
               return (
                 <div
-                  onClick={(e) => { e.stopPropagation(); onOpen(item); }}
-                  className="group/thumb mb-3 flex h-48 w-full relative items-center justify-center rounded-xl bg-white border border-rose-wine/10 font-display text-4xl text-rose-wine overflow-hidden cursor-zoom-in"
+                  onClick={(e) => { if (category === "delivery") return; e.stopPropagation(); onOpen(item); }}
+                  className={`group/thumb mb-3 flex h-48 w-full relative items-center justify-center rounded-xl bg-white border border-rose-wine/10 font-display text-4xl text-rose-wine overflow-hidden ${category === "delivery" ? "" : "cursor-zoom-in"}`}
                 >
+
                   {thumb ? (
                     <img
                       src={thumb}
@@ -107,9 +108,11 @@ export function ProductGrid({
                   ) : (
                     item.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "✦"
                   )}
-                  <span className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[0.65rem] font-medium text-rose-wine opacity-0 shadow-sm transition group-hover/thumb:opacity-100">
-                    View full image
-                  </span>
+                  {category !== "delivery" && (
+                    <span className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[0.65rem] font-medium text-rose-wine opacity-0 shadow-sm transition group-hover/thumb:opacity-100">
+                      View full image
+                    </span>
+                  )}
                 </div>
             );
             })()}
@@ -139,8 +142,9 @@ export function ProductGrid({
                 )}
               </button>
 
-              {/* View More always visible for shoppable items; templates/sizes only when active */}
-              {(active || (!isSize && !isTemplate)) && (
+              {/* View More always visible for shoppable items; templates/sizes only when active.
+                  Delivery options have no imagery or reviews, so no View More. */}
+              {category !== "delivery" && (active || (!isSize && !isTemplate)) && (
                 <button
                   onClick={() => onOpen(item)}
                   className="pill-btn pill-btn-hover !py-2 !px-3 !text-xs shrink-0"
@@ -338,7 +342,7 @@ export function ProductModal({
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">{category}</p>
             <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">{product.name}</h3>
 
-            <ReviewStars avg={avgRating} count={reviews.length} />
+            {category !== "delivery" && <ReviewStars avg={avgRating} count={reviews.length} />}
 
             <p className="mt-4 text-3xl font-semibold text-blush-rose">
               {isTemplate ? "Included with package" : product.price ? fmt(product.price) : "Free"}
@@ -368,12 +372,15 @@ export function ProductModal({
           </div>
         </div>
 
-        <ReviewsPanel
-          reviews={reviews} loading={loadingReviews} posting={posting} reviewerId={reviewerId}
-          rvName={rvName} setRvName={setRvName} rvText={rvText} setRvText={setRvText}
-          rvRating={rvRating} setRvRating={setRvRating}
-          onSubmit={handleSubmitReview} onDelete={handleDeleteReview}
-        />
+        {/* Delivery options are not reviewable */}
+        {category !== "delivery" && (
+          <ReviewsPanel
+            reviews={reviews} loading={loadingReviews} posting={posting} reviewerId={reviewerId}
+            rvName={rvName} setRvName={setRvName} rvText={rvText} setRvText={setRvText}
+            rvRating={rvRating} setRvRating={setRvRating}
+            onSubmit={handleSubmitReview} onDelete={handleDeleteReview}
+          />
+        )}
       </ModalShell>
 
 {/* ================= FULLSCREEN LIGHTBOX ================= */}
