@@ -1,8 +1,13 @@
+import { useState } from "react";
 import { Newspaper, Check } from "lucide-react";
 import { toast } from "sonner";
 import { CATALOG, NEWSPAPER_TEMPLATES, fmt } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { SITE } from "@/lib/site-content";
+import { ModalShell } from "./shop";
+import { useProductReviews } from "@/lib/use-product-reviews";
+import { ReviewsPanel, ReviewStars } from "./reviews-panel";
+
 
 function LayoutPlaceholder({ n }: { n: number }) {
   const palettes = [
