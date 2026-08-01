@@ -715,12 +715,12 @@ function Timeline() {
     <div id="timeline" className="relative z-10 px-4 py-12 sm:py-20">
       <div className="mx-auto max-w-6xl">
         <SectionHead eyebrow="Timeline" title="From design to your hands" />
-        <div className="grid gap-4 xl:grid-cols-3">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-4">
           {TIMELINE.map((t, i) => (
-            <div key={t.t} className="step-card">
-              <span className="font-display text-4xl text-rose-wine/60">0{i + 1}</span>
-              <h4 className="mt-2 font-display text-2xl text-rose-wine">{t.t}</h4>
-              <p className="mt-1 text-sm text-neutral-700">{t.d}</p>
+            <div key={t.t} className="step-card !p-2.5 sm:!p-4 md:!p-6">
+              <span className="font-display text-lg sm:text-2xl md:text-4xl text-rose-wine/60">0{i + 1}</span>
+              <h4 className="mt-1 sm:mt-2 font-display text-xs sm:text-lg md:text-2xl text-rose-wine leading-tight">{t.t}</h4>
+              <p className="mt-1 text-[0.6rem] sm:text-sm text-neutral-700 leading-snug">{t.d}</p>
             </div>
           ))}
         </div>
@@ -847,20 +847,20 @@ function Journey() {
           </h2>
           <p className="mt-2 text-sm text-dusty-rose">{subtitle}</p>
         </div>
-        <div className="grid gap-4 xl:grid-cols-3">
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-4">
           {blocks.map((s) => (
             <div
               key={s.small}
-              className="rounded-2xl p-8 text-center text-white shadow-[0_20px_60px_-20px_rgba(120,20,50,0.5)]"
+              className="rounded-lg sm:rounded-2xl p-2.5 sm:p-5 md:p-8 text-center text-white shadow-[0_20px_60px_-20px_rgba(120,20,50,0.5)]"
               style={{ backgroundColor: color }}
             >
-              <p className="font-display text-4xl md:text-5xl font-bold tracking-tight">{s.big}</p>
+              <p className="font-display text-lg sm:text-3xl md:text-5xl font-bold tracking-tight">{s.big}</p>
               {s.progress != null && (
-                <div className="mt-3 mx-auto h-1.5 w-3/4 rounded-full bg-white/25 overflow-hidden">
+                <div className="mt-2 sm:mt-3 mx-auto h-1 sm:h-1.5 w-3/4 rounded-full bg-white/25 overflow-hidden">
                   <div className="h-full bg-white rounded-full" style={{ width: `${s.progress}%` }} />
                 </div>
               )}
-              <p className="mt-3 text-xs uppercase tracking-[0.25em] text-white/80">{s.small}</p>
+              <p className="mt-1.5 sm:mt-3 text-[0.5rem] sm:text-xs uppercase tracking-[0.05em] sm:tracking-[0.25em] text-white/80 leading-tight">{s.small}</p>
             </div>
           ))}
         </div>
