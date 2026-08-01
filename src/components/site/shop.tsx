@@ -108,9 +108,11 @@ export function ProductGrid({
                   ) : (
                     item.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "✦"
                   )}
-                  <span className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[0.65rem] font-medium text-rose-wine opacity-0 shadow-sm transition group-hover/thumb:opacity-100">
-                    View full image
-                  </span>
+                  {category !== "delivery" && (
+                    <span className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[0.65rem] font-medium text-rose-wine opacity-0 shadow-sm transition group-hover/thumb:opacity-100">
+                      View full image
+                    </span>
+                  )}
                 </div>
             );
             })()}
