@@ -842,7 +842,10 @@ export function ModalShell({ children, onClose, maxW = "max-w-2xl" }: { children
   return createPortal(
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
       <div className="absolute inset-0 bg-rose-wine/30 backdrop-blur-sm" onClick={onClose} />
-      <div className={`glass relative z-10 w-full ${maxW} rounded-3xl p-6 md:p-8 max-h-[90vh] overflow-y-auto overscroll-contain`}>
+      <div
+        className={`glass relative z-10 w-full ${maxW} rounded-3xl p-6 md:p-8 max-h-[90vh] overflow-y-auto overscroll-contain`}
+        onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      >
         <button
           onClick={onClose}
           className="absolute right-4 top-4 z-20 grid h-9 w-9 place-items-center rounded-full bg-white/95 text-rose-wine shadow-md ring-1 ring-rose-wine/10 hover:bg-white"

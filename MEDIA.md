@@ -19,9 +19,11 @@ Open `src/lib/site-content.ts` and edit anything between quotes.
 | "Behind The Layout" link       | `links.behindTheLayout`                                                |
 | LinkedIn / Instagram / X links | `links.linkedin`, `links.instagram`, `links.twitter`                   |
 | Instagram reels shown          | `reels` — paste/replace reel URLs                                      |
+| Photo gallery ("Wall of memories") | `photoGallery` — see § 2b                                          |
 | The scrolling top banner       | `marquee`                                                              |
 | Founder names / bios           | `founders`                                                             |
 | Milestone reel copy            | `milestoneReel`                                                        |
+| How many templates exist       | `templateCount` — see § 2c                                             |
 
 Save the file → the site updates automatically.
 
@@ -40,6 +42,11 @@ public/media/
 ├── founders/       ← founder headshots
 ├── products/       ← product photos (used in the shop modal)
 ├── reels/          ← reel thumbnails if needed
+├── photo gallery/  ← "Wall of memories" grid (see § 2b)
+├── templates/      ← magazine template spreads (see § 2c)
+├── combos/         ← combo bundle cover shots (see § 2d)
+├── delivery/       ← delivery-option cover shots (see § 2d)
+├── newspaper/      ← newspaper spread previews (see § 2d)
 └── bg/             ← background tiles (see § 3)
 ```
 
@@ -51,13 +58,74 @@ public/media/
   `site-content.ts`.
 
 **Product images** live under `productImages` in `site-content.ts`,
-keyed by the product id (`str-1`, `pol-mini`, `add-wrap`, …). Example:
+keyed by the product id (`strip-1`, `pol-mini`, `add-wrap`, …). Example:
 
 ```ts
-"str-1": ["/media/products/strip-1-a.jpg", "/media/products/strip-1-b.jpg"],
+"strip-1": ["/media/strips/1-a.jpg", "/media/strips/1-b.jpg"],
 ```
 
-Leave the array `[]` and the modal falls back to an auto-generated gradient tile.
+Leave the array `[]` (or leave the line commented out) and the modal falls
+back to an auto-generated gradient tile.
+
+**Filename case matters.** The live site is hosted on a case-sensitive
+server — `Photo.JPG` and `photo.jpg` are different files there even though
+Windows/Mac treat them as the same. Whatever case the file has in
+`public/media/…`, copy that exact case into the path in `site-content.ts`.
+
+### 2b. The "Wall of memories" photo gallery
+
+This is the self-refreshing 3×3 grid below the Reels section. It's driven
+entirely by the `photoGallery` array in `site-content.ts`:
+
+```ts
+photoGallery: [
+  "/media/photo%20gallery/1.JPG",
+  "/media/photo%20gallery/2.JPG",
+  // ...
+],
+```
+
+- **The first entry in the list always sits in the center tile** and never
+  changes. The other 8 tiles keep cycling through the rest of the list.
+- **To add a photo:** drop the file into `public/media/photo gallery/` and
+  add its path as a new line (or uncomment one of the placeholder lines
+  already in the file — there's room for up to 38).
+- **To remove a photo:** delete or comment out its line.
+- The folder name has a space in it, so the URL uses `%20` in place of the
+  space — keep that when adding new lines.
+
+### 2c. Adding more templates
+
+The Templates section is generated from a single number:
+
+```ts
+templateCount: 24,
+```
+
+To add template #25: bump this to `25`, drop the new spread image at
+`public/media/templates/25.jpg`, and add a line for it under
+`productImages` in the same file:
+
+```ts
+"tpl-25": ["/media/templates/25.jpg"],
+```
+
+Until you add that image line, the new template card just shows the
+built-in placeholder — it won't break anything to bump the count first and
+add art later.
+
+### 2d. Combos, Delivery, and Newspaper images
+
+These sections work exactly like any other product — add an entry under
+`productImages` keyed by the product id and it'll show up automatically.
+The ids are already listed as commented-out examples in `site-content.ts`;
+just uncomment and point them at your files:
+
+| Section    | Product ids                              |
+| ---------- | ----------------------------------------- |
+| Combos     | `combo-main`, `combo-core`, `combo-soft`  |
+| Delivery   | `del-std`, `del-exp`                      |
+| Newspaper  | `news-tpl-1`, `news-tpl-2` (the two fixed spread previews — the newspaper product itself has no separate cover slot) |
 
 ---
 

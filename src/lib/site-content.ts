@@ -73,6 +73,58 @@ export const SITE = {
   ],
 
   // ────────────────────────────────────────────────────────────────
+  // PHOTO GALLERY — "Wall of memories" section, below Reels.
+  // Files live in /public/media/photo gallery/. The FIRST image in this
+  // list always stays pinned in the center tile; the other 8 tiles keep
+  // cycling through the rest of the list. Add or remove lines freely —
+  // supports as many images as you drop in the folder (currently used
+  // up to 15; room for up to 38 below, just uncomment and fix the
+  // extension to match the actual file).
+  // Note: extension CASE matters on the live site (1.JPG vs 1.jpg) —
+  // copy the case exactly as the file appears in the folder.
+  // ────────────────────────────────────────────────────────────────
+  photoGallery: [
+    "/media/photo%20gallery/1.JPG",
+    "/media/photo%20gallery/2.JPG",
+    "/media/photo%20gallery/3.JPG",
+    "/media/photo%20gallery/4.JPG",
+    "/media/photo%20gallery/5.JPG",
+    "/media/photo%20gallery/6.JPG",
+    "/media/photo%20gallery/7.JPG",
+    "/media/photo%20gallery/8.JPG",
+    "/media/photo%20gallery/9.jpg",
+    "/media/photo%20gallery/10.jpg",
+    "/media/photo%20gallery/11.jpg",
+    "/media/photo%20gallery/12.jpg",
+    "/media/photo%20gallery/13.jpg",
+    "/media/photo%20gallery/14.jpg",
+    "/media/photo%20gallery/15.jpg",
+    // "/media/photo%20gallery/16.jpg",
+    // "/media/photo%20gallery/17.jpg",
+    // "/media/photo%20gallery/18.jpg",
+    // "/media/photo%20gallery/19.jpg",
+    // "/media/photo%20gallery/20.jpg",
+    // "/media/photo%20gallery/21.jpg",
+    // "/media/photo%20gallery/22.jpg",
+    // "/media/photo%20gallery/23.jpg",
+    // "/media/photo%20gallery/24.jpg",
+    // "/media/photo%20gallery/25.jpg",
+    // "/media/photo%20gallery/26.jpg",
+    // "/media/photo%20gallery/27.jpg",
+    // "/media/photo%20gallery/28.jpg",
+    // "/media/photo%20gallery/29.jpg",
+    // "/media/photo%20gallery/30.jpg",
+    // "/media/photo%20gallery/31.jpg",
+    // "/media/photo%20gallery/32.jpg",
+    // "/media/photo%20gallery/33.jpg",
+    // "/media/photo%20gallery/34.jpg",
+    // "/media/photo%20gallery/35.jpg",
+    // "/media/photo%20gallery/36.jpg",
+    // "/media/photo%20gallery/37.jpg",
+    // "/media/photo%20gallery/38.jpg",
+  ],
+
+  // ────────────────────────────────────────────────────────────────
   // EXTERNAL LINKS (open in new tab)
   // ────────────────────────────────────────────────────────────────
   links: {
@@ -167,6 +219,15 @@ export const SITE = {
   happyCustomers: [] as { heading: string; images: string[] }[],
 
   // ────────────────────────────────────────────────────────────────
+  // TEMPLATE COUNT
+  // How many "Template NN" cards appear in the Templates section.
+  // To add more templates: bump this number, then drop a matching
+  // "tpl-<n>": ["/media/templates/<n>.jpg"] line into productImages
+  // below (Template <n> just shows a placeholder until you do).
+  // ────────────────────────────────────────────────────────────────
+  templateCount: 24,
+
+  // ────────────────────────────────────────────────────────────────
   // PRODUCT IMAGES (for the e-commerce modal)
   // Keys must match ids in src/lib/catalog.ts.
   // Give each product an array of image URLs — 3-5 works best.
@@ -247,6 +308,21 @@ export const SITE = {
       "add-wrap":   [] as string[],
       "add-letter": [] as string[],
       "add-combo":  [] as string[],
+
+      // Combos (Curated bundles section) — optional cover imagery.
+      // "combo-main": ["/media/combos/main.jpg"],
+      // "combo-core": ["/media/combos/core.jpg"],
+      // "combo-soft": ["/media/combos/soft.jpg"],
+
+      // Delivery (Step 6) — optional cover imagery.
+      // "del-std": ["/media/delivery/standard.jpg"],
+      // "del-exp": ["/media/delivery/express.jpg"],
+
+      // Newspaper Magazine — previews for its two fixed spreads (the
+      // main "news-mag" product itself has no preview image slot; it
+      // only ever shows the two spreads below).
+      // "news-tpl-1":  ["/media/newspaper/spread-1.jpg"],
+      // "news-tpl-2":  ["/media/newspaper/spread-2.jpg"],
   } as Record<string, string[]>,
 
   // ────────────────────────────────────────────────────────────────

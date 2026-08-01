@@ -3,6 +3,8 @@
 // Update GAS_URL after deploying Code.gs as a Web App.
 // ===========================================================
 
+import { SITE } from "./site-content";
+
 export const CONFIG = {
   GAS_URL: "https://script.google.com/macros/s/AKfycbwoqxri-OOv5wTYTw3iLPJC1ZJ7nru5b2SFQ8E080e6L_OY1LJAK_BR__VTdTh3gFQq2g/exec",
   UPI_ID: "sphati666-1@okhdfcbank",
@@ -43,7 +45,8 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
     { id: "sz-18", name: "18 Pages", price: 1650, templateLimit: 15, desc: "18 pages + front & back cover. 15 templates." },
     { id: "sz-20", name: "20 Pages", price: 1850, templateLimit: 17, desc: "20 pages + front & back cover. 17 templates." },
   ],
-  templates: Array.from({ length: 24 }, (_, i) => ({
+  // Count lives in site-content.ts (SITE.templateCount) — bump it there.
+  templates: Array.from({ length: SITE.templateCount }, (_, i) => ({
     id: `tpl-${i + 1}`,
     name: `Template ${i + 1}`,
     price: 0,

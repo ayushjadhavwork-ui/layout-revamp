@@ -319,11 +319,14 @@ export function SpinWheel() {
       {open && createPortal(
         <div className="fixed inset-0 z-[110] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-rose-wine/30 backdrop-blur-sm" onClick={handleClose} />
-          <div className="relative z-10 w-full max-w-md rounded-3xl bg-[#fce9ef] p-6 md:p-8 shadow-2xl ring-1 ring-pink-mist/60 max-h-[92vh] overflow-y-auto">
+          <div
+            className="relative z-10 w-full max-w-md rounded-3xl bg-[#fce9ef] p-6 md:p-8 shadow-2xl ring-1 ring-pink-mist/60 max-h-[92vh] overflow-y-auto"
+            onClick={(e) => { if (e.target === e.currentTarget) handleClose(); }}
+          >
             <button
               onClick={handleClose}
               aria-label="Close"
-              className="absolute right-4 top-4 grid h-8 w-8 place-items-center rounded-full bg-white/80 hover:bg-white text-rose-wine"
+              className="absolute right-4 top-4 z-30 grid h-8 w-8 place-items-center rounded-full bg-white/80 hover:bg-white text-rose-wine"
             >
               <X className="h-4 w-4" />
             </button>
