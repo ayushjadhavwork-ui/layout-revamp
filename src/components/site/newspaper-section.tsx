@@ -32,6 +32,8 @@ function LayoutPlaceholder({ n }: { n: number }) {
 // (see COMBO_INDEPENDENT in store.ts). Both spreads are fixed and always
 // come together — there's nothing to pick, just one flat-priced product.
 export function NewspaperSection() {
+  const [openSpreadId, setOpenSpreadId] = useState<string | null>(null);
+  const [reviewsOpen, setReviewsOpen] = useState(false);
   const cart = useStore((s) => s.cart);
   const addItem = useStore((s) => s.addItem);
   const removeItem = useStore((s) => s.removeItem);
