@@ -342,7 +342,7 @@ export function ProductModal({
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">{category}</p>
             <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">{product.name}</h3>
 
-            <ReviewStars avg={avgRating} count={reviews.length} />
+            {category !== "delivery" && <ReviewStars avg={avgRating} count={reviews.length} />}
 
             <p className="mt-4 text-3xl font-semibold text-blush-rose">
               {isTemplate ? "Included with package" : product.price ? fmt(product.price) : "Free"}
