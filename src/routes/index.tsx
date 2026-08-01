@@ -179,6 +179,14 @@ function Home() {
         
       </section>
 
+      <TiledSection tiles={SITE.backgrounds.customize}>
+        <div id="combos" className="relative z-10 px-4 py-12 sm:py-20">
+          <div className="mx-auto max-w-6xl">
+            <SectionHead eyebrow="Curated" title="Combos" sub="Bundled favourites at a soft price — pick one, then choose your own templates below." />
+            <CombosSection />
+          </div>
+        </div>
+      </TiledSection>
 
       <TiledSection tiles={SITE.backgrounds.customize}>
         <div id="build" className="relative z-10 px-4 py-12 sm:py-20">
@@ -188,12 +196,10 @@ function Home() {
           </div>
         </div>
 
-        <div id="combos" className="relative z-10 px-4 py-12 sm:py-20">
-          <div className="mx-auto max-w-6xl">
-            <SectionHead eyebrow="Curated" title="Combos" sub="Bundled favourites at a soft price — pick one, then choose your own templates below." />
-            <CombosSection />
-          </div>
-        </div>
+
+
+
+
 
         <div id="templates" className="relative z-10 px-4 py-12 sm:py-20">
           <div className="mx-auto max-w-6xl">
