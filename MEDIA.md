@@ -88,8 +88,8 @@ photoGallery: [
 - **The first entry in the list always sits in the center tile** and never
   changes. The other 8 tiles keep cycling through the rest of the list.
 - **To add a photo:** drop the file into `public/media/photo gallery/` and
-  add its path as a new line (or uncomment one of the placeholder lines
-  already in the file — there's room for up to 38).
+  add its path as a new line (all 38 currently in that folder are already
+  listed — just append `39.jpg`, etc. as you add more).
 - **To remove a photo:** delete or comment out its line.
 - The folder name has a space in it, so the URL uses `%20` in place of the
   space — keep that when adding new lines.

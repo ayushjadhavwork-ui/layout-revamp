@@ -76,10 +76,7 @@ export const SITE = {
   // PHOTO GALLERY — "Wall of memories" section, below Reels.
   // Files live in /public/media/photo gallery/. The FIRST image in this
   // list always stays pinned in the center tile; the other 8 tiles keep
-  // cycling through the rest of the list. Add or remove lines freely —
-  // supports as many images as you drop in the folder (currently used
-  // up to 15; room for up to 38 below, just uncomment and fix the
-  // extension to match the actual file).
+  // cycling through the rest of the list. Add or remove lines freely.
   // Note: extension CASE matters on the live site (1.JPG vs 1.jpg) —
   // copy the case exactly as the file appears in the folder.
   // ────────────────────────────────────────────────────────────────
@@ -99,29 +96,29 @@ export const SITE = {
     "/media/photo%20gallery/13.jpg",
     "/media/photo%20gallery/14.jpg",
     "/media/photo%20gallery/15.jpg",
-    // "/media/photo%20gallery/16.jpg",
-    // "/media/photo%20gallery/17.jpg",
-    // "/media/photo%20gallery/18.jpg",
-    // "/media/photo%20gallery/19.jpg",
-    // "/media/photo%20gallery/20.jpg",
-    // "/media/photo%20gallery/21.jpg",
-    // "/media/photo%20gallery/22.jpg",
-    // "/media/photo%20gallery/23.jpg",
-    // "/media/photo%20gallery/24.jpg",
-    // "/media/photo%20gallery/25.jpg",
-    // "/media/photo%20gallery/26.jpg",
-    // "/media/photo%20gallery/27.jpg",
-    // "/media/photo%20gallery/28.jpg",
-    // "/media/photo%20gallery/29.jpg",
-    // "/media/photo%20gallery/30.jpg",
-    // "/media/photo%20gallery/31.jpg",
-    // "/media/photo%20gallery/32.jpg",
-    // "/media/photo%20gallery/33.jpg",
-    // "/media/photo%20gallery/34.jpg",
-    // "/media/photo%20gallery/35.jpg",
-    // "/media/photo%20gallery/36.jpg",
-    // "/media/photo%20gallery/37.jpg",
-    // "/media/photo%20gallery/38.jpg",
+    "/media/photo%20gallery/16.jpg",
+    "/media/photo%20gallery/17.jpg",
+    "/media/photo%20gallery/18.jpg",
+    "/media/photo%20gallery/19.jpg",
+    "/media/photo%20gallery/20.jpg",
+    "/media/photo%20gallery/21.jpg",
+    "/media/photo%20gallery/22.jpg",
+    "/media/photo%20gallery/23.jpg",
+    "/media/photo%20gallery/24.jpg",
+    "/media/photo%20gallery/25.jpg",
+    "/media/photo%20gallery/26.jpg",
+    "/media/photo%20gallery/27.jpg",
+    "/media/photo%20gallery/28.jpg",
+    "/media/photo%20gallery/29.jpg",
+    "/media/photo%20gallery/30.jpg",
+    "/media/photo%20gallery/31.jpg",
+    "/media/photo%20gallery/32.jpg",
+    "/media/photo%20gallery/33.jpg",
+    "/media/photo%20gallery/34.jpg",
+    "/media/photo%20gallery/35.jpg",
+    "/media/photo%20gallery/36.jpg",
+    "/media/photo%20gallery/37.jpg",
+    "/media/photo%20gallery/38.jpg",
   ],
 
   // ────────────────────────────────────────────────────────────────
