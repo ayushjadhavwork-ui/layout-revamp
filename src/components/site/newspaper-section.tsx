@@ -75,22 +75,38 @@ export function NewspaperSection() {
               key={tpl.id}
               className="relative rounded-xl overflow-hidden bg-black/15 ring-1 ring-pink-mist/30"
             >
-              <div className="relative w-full aspect-[2480/1754]">
+              <div
+                onClick={() => setOpenSpreadId(tpl.id)}
+                className="relative w-full aspect-[2480/1754] cursor-zoom-in"
+              >
                 {hero ? (
                   <img src={hero} alt={tpl.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
                 ) : (
                   <LayoutPlaceholder n={idx + 1} />
                 )}
               </div>
-              <p className="py-2 text-center font-display tracking-[0.2em] text-xs text-off-white">
-                {tpl.name}
-              </p>
+              <div className="flex flex-col items-center gap-2 py-2">
+                <p className="text-center font-display tracking-[0.2em] text-xs text-off-white">
+                  {tpl.name}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setOpenSpreadId(tpl.id)}
+                  className="rounded-full px-3 py-1 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
+                >
+                  View
+                </button>
+              </div>
             </div>
           );
         })}
       </div>
 
-      <div className="mt-6 flex justify-center">
+      <p className="mt-4 text-center text-[0.7rem] tracking-[0.2em] text-pink-mist">
+        Both spreads ship together as one keepsake — view each one above.
+      </p>
+
+      <div className="mt-6 flex flex-col items-center gap-3">
         {inCart ? (
           <div className="flex flex-col items-center gap-3">
             <span className="inline-flex items-center gap-2 rounded-full bg-off-white px-5 py-2 text-sm font-semibold text-rose-wine shadow">
@@ -113,11 +129,90 @@ export function NewspaperSection() {
             Add to cart — {fmt(product.price)}
           </button>
         )}
+
+        <button
+          type="button"
+          onClick={() => setReviewsOpen(true)}
+          className="rounded-full px-5 py-2 text-[0.7rem] font-semibold uppercase tracking-[0.2em] text-off-white border border-pink-mist/50 hover:bg-off-white/10"
+        >
+          Reviews
+        </button>
       </div>
 
       <p className="mt-6 text-center text-xs tracking-[0.25em] text-pink-mist">
         ♡ small format, big story ♡
       </p>
+
+      <SpreadModal
+        open={!!openSpreadId}
+        index={NEWSPAPER_TEMPLATES.findIndex((t) => t.id === openSpreadId)}
+        onClose={() => setOpenSpreadId(null)}
+      />
+      {reviewsOpen && (
+        <NewspaperReviewsModal productId={product.id} productName={product.name} onClose={() => setReviewsOpen(false)} />
+      )}
     </div>
+  );
+}
+
+/* One landscape spread, viewable on its own — both still ship as one product. */
+function SpreadModal({ open, index, onClose }: { open: boolean; index: number; onClose: () => void }) {
+  const tpl = index >= 0 ? NEWSPAPER_TEMPLATES[index] : null;
+  if (!open || !tpl) return null;
+  const hero = SITE.productImages?.[tpl.id]?.[0];
+
+  return (
+    <ModalShell onClose={onClose} maxW="max-w-5xl">
+      <div className="rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10">
+        {hero ? (
+          <img src={hero} alt={tpl.name} className="w-full h-auto object-contain" />
+        ) : (
+          <div className="relative aspect-[2480/1754]">
+            <LayoutPlaceholder n={index + 1} />
+          </div>
+        )}
+      </div>
+      <div className="mt-5">
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">Newspaper Spread</p>
+        <h3 className="font-display text-3xl text-rose-wine mt-2">{tpl.name}</h3>
+        <p className="mt-3 text-sm leading-relaxed text-neutral-700">{tpl.desc}</p>
+        <p className="mt-3 text-sm text-neutral-600">
+          Included — both spreads come together as the one Newspaper Magazine keepsake.
+        </p>
+      </div>
+    </ModalShell>
+  );
+}
+
+/* Reviews for the Newspaper Magazine as a whole. */
+function NewspaperReviewsModal({
+  productId,
+  productName,
+  onClose,
+}: {
+  productId: string;
+  productName: string;
+  onClose: () => void;
+}) {
+  const {
+    reviews, loading, posting, avg, reviewerId,
+    rvName, setRvName, rvText, setRvText, rvRating, setRvRating,
+    submitReview, deleteReview,
+  } = useProductReviews(productId);
+
+  return (
+    <ModalShell onClose={onClose} maxW="max-w-3xl">
+      <div>
+        <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">Newspaper</p>
+        <h3 className="font-display text-3xl text-rose-wine mt-2">{productName}</h3>
+        <ReviewStars avg={avg} count={reviews.length} />
+      </div>
+      <ReviewsPanel
+        reviews={reviews} loading={loading} posting={posting} reviewerId={reviewerId}
+        rvName={rvName} setRvName={setRvName} rvText={rvText} setRvText={setRvText}
+        rvRating={rvRating} setRvRating={setRvRating}
+        onSubmit={submitReview} onDelete={deleteReview}
+      />
+    </ModalShell>
   );
 }
