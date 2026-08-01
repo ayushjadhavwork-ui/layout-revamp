@@ -125,7 +125,7 @@ export function AddonsSection() {
                   <button
                     type="button"
                     onClick={handleToggle}
-                    className={`flex-1 rounded-full px-1 sm:px-3 py-1 sm:py-1.5 text-[0.5rem] sm:text-[0.7rem] font-medium transition border ${
+                    className={`flex-1 min-w-0 rounded-full px-1 sm:px-3 py-1 sm:py-1.5 text-[0.5rem] sm:text-[0.7rem] font-medium transition border truncate ${
                       active
                         ? "bg-off-white text-rose-wine border-off-white"
                         : "bg-transparent text-off-white border-pink-mist/50 hover:bg-off-white/10"
@@ -137,7 +137,7 @@ export function AddonsSection() {
                     type="button"
                     onClick={() => setOpenId(item.id)}
                     aria-label={`View ${item.name}`}
-                    className="grid place-items-center rounded-full px-1.5 sm:px-3 py-1 sm:py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
+                    className="grid shrink-0 place-items-center rounded-full px-1.5 sm:px-3 py-1 sm:py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
                   >
                     <Eye className="h-3 w-3 sm:hidden" />
                     <span className="hidden sm:inline">View</span>

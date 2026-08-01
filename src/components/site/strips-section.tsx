@@ -148,13 +148,13 @@ export function StripsSection() {
                     <button
                       type="button"
                       onClick={() => handleToggle(item.id, item.name)}
-                      className={`pill-btn !py-0.5 sm:!py-1.5 !px-1 sm:!px-2 !text-[0.5rem] sm:!text-[0.7rem] flex-1 ${
+                      className={`pill-btn !py-0.5 sm:!py-1.5 !px-1 sm:!px-2 !text-[0.5rem] sm:!text-[0.7rem] flex-1 min-w-0 ${
                         active ? "!bg-rose-wine !text-white !border-rose-wine" : "pill-btn-hover"
                       }`}
                     >
                       {active ? (
-                        <span className="flex items-center justify-center gap-1">
-                          <Check className="h-3 w-3 hidden sm:inline" /> Selected
+                        <span className="flex min-w-0 items-center justify-center gap-1">
+                          <Check className="h-3 w-3 hidden sm:inline shrink-0" /> <span className="truncate">Selected</span>
                         </span>
                       ) : (
                         "Select"
@@ -164,7 +164,7 @@ export function StripsSection() {
                       type="button"
                       onClick={() => setOpenId(item.id)}
                       aria-label={`View ${item.name}`}
-                      className="pill-btn pill-btn-hover !py-0.5 sm:!py-1.5 !px-1 sm:!px-2 !text-[0.5rem] sm:!text-[0.7rem]"
+                      className="pill-btn pill-btn-hover !py-0.5 sm:!py-1.5 !px-1 sm:!px-2 !text-[0.5rem] sm:!text-[0.7rem] shrink-0"
                     >
                       <Eye className="h-3 w-3 sm:hidden" />
                       <span className="hidden sm:inline">View</span>

@@ -123,27 +123,27 @@ export function ProductGrid({
             <div className="mt-3 flex gap-2" onClick={(e) => e.stopPropagation()}>
               <button
                 onClick={handleToggle}
-                className={`pill-btn !py-2 !px-3 !text-xs flex-1 transition-all ${
-                  active 
-                    ? "!bg-rose-wine !text-white !border-rose-wine shadow-md" 
+                className={`pill-btn !py-2 !px-3 !text-xs flex-1 min-w-0 transition-all ${
+                  active
+                    ? "!bg-rose-wine !text-white !border-rose-wine shadow-md"
                     : "pill-btn-hover"
                 }`}
                 type="button"
               >
                 {active ? (
-                  <span className="flex items-center justify-center gap-1">
-                    <Check className="h-3 w-3" /> Selected
+                  <span className="flex min-w-0 items-center justify-center gap-1">
+                    <Check className="h-3 w-3 shrink-0" /> <span className="truncate">Selected</span>
                   </span>
                 ) : (
                   "Select"
                 )}
               </button>
-              
+
               {/* View More always visible for shoppable items; templates/sizes only when active */}
               {(active || (!isSize && !isTemplate)) && (
                 <button
                   onClick={() => onOpen(item)}
-                  className="pill-btn pill-btn-hover !py-2 !px-3 !text-xs"
+                  className="pill-btn pill-btn-hover !py-2 !px-3 !text-xs shrink-0"
                   type="button"
                 >
                   View More

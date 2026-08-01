@@ -271,6 +271,7 @@ function Home() {
       </section>         
 
       <Reels />
+      <PhotoGallery />
       <HappyCustomersBanner />
       <Faq />
       <Policy />
@@ -339,6 +340,68 @@ const REELS = [
   "https://www.instagram.com/reel/DaWLtOkzxqR/",
   "https://www.instagram.com/reel/DaQZQ2TKI8L/",
 ];
+
+// Files 1–8 are uppercase .JPG, 9–15 are lowercase .jpg — case matters on deploy.
+const GALLERY_IMAGES = [
+  "/media/photo%20gallery/1.JPG",
+  "/media/photo%20gallery/2.JPG",
+  "/media/photo%20gallery/3.JPG",
+  "/media/photo%20gallery/4.JPG",
+  "/media/photo%20gallery/5.JPG",
+  "/media/photo%20gallery/6.JPG",
+  "/media/photo%20gallery/7.JPG",
+  "/media/photo%20gallery/8.JPG",
+  "/media/photo%20gallery/9.jpg",
+  "/media/photo%20gallery/10.jpg",
+  "/media/photo%20gallery/11.jpg",
+  "/media/photo%20gallery/12.jpg",
+  "/media/photo%20gallery/13.jpg",
+  "/media/photo%20gallery/14.jpg",
+  "/media/photo%20gallery/15.jpg",
+];
+
+function PhotoGallery() {
+  const [tiles, setTiles] = useState(() =>
+    Array.from({ length: 9 }, (_, i) => i % GALLERY_IMAGES.length)
+  );
+
+  useEffect(() => {
+    const id = setInterval(() => {
+      setTiles((prev) => {
+        const slot = Math.floor(Math.random() * prev.length);
+        let next: number;
+        do {
+          next = Math.floor(Math.random() * GALLERY_IMAGES.length);
+        } while (prev.includes(next));
+        const copy = [...prev];
+        copy[slot] = next;
+        return copy;
+      });
+    }, 2200);
+    return () => clearInterval(id);
+  }, []);
+
+  return (
+    <section id="gallery" className="relative z-10 px-4 py-12 sm:py-20">
+      <div className="mx-auto max-w-3xl">
+        <SectionHead eyebrow="Straight from the studio" title="A wall that keeps changing" sub="A living peek at prints, packs and unboxings — refreshing in real time." />
+        <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
+          {tiles.map((imgIdx, slot) => (
+            <div key={slot} className="relative aspect-square overflow-hidden rounded-lg sm:rounded-2xl bg-white/40 shadow-sm">
+              <img
+                key={imgIdx}
+                src={GALLERY_IMAGES[imgIdx]}
+                alt=""
+                loading="lazy"
+                className="gallery-fade absolute inset-0 h-full w-full object-cover"
+              />
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
 
 function useInstagramEmbeds() {
   useEffect(() => {
@@ -652,7 +715,7 @@ function Timeline() {
     <div id="timeline" className="relative z-10 px-4 py-12 sm:py-20">
       <div className="mx-auto max-w-6xl">
         <SectionHead eyebrow="Timeline" title="From design to your hands" />
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 xl:grid-cols-3">
           {TIMELINE.map((t, i) => (
             <div key={t.t} className="step-card">
               <span className="font-display text-4xl text-rose-wine/60">0{i + 1}</span>
@@ -784,7 +847,7 @@ function Journey() {
           </h2>
           <p className="mt-2 text-sm text-dusty-rose">{subtitle}</p>
         </div>
-        <div className="grid gap-4 lg:grid-cols-3">
+        <div className="grid gap-4 xl:grid-cols-3">
           {blocks.map((s) => (
             <div
               key={s.small}
