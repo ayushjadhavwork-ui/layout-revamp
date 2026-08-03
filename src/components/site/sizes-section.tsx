@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Layers, Check, Eye } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Layers, Check, Eye, X, ChevronLeft, ChevronRight } from "lucide-react";
+
 import { toast } from "sonner";
 import { CATALOG, fmt } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
@@ -8,9 +10,28 @@ import { ModalShell } from "./shop";
 import { useProductReviews } from "@/lib/use-product-reviews";
 import { ReviewsPanel, ReviewStars } from "./reviews-panel";
 
-function sizeHero(id: string): string | undefined {
-  return SITE.productImages?.[id]?.[0];
+// Each package has two images in /public/media/sizes, matched by page count:
+//   <n>_pages_magazine.jpg   → grid thumbnail
+//   <n>_pages_sizeGuide.jpg  → detail / size-guide image (swipeable gallery)
+// Override either by adding paths under SITE.productImages["sz-<n>"].
+function pageCount(id: string): string {
+  return id.replace(/\D/g, "");
 }
+
+function sizeHero(id: string): string | undefined {
+  const override = SITE.productImages?.[id]?.[0];
+  if (override) return override;
+  const n = pageCount(id);
+  return n ? `/media/sizes/${n}_pages_magazine.jpg` : undefined;
+}
+
+function sizeGallery(id: string): string[] {
+  const override = SITE.productImages?.[id];
+  if (override && override.length > 1) return override;
+  const n = pageCount(id);
+  return n ? [`/media/sizes/${n}_pages_sizeGuide.jpg`] : [];
+}
+
 
 function SizePlaceholder({ label }: { label: string }) {
   return (
@@ -137,7 +158,11 @@ function SizeModal({
   sizeId: string | null;
   onClose: () => void;
 }) {
+  const [slide, setSlide] = useState(0);
+  const [lightbox, setLightbox] = useState<number | null>(null);
+
   const item = sizeId ? CATALOG.sizes.find((s) => s.id === sizeId) ?? null : null;
+
   const selectedSizeId = useStore((s) => s.selectedSizeId);
   const setSize = useStore((s) => s.setSize);
   const {
@@ -149,20 +174,62 @@ function SizeModal({
   if (!open || !item) return null;
 
   const hero = sizeHero(item.id);
+  const gallery = sizeGallery(item.id);
+  const slides = gallery.length ? gallery : hero ? [hero] : [];
   const active = selectedSizeId === item.id;
 
   return (
     <ModalShell onClose={onClose} maxW="max-w-4xl">
       <div className="grid gap-6 md:grid-cols-12">
-        <div className="md:col-span-5 flex justify-center">
-          <div className="w-full max-w-[320px] aspect-[4/5] rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10 relative">
-            {hero ? (
-              <img src={hero} alt={item.name} className="absolute inset-0 h-full w-full object-cover" />
+        <div className="md:col-span-5">
+          <div className="mx-auto w-full max-w-[340px]">
+            {slides.length ? (
+              <>
+                <div
+                  className="flex snap-x snap-mandatory overflow-x-auto rounded-xl bg-white shadow-2xl ring-1 ring-rose-wine/10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  onScroll={(e) => {
+                    const el = e.currentTarget;
+                    setSlide(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
+                  }}
+                >
+                  {slides.map((src, i) => (
+                    <div key={src + i} className="w-full shrink-0 snap-center">
+                      <img
+                        src={src}
+                        alt={`${item.name} size guide ${i + 1}`}
+                        onClick={() => setLightbox(i)}
+                        className="block h-auto w-full cursor-zoom-in object-contain"
+                      />
+                    </div>
+                  ))}
+                </div>
+                {slides.length > 1 && (
+                  <div className="mt-3 flex justify-center gap-1.5">
+                    {slides.map((_, i) => (
+                      <span
+                        key={i}
+                        className={`h-1.5 rounded-full transition-all ${i === slide ? "w-4 bg-rose-wine" : "w-1.5 bg-rose-wine/30"}`}
+                      />
+                    ))}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setLightbox(slide)}
+                  className="mt-2 w-full text-center text-[0.65rem] uppercase tracking-[0.2em] text-dusty-rose hover:text-rose-wine"
+                >
+                  Size guide · tap to view full image{slides.length > 1 ? " · swipe to browse" : ""}
+                </button>
+
+              </>
             ) : (
-              <SizePlaceholder label={item.name.replace(/\D/g, "")} />
+              <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-rose-wine/10">
+                <SizePlaceholder label={item.name.replace(/\D/g, "")} />
+              </div>
             )}
           </div>
         </div>
+
 
         <div className="md:col-span-7 flex flex-col">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">Magazine Package</p>
@@ -197,6 +264,45 @@ function SizeModal({
         rvRating={rvRating} setRvRating={setRvRating}
         onSubmit={submitReview} onDelete={deleteReview}
       />
+
+      {lightbox !== null && slides[lightbox] && createPortal(
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <button
+            onClick={() => setLightbox(null)}
+            aria-label="Close"
+            className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+          >
+            <X className="h-6 w-6" />
+          </button>
+
+          {slides.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightbox((n) => ((n ?? 0) - 1 + slides.length) % slides.length); }}
+                aria-label="Previous image"
+                className="absolute left-4 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+              ><ChevronLeft className="h-6 w-6" /></button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightbox((n) => ((n ?? 0) + 1) % slides.length); }}
+                aria-label="Next image"
+                className="absolute right-4 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+              ><ChevronRight className="h-6 w-6" /></button>
+            </>
+          )}
+
+          <img
+            src={slides[lightbox]}
+            alt={`${item.name} size guide`}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[92vh] max-w-full object-contain"
+          />
+        </div>,
+        document.body,
+      )}
     </ModalShell>
+
   );
 }

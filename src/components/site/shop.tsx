@@ -89,15 +89,17 @@ export function ProductGrid({
             } ${templateDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
           >
             {/* NEW LOGIC: Check if this item has images in site-content.ts */}
-            {(() => {
+            {/* Delivery options have no imagery — skip the thumbnail entirely. */}
+            {category !== "delivery" && (() => {
               const photos = SITE.productImages?.[item.id] ?? [];
               const thumb = photos[0];
-              
+
               return (
                 <div
                   onClick={(e) => { e.stopPropagation(); onOpen(item); }}
                   className="group/thumb mb-3 flex h-48 w-full relative items-center justify-center rounded-xl bg-white border border-rose-wine/10 font-display text-4xl text-rose-wine overflow-hidden cursor-zoom-in"
                 >
+
                   {thumb ? (
                     <img
                       src={thumb}
@@ -139,8 +141,9 @@ export function ProductGrid({
                 )}
               </button>
 
-              {/* View More always visible for shoppable items; templates/sizes only when active */}
-              {(active || (!isSize && !isTemplate)) && (
+              {/* View More always visible for shoppable items; templates/sizes only when active.
+                  Delivery options have no imagery or reviews, so no View More. */}
+              {category !== "delivery" && (active || (!isSize && !isTemplate)) && (
                 <button
                   onClick={() => onOpen(item)}
                   className="pill-btn pill-btn-hover !py-2 !px-3 !text-xs shrink-0"
@@ -338,7 +341,7 @@ export function ProductModal({
             <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">{category}</p>
             <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">{product.name}</h3>
 
-            <ReviewStars avg={avgRating} count={reviews.length} />
+            {category !== "delivery" && <ReviewStars avg={avgRating} count={reviews.length} />}
 
             <p className="mt-4 text-3xl font-semibold text-blush-rose">
               {isTemplate ? "Included with package" : product.price ? fmt(product.price) : "Free"}
@@ -368,12 +371,15 @@ export function ProductModal({
           </div>
         </div>
 
-        <ReviewsPanel
-          reviews={reviews} loading={loadingReviews} posting={posting} reviewerId={reviewerId}
-          rvName={rvName} setRvName={setRvName} rvText={rvText} setRvText={setRvText}
-          rvRating={rvRating} setRvRating={setRvRating}
-          onSubmit={handleSubmitReview} onDelete={handleDeleteReview}
-        />
+        {/* Delivery options are not reviewable */}
+        {category !== "delivery" && (
+          <ReviewsPanel
+            reviews={reviews} loading={loadingReviews} posting={posting} reviewerId={reviewerId}
+            rvName={rvName} setRvName={setRvName} rvText={rvText} setRvText={setRvText}
+            rvRating={rvRating} setRvRating={setRvRating}
+            onSubmit={handleSubmitReview} onDelete={handleDeleteReview}
+          />
+        )}
       </ModalShell>
 
 {/* ================= FULLSCREEN LIGHTBOX ================= */}
@@ -968,19 +974,30 @@ function DeliveryEta() {
   const cart = useStore((s) => s.cart);
   const delivery = cart.find((c) => c.category === "delivery");
   const isExpress = delivery?.id === "del-exp";
-  const range = isExpress ? { min: 3, max: 4, label: "Express Shipping" } : { min: 7, max: 8, label: "Standard Shipping" };
-  const now = new Date();
-  const eta1 = new Date(now); eta1.setDate(now.getDate() + range.min);
-  const eta2 = new Date(now); eta2.setDate(now.getDate() + range.max);
-  const fmtDate = (d: Date) => d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  const range = isExpress
+    ? { min: 3, max: 4, label: "Express Shipping" }
+    : { min: 7, max: 8, label: "Standard Shipping" };
+
   return (
-    <div className="rounded-xl bg-rose-wine/5 px-3 py-2 text-xs text-rose-wine">
-      <span className="font-semibold">{range.label}</span>
+    <div className="rounded-xl bg-rose-wine/5 px-3 py-2 text-xs leading-relaxed text-rose-wine">
       {delivery ? (
-        <> · expected {fmtDate(eta1)} – {fmtDate(eta2)} ({range.min}-{range.max} days)</>
+        <>
+          <span className="font-semibold">{range.label}</span> · Estimated delivery:{" "}
+          <span className="font-semibold">{range.min}–{range.max} days</span> after your magazine is
+          completed by our team, based on the delivery option selected.
+          <span className="block mt-1 text-rose-wine/70">
+            Production time is separate from shipping time — the delivery window begins once your
+            magazine is finalised and dispatched.
+          </span>
+        </>
       ) : (
-        <> · pick a delivery mode in Step 6 to see ETA</>
+        <>
+          <span className="font-semibold">Delivery</span> · Choose a delivery option in Step 6 to see
+          your estimated timeframe. Delivery days are counted after your magazine is completed by our
+          team.
+        </>
       )}
     </div>
   );
 }
+
