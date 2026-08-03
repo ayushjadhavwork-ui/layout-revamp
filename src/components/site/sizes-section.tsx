@@ -8,9 +8,28 @@ import { ModalShell } from "./shop";
 import { useProductReviews } from "@/lib/use-product-reviews";
 import { ReviewsPanel, ReviewStars } from "./reviews-panel";
 
-function sizeHero(id: string): string | undefined {
-  return SITE.productImages?.[id]?.[0];
+// Each package has two images in /public/media/sizes, matched by page count:
+//   <n>_pages_magazine.jpg   → grid thumbnail
+//   <n>_pages_sizeGuide.jpg  → detail / size-guide image (swipeable gallery)
+// Override either by adding paths under SITE.productImages["sz-<n>"].
+function pageCount(id: string): string {
+  return id.replace(/\D/g, "");
 }
+
+function sizeHero(id: string): string | undefined {
+  const override = SITE.productImages?.[id]?.[0];
+  if (override) return override;
+  const n = pageCount(id);
+  return n ? `/media/sizes/${n}_pages_magazine.jpg` : undefined;
+}
+
+function sizeGallery(id: string): string[] {
+  const override = SITE.productImages?.[id];
+  if (override && override.length > 1) return override;
+  const n = pageCount(id);
+  return n ? [`/media/sizes/${n}_pages_sizeGuide.jpg`] : [];
+}
+
 
 function SizePlaceholder({ label }: { label: string }) {
   return (
