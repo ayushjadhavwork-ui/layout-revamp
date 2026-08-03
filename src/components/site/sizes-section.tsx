@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Layers, Check, Eye } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Layers, Check, Eye, X, ChevronLeft, ChevronRight } from "lucide-react";
+
 import { toast } from "sonner";
 import { CATALOG, fmt } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
