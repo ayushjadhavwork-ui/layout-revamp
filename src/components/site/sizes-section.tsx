@@ -157,6 +157,8 @@ function SizeModal({
   onClose: () => void;
 }) {
   const [slide, setSlide] = useState(0);
+  const [lightbox, setLightbox] = useState<number | null>(null);
+
   const item = sizeId ? CATALOG.sizes.find((s) => s.id === sizeId) ?? null : null;
 
   const selectedSizeId = useStore((s) => s.selectedSizeId);
