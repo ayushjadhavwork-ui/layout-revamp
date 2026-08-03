@@ -974,19 +974,30 @@ function DeliveryEta() {
   const cart = useStore((s) => s.cart);
   const delivery = cart.find((c) => c.category === "delivery");
   const isExpress = delivery?.id === "del-exp";
-  const range = isExpress ? { min: 3, max: 4, label: "Express Shipping" } : { min: 7, max: 8, label: "Standard Shipping" };
-  const now = new Date();
-  const eta1 = new Date(now); eta1.setDate(now.getDate() + range.min);
-  const eta2 = new Date(now); eta2.setDate(now.getDate() + range.max);
-  const fmtDate = (d: Date) => d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+  const range = isExpress
+    ? { min: 3, max: 4, label: "Express Shipping" }
+    : { min: 7, max: 8, label: "Standard Shipping" };
+
   return (
-    <div className="rounded-xl bg-rose-wine/5 px-3 py-2 text-xs text-rose-wine">
-      <span className="font-semibold">{range.label}</span>
+    <div className="rounded-xl bg-rose-wine/5 px-3 py-2 text-xs leading-relaxed text-rose-wine">
       {delivery ? (
-        <> · expected {fmtDate(eta1)} – {fmtDate(eta2)} ({range.min}-{range.max} days)</>
+        <>
+          <span className="font-semibold">{range.label}</span> · Estimated delivery:{" "}
+          <span className="font-semibold">{range.min}–{range.max} days</span> after your magazine is
+          completed by our team, based on the delivery option selected.
+          <span className="block mt-1 text-rose-wine/70">
+            Production time is separate from shipping time — the delivery window begins once your
+            magazine is finalised and dispatched.
+          </span>
+        </>
       ) : (
-        <> · pick a delivery mode in Step 6 to see ETA</>
+        <>
+          <span className="font-semibold">Delivery</span> · Choose a delivery option in Step 6 to see
+          your estimated timeframe. Delivery days are counted after your magazine is completed by our
+          team.
+        </>
       )}
     </div>
   );
 }
+
