@@ -193,7 +193,8 @@ function SizeModal({
                       <img
                         src={src}
                         alt={`${item.name} size guide ${i + 1}`}
-                        className="block h-auto w-full object-contain"
+                        onClick={() => setLightbox(i)}
+                        className="block h-auto w-full cursor-zoom-in object-contain"
                       />
                     </div>
                   ))}
@@ -208,9 +209,14 @@ function SizeModal({
                     ))}
                   </div>
                 )}
-                <p className="mt-2 text-center text-[0.65rem] uppercase tracking-[0.2em] text-dusty-rose">
-                  Size guide{slides.length > 1 ? " · swipe to browse" : ""}
-                </p>
+                <button
+                  type="button"
+                  onClick={() => setLightbox(slide)}
+                  className="mt-2 w-full text-center text-[0.65rem] uppercase tracking-[0.2em] text-dusty-rose hover:text-rose-wine"
+                >
+                  Size guide · tap to view full image{slides.length > 1 ? " · swipe to browse" : ""}
+                </button>
+
               </>
             ) : (
               <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-rose-wine/10">
