@@ -730,34 +730,19 @@ function Founders() {
     <div id="founders" className="relative z-10 px-4 py-12 sm:py-20">
       <div className="mx-auto max-w-6xl">
         <SectionHead eyebrow="The team" title="Meet the founders" />
-        <div className="grid gap-6 md:grid-cols-2">
-          {SITE.founders.map((f, i) => (
-            <div key={f.name} className="glass rounded-3xl p-8">
-              <div className="flex gap-6">
-                {f.photo ? (
-                  <img src={f.photo} alt={f.name} className="h-24 w-24 shrink-0 rounded-2xl object-cover shadow-lg" />
-                ) : (
-                  <div className={`grid h-24 w-24 shrink-0 place-items-center rounded-2xl bg-gradient-to-br ${i === 0 ? "from-blush-rose to-rose-wine" : "from-pink-mist to-dusty-rose"} font-display text-4xl text-white shadow-lg`}>
-                    {f.name.charAt(0)}
-                  </div>
-                )}
-                <div className="min-w-0">
-                  <h4 className="font-display text-3xl text-rose-wine">{f.name}</h4>
-                  <p className="text-xs uppercase tracking-[0.3em] text-dusty-rose">{f.role}</p>
-                  <p className="mt-3 text-sm text-neutral-700">{f.bio}</p>
-                  <div className="mt-4 flex gap-2">
-                    <SocialIcon icon={<Instagram className="h-4 w-4" />} href={SITE.links.instagram} />
-                    <SocialIcon icon={<Youtube className="h-4 w-4" />} href={SITE.links.youtube} />
-                  </div>
-                </div>
-              </div>
-            </div>
-          ))}
+        <div className="mx-auto w-full max-w-[560px] overflow-hidden rounded-3xl shadow-xl ring-1 ring-rose-wine/10">
+          <img
+            src={SITE.foundersImage}
+            alt={SITE.foundersImageAlt}
+            loading="lazy"
+            className="block h-auto w-full object-contain"
+          />
         </div>
       </div>
     </div>
   );
 }
+
 
 function Faq() {
   return (
