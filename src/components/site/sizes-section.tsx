@@ -1,5 +1,7 @@
 import { useState } from "react";
-import { Layers, Check, Eye } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Layers, Check, Eye, X, ChevronLeft, ChevronRight } from "lucide-react";
+
 import { toast } from "sonner";
 import { CATALOG, fmt } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
@@ -157,6 +159,8 @@ function SizeModal({
   onClose: () => void;
 }) {
   const [slide, setSlide] = useState(0);
+  const [lightbox, setLightbox] = useState<number | null>(null);
+
   const item = sizeId ? CATALOG.sizes.find((s) => s.id === sizeId) ?? null : null;
 
   const selectedSizeId = useStore((s) => s.selectedSizeId);
@@ -193,7 +197,8 @@ function SizeModal({
                       <img
                         src={src}
                         alt={`${item.name} size guide ${i + 1}`}
-                        className="block h-auto w-full object-contain"
+                        onClick={() => setLightbox(i)}
+                        className="block h-auto w-full cursor-zoom-in object-contain"
                       />
                     </div>
                   ))}
@@ -208,9 +213,14 @@ function SizeModal({
                     ))}
                   </div>
                 )}
-                <p className="mt-2 text-center text-[0.65rem] uppercase tracking-[0.2em] text-dusty-rose">
-                  Size guide{slides.length > 1 ? " · swipe to browse" : ""}
-                </p>
+                <button
+                  type="button"
+                  onClick={() => setLightbox(slide)}
+                  className="mt-2 w-full text-center text-[0.65rem] uppercase tracking-[0.2em] text-dusty-rose hover:text-rose-wine"
+                >
+                  Size guide · tap to view full image{slides.length > 1 ? " · swipe to browse" : ""}
+                </button>
+
               </>
             ) : (
               <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-rose-wine/10">
@@ -254,6 +264,45 @@ function SizeModal({
         rvRating={rvRating} setRvRating={setRvRating}
         onSubmit={submitReview} onDelete={deleteReview}
       />
+
+      {lightbox !== null && slides[lightbox] && createPortal(
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <button
+            onClick={() => setLightbox(null)}
+            aria-label="Close"
+            className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+          >
+            <X className="h-6 w-6" />
+          </button>
+
+          {slides.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightbox((n) => ((n ?? 0) - 1 + slides.length) % slides.length); }}
+                aria-label="Previous image"
+                className="absolute left-4 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+              ><ChevronLeft className="h-6 w-6" /></button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightbox((n) => ((n ?? 0) + 1) % slides.length); }}
+                aria-label="Next image"
+                className="absolute right-4 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+              ><ChevronRight className="h-6 w-6" /></button>
+            </>
+          )}
+
+          <img
+            src={slides[lightbox]}
+            alt={`${item.name} size guide`}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[92vh] max-w-full object-contain"
+          />
+        </div>,
+        document.body,
+      )}
     </ModalShell>
+
   );
 }

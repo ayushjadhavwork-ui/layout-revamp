@@ -36,7 +36,7 @@ export const Route = createFileRoute("/")({
 const NAV = [
   { label: "Build", href: "#build" },
   { label: "Templates", href: "#templates" },
-  { label: "Founders", href: "#founders" },
+  { label: "The Team", href: "#founders" },
 ];
 
 const STEPS = [
@@ -729,7 +729,7 @@ function Founders() {
   return (
     <div id="founders" className="relative z-10 px-4 py-12 sm:py-20">
       <div className="mx-auto max-w-6xl">
-        <SectionHead eyebrow="The team" title="Meet the founders" />
+        <SectionHead eyebrow="The team" title="The Team" />
         <div className="mx-auto w-full max-w-[560px] overflow-hidden rounded-3xl shadow-xl ring-1 ring-rose-wine/10">
           <img
             src={SITE.foundersImage}
