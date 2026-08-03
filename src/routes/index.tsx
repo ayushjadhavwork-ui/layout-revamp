@@ -516,9 +516,9 @@ function Hero() {
         <img
           src={logoAsset.url}
           alt="The Layout"
-          className="mx-auto mt-6 h-40 w-40 md:h-56 md:w-56 object-contain"
+          className="mx-auto mt-1 h-40 w-40 md:h-56 md:w-56 object-contain"
         />
-        <p className="mx-auto mt-6 max-w-2xl text-xl md:text-2xl font-display italic text-rose-wine">
+        <p className="mx-auto mt-1 max-w-2xl text-xl md:text-2xl font-display italic text-rose-wine">
           Editorial storytelling, printed with <span className="text-blush-rose">quiet obsession.</span>
         </p>
 
