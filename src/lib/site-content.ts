@@ -179,22 +179,12 @@ export const SITE = {
   },
 
   // ────────────────────────────────────────────────────────────────
-  // FOUNDERS
+  // FOUNDERS — a single banner image is shown for the whole section.
+  // Swap the file (or the path) to change it. Portrait/4:5 works best.
   // ────────────────────────────────────────────────────────────────
-  founders: [
-    {
-      name: "Founder One",
-      role: "Creative Director",
-      bio: "A designer with an eye for editorial detail. She curates every layout, colour story and cover.",
-      photo: "", // e.g. "/media/founders/founder-one.jpg" — leave "" to show initial avatar
-    },
-    {
-      name: "Founder Two",
-      role: "Operations & Print",
-      bio: "The operator and storyteller. He handles print, quality and delivery.",
-      photo: "",
-    },
-  ],
+  foundersImage: "/media/founders/foudners_banner.jpeg",
+  foundersImageAlt: "The founders of The Layout",
+
 
   // ────────────────────────────────────────────────────────────────
   // HAPPY CUSTOMERS — screenshots of customer messages/reviews.
