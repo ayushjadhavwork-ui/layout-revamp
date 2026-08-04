@@ -73,12 +73,28 @@ const COMBO_MANAGED: Category[] = ["sizes", "templates", "addons", "polaroids", 
 
 export const useStore = create<State>((set, get) => ({
   cart: [],
+  format: "standard",
   selectedSizeId: null,
   selectedTemplateIds: [],
   stripSelections: [],
   coupon: null,
   cartId: null,
   customer: null,
+
+  // Switching format invalidates any size/template pick (IDs are
+  // format-specific) and any active combo (combo recipes are Standard-only,
+  // so a Mini switch would leave the cart misrepresenting the order).
+  setFormat: (format) => set((s) => {
+    if (s.format === format) return s;
+    return {
+      format,
+      selectedSizeId: null,
+      selectedTemplateIds: [],
+      cart: dropCombo(s.cart).filter((c) => c.category !== "sizes" && c.category !== "templates"),
+    };
+  }),
+
+
 
 
   addItem: (category, product, note) => {
