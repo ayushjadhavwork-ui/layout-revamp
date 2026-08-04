@@ -3,7 +3,7 @@ import { createPortal } from "react-dom";
 import { Layers, Check, Eye, X, ChevronLeft, ChevronRight } from "lucide-react";
 
 import { toast } from "sonner";
-import { CATALOG, fmt } from "@/lib/catalog";
+import { CATALOG, fmt, type SizeFormat } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { SITE } from "@/lib/site-content";
 import { ModalShell } from "./shop";
