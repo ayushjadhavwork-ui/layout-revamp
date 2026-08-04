@@ -38,16 +38,17 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
   templates: Product[];
 } = {
   sizes: [
-    { id: "sz-4",  name: "4 Pages",  price: 699,  templateLimit: 1,  desc: "4 pages + front & back cover. 1 template." },
-    { id: "sz-6",  name: "6 Pages",  price: 799,  templateLimit: 3,  desc: "6 pages + front & back cover. 3 templates." },
-    { id: "sz-8",  name: "8 Pages",  price: 999,  templateLimit: 5,  desc: "8 pages + front & back cover. 5 templates." },
-    { id: "sz-12", name: "12 Pages", price: 1200, templateLimit: 9,  desc: "12 pages + front & back cover. 9 templates." },
-    { id: "sz-14", name: "14 Pages", price: 1325, templateLimit: 11, desc: "14 pages + front & back cover. 11 templates." },
-    { id: "sz-16", name: "16 Pages", price: 1449, templateLimit: 13, desc: "16 pages + front & back cover. 13 templates." },
-    { id: "sz-18", name: "18 Pages", price: 1650, templateLimit: 15, desc: "18 pages + front & back cover. 15 templates." },
-    { id: "sz-20", name: "20 Pages", price: 1850, templateLimit: 17, desc: "20 pages + front & back cover. 17 templates." },
+    { id: "sz-4",  name: "4 Pages",  price: priceOf("sizes", "sz-4"),  templateLimit: 1,  desc: "4 pages + front & back cover. 1 template." },
+    { id: "sz-6",  name: "6 Pages",  price: priceOf("sizes", "sz-6"),  templateLimit: 3,  desc: "6 pages + front & back cover. 3 templates." },
+    { id: "sz-8",  name: "8 Pages",  price: priceOf("sizes", "sz-8"),  templateLimit: 5,  desc: "8 pages + front & back cover. 5 templates." },
+    { id: "sz-12", name: "12 Pages", price: priceOf("sizes", "sz-12"), templateLimit: 9,  desc: "12 pages + front & back cover. 9 templates." },
+    { id: "sz-14", name: "14 Pages", price: priceOf("sizes", "sz-14"), templateLimit: 11, desc: "14 pages + front & back cover. 11 templates." },
+    { id: "sz-16", name: "16 Pages", price: priceOf("sizes", "sz-16"), templateLimit: 13, desc: "16 pages + front & back cover. 13 templates." },
+    { id: "sz-18", name: "18 Pages", price: priceOf("sizes", "sz-18"), templateLimit: 15, desc: "18 pages + front & back cover. 15 templates." },
+    { id: "sz-20", name: "20 Pages", price: priceOf("sizes", "sz-20"), templateLimit: 17, desc: "20 pages + front & back cover. 17 templates." },
   ],
   // Count lives in site-content.ts (SITE.templateCount) — bump it there.
+
   templates: Array.from({ length: SITE.templateCount }, (_, i) => ({
     id: `tpl-${i + 1}`,
     name: `Template ${i + 1}`,
