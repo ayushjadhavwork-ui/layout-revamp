@@ -21,6 +21,8 @@ export type CartItem = {
 
 type State = {
   cart: CartItem[];
+  // Magazine trim format the customer is shopping in — picked before a size.
+  format: SizeFormat;
   selectedSizeId: string | null;
   selectedTemplateIds: string[];
   stripSelections: string[];
@@ -30,6 +32,7 @@ type State = {
 
   addItem: (category: Category, product: Product, note?: string) => void;
   removeItem: (key: string) => void;
+  setFormat: (format: SizeFormat) => void;
   setSize: (sizeId: string) => void;
   toggleTemplate: (id: string) => boolean; // returns success
   randomizeTemplates: () => number; // returns count picked
