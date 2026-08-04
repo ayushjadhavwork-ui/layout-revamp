@@ -54,8 +54,10 @@ export function SizesSection() {
   const setSize = useStore((s) => s.setSize);
   const removeItem = useStore((s) => s.removeItem);
   const cart = useStore((s) => s.cart);
+  const format = useStore((s) => s.format);
+  const setFormat = useStore((s) => s.setFormat);
 
-  const items = CATALOG.sizes;
+  const items = CATALOG.sizes.filter((s) => s.format === format);
 
   const handleToggle = (id: string, name: string) => {
     if (selectedSizeId === id) {
@@ -68,15 +70,50 @@ export function SizesSection() {
     }
   };
 
+  const formats: { key: SizeFormat; label: string; sub: string }[] = [
+    { key: "standard", label: "Standard", sub: "A4" },
+    { key: "mini", label: "Mini", sub: "A5" },
+  ];
+
   return (
     <>
       <div className="mt-6 rounded-3xl p-6 md:p-10 bg-rose-wine">
 
+        {/* Format toggle — pick before choosing a page count */}
+        <div className="mb-5 sm:mb-8 flex flex-col items-center">
+          <p className="text-[0.6rem] sm:text-[0.65rem] uppercase tracking-[0.3em] text-pink-mist">
+            Choose your format
+          </p>
+          <div className="mt-2 inline-flex rounded-full bg-black/20 p-1 ring-1 ring-pink-mist/30">
+            {formats.map((f) => {
+              const on = format === f.key;
+              return (
+                <button
+                  key={f.key}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => {
+                    if (format === f.key) return;
+                    setFormat(f.key);
+                    toast.success(`${f.label} (${f.sub}) format selected`);
+                  }}
+                  className={`rounded-full px-4 sm:px-7 py-1.5 sm:py-2 text-[0.65rem] sm:text-xs font-medium uppercase tracking-[0.2em] transition ${
+                    on ? "bg-off-white text-rose-wine shadow" : "text-off-white/80 hover:text-off-white"
+                  }`}
+                >
+                  {f.label} <span className="opacity-60">· {f.sub}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         <div className="grid grid-cols-4 gap-1.5 sm:gap-4 md:gap-5">
           {items.map((item) => {
             const active = selectedSizeId === item.id;
-            const hero = sizeHero(item.id);
+            const hero = sizeHero(item.id, item.format);
+
+
 
             return (
               <div
