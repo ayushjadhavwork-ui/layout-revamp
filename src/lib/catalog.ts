@@ -4,6 +4,8 @@
 // ===========================================================
 
 import { SITE } from "./site-content";
+// ALL PRICES LIVE IN prices.ts — edit that file, not this one.
+import { PRICES, priceOf } from "./prices";
 
 export const CONFIG = {
   GAS_URL: "https://script.google.com/macros/s/AKfycbwoqxri-OOv5wTYTw3iLPJC1ZJ7nru5b2SFQ8E080e6L_OY1LJAK_BR__VTdTh3gFQq2g/exec",
