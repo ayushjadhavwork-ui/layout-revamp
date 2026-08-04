@@ -137,14 +137,10 @@ export const COUPON_FREEBIES: Record<string, string> = {
 };
 
 // Tier pricing for polaroid strips, indexed by number of strips selected (1..5).
-export const STRIP_TIERS: Record<number, number> = {
-  1: 100,
-  2: 125,
-  3: 175,
-  4: 220,
-  5: 275,
-};
-export const STRIP_MAX = 5;
+// Numbers live in prices.ts → PRICES.stripTiers.
+export const STRIP_TIERS: Record<number, number> = { ...PRICES.stripTiers };
+export const STRIP_MAX = Object.keys(PRICES.stripTiers).length;
+
 
 // ===========================================================
 // COMBO RECIPES — what a combo auto-selects when chosen.
