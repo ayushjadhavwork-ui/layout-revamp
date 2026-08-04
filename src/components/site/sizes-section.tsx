@@ -215,8 +215,8 @@ function SizeModal({
 
   if (!open || !item) return null;
 
-  const hero = sizeHero(item.id);
-  const gallery = sizeGallery(item.id);
+  const hero = sizeHero(item.id, item.format);
+  const gallery = sizeGallery(item.id, item.format);
   const slides = gallery.length ? gallery : hero ? [hero] : [];
   const active = selectedSizeId === item.id;
 
