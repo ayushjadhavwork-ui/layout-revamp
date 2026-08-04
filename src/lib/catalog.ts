@@ -26,27 +26,55 @@ export type Category =
   | "promotions";
 
 
+// A magazine trim format. Only "sizes" entries carry this field.
+export type SizeFormat = "standard" | "mini";
+
 export type Product = {
   id: string;
   name: string;
   price: number;
   desc: string;
   templateLimit?: number;
+  format?: SizeFormat;
 };
+
+// Page count → how many templates that package includes. Shared by both
+// formats (Mini gets the same template allowance as Standard).
+const SIZE_ROWS: { pages: number; templateLimit: number }[] = [
+  { pages: 4,  templateLimit: 1 },
+  { pages: 6,  templateLimit: 3 },
+  { pages: 8,  templateLimit: 5 },
+  { pages: 12, templateLimit: 9 },
+  { pages: 14, templateLimit: 11 },
+  { pages: 16, templateLimit: 13 },
+  { pages: 18, templateLimit: 15 },
+  { pages: 20, templateLimit: 17 },
+];
 
 export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
   templates: Product[];
 } = {
   sizes: [
-    { id: "sz-4",  name: "4 Pages",  price: priceOf("sizes", "sz-4"),  templateLimit: 1,  desc: "4 pages + front & back cover. 1 template." },
-    { id: "sz-6",  name: "6 Pages",  price: priceOf("sizes", "sz-6"),  templateLimit: 3,  desc: "6 pages + front & back cover. 3 templates." },
-    { id: "sz-8",  name: "8 Pages",  price: priceOf("sizes", "sz-8"),  templateLimit: 5,  desc: "8 pages + front & back cover. 5 templates." },
-    { id: "sz-12", name: "12 Pages", price: priceOf("sizes", "sz-12"), templateLimit: 9,  desc: "12 pages + front & back cover. 9 templates." },
-    { id: "sz-14", name: "14 Pages", price: priceOf("sizes", "sz-14"), templateLimit: 11, desc: "14 pages + front & back cover. 11 templates." },
-    { id: "sz-16", name: "16 Pages", price: priceOf("sizes", "sz-16"), templateLimit: 13, desc: "16 pages + front & back cover. 13 templates." },
-    { id: "sz-18", name: "18 Pages", price: priceOf("sizes", "sz-18"), templateLimit: 15, desc: "18 pages + front & back cover. 15 templates." },
-    { id: "sz-20", name: "20 Pages", price: priceOf("sizes", "sz-20"), templateLimit: 17, desc: "20 pages + front & back cover. 17 templates." },
+    // Standard (A4)
+    ...SIZE_ROWS.map(({ pages, templateLimit }) => ({
+      id: `sz-${pages}`,
+      name: `${pages} Pages`,
+      price: priceOf("sizes", `sz-${pages}`),
+      templateLimit,
+      format: "standard" as SizeFormat,
+      desc: `${pages} pages + front & back cover. ${templateLimit} template${templateLimit === 1 ? "" : "s"}. Standard A4 size.`,
+    })),
+    // Mini (A5)
+    ...SIZE_ROWS.map(({ pages, templateLimit }) => ({
+      id: `sz-${pages}-mini`,
+      name: `${pages} Pages`,
+      price: priceOf("sizesMini", `sz-${pages}-mini`),
+      templateLimit,
+      format: "mini" as SizeFormat,
+      desc: `${pages} pages + front & back cover. ${templateLimit} template${templateLimit === 1 ? "" : "s"}. Mini A5 size.`,
+    })),
   ],
+
   // Count lives in site-content.ts (SITE.templateCount) — bump it there.
 
   templates: Array.from({ length: SITE.templateCount }, (_, i) => ({
