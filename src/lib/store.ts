@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { CATALOG, STRIP_TIERS, STRIP_MAX, COMBO_RECIPES, COUPON_FREEBIES, type Product, type Category } from "./catalog";
+import { CATALOG, STRIP_TIERS, STRIP_MAX, COMBO_RECIPES, COUPON_FREEBIES, type Product, type Category, type SizeFormat } from "./catalog";
 
 
 export type CartItem = {
