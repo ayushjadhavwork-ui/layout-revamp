@@ -56,36 +56,36 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
     desc: "Curated aesthetic layout — included with your chosen package.",
   })),
   addons: [
-    { id: "add-wrap",   name: "Gift Wrap",           price: 99,  desc: "Pastel gift wrap with ribbon." },
-    { id: "add-letter", name: "Handwritten Letter",  price: 149, desc: "A personal letter, penned by us." },
-    { id: "add-combo",  name: "Combo (Wrap + Letter)", price: 219, desc: "Both — because why not?" },
+    { id: "add-wrap",   name: "Gift Wrap",           price: priceOf("addons", "add-wrap"),   desc: "Pastel gift wrap with ribbon." },
+    { id: "add-letter", name: "Handwritten Letter",  price: priceOf("addons", "add-letter"), desc: "A personal letter, penned by us." },
+    { id: "add-combo",  name: "Combo (Wrap + Letter)", price: priceOf("addons", "add-combo"), desc: "Both — because why not?" },
   ],
   combos: [
     {
       id: "combo-main",
       name: "Main Character Pack",
-      price: 1049,
+      price: priceOf("combos", "combo-main"),
       desc: "8-Page Custom Magazine + Gift Wrap + Personalized Letter. Everything you need to feel like the main character. You save ₹50.",
     },
     {
       id: "combo-core",
       name: "Core Memory Pack",
-      price: 1379,
+      price: priceOf("combos", "combo-core"),
       desc: "12-Page Custom Magazine + Classic Polaroid Pack (18 Photos) + 1 Polaroid Strip. A whole core memory in a box. You save ₹71.",
     },
     {
       id: "combo-soft",
       name: "Soft Launch Bundle",
-      price: 1699,
+      price: priceOf("combos", "combo-soft"),
       desc: "16-Page Custom Magazine + Memory Polaroid Pack (27 Photos) + Gift Wrap + Personalized Letter. The full soft launch treatment. You save ₹70.",
     },
   ],
 
   polaroids: [
-    { id: "pol-mini",    name: "Mini Pack",    price: 80,  desc: "9 mini polaroids — matte finish, keepsake-ready." },
-    { id: "pol-classic", name: "Classic Pack", price: 150, desc: "18 classic polaroids — the everyday memory stack." },
-    { id: "pol-memory",  name: "Memory Pack",  price: 220, desc: "27 polaroids to tell the whole story." },
-    { id: "pol-premium", name: "Premium Pack", price: 280, desc: "36 premium polaroids — the full collection." },
+    { id: "pol-mini",    name: "Mini Pack",    price: priceOf("polaroids", "pol-mini"),    desc: "9 mini polaroids — matte finish, keepsake-ready." },
+    { id: "pol-classic", name: "Classic Pack", price: priceOf("polaroids", "pol-classic"), desc: "18 classic polaroids — the everyday memory stack." },
+    { id: "pol-memory",  name: "Memory Pack",  price: priceOf("polaroids", "pol-memory"),  desc: "27 polaroids to tell the whole story." },
+    { id: "pol-premium", name: "Premium Pack", price: priceOf("polaroids", "pol-premium"), desc: "36 premium polaroids — the full collection." },
   ],
   strips: [
     { id: "strip-1", name: "Strip 1", price: 0, desc: "Editorial polaroid strip — design 1." },
@@ -95,8 +95,8 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
     { id: "strip-5", name: "Strip 5", price: 0, desc: "Editorial polaroid strip — design 5." },
   ],
   delivery: [
-    { id: "del-std", name: "Standard Delivery", price: 0,   desc: "Free — arrives in 7-8 days." },
-    { id: "del-exp", name: "Express Shipping",  price: 149, desc: "Priority — arrives in 3-4 days." },
+    { id: "del-std", name: "Standard Delivery", price: priceOf("delivery", "del-std"), desc: "Free — arrives in 7-8 days." },
+    { id: "del-exp", name: "Express Shipping",  price: priceOf("delivery", "del-exp"), desc: "Priority — arrives in 3-4 days." },
   ],
 
   // A small, standalone product — not part of the magazine builder or any
@@ -105,10 +105,11 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
     {
       id: "news-mag",
       name: "Newspaper Magazine",
-      price: 250,
+      price: priceOf("newspaper", "news-mag"),
       desc: "A special broadsheet-style keepsake with space for two landscape spreads.",
     },
   ],
+
 
   // Free items granted by redeeming a Spin-the-Wheel coupon code — never sold
   // directly, only ever added by applyCouponFreebie() in store.ts.
