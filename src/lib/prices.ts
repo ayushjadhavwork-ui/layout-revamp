@@ -19,7 +19,7 @@
 
 export const PRICES = {
   // -------------------------------------------------------
-  // MAGAZINE PACKAGES ("Choose Your Package")
+  // MAGAZINE PACKAGES — STANDARD (A4) format
   // Key = page count.
   // -------------------------------------------------------
   sizes: {
@@ -32,6 +32,22 @@ export const PRICES = {
     "sz-18": 1650, // 18 Pages
     "sz-20": 1850, // 20 Pages
   },
+
+  // -------------------------------------------------------
+  // MAGAZINE PACKAGES — MINI (A5) format
+  // Same page counts, smaller trim size, its own prices.
+  // -------------------------------------------------------
+  sizesMini: {
+    "sz-4-mini": 549, // 4 Pages (Mini)
+    "sz-6-mini": 649, // 6 Pages (Mini)
+    "sz-8-mini": 799, // 8 Pages (Mini)
+    "sz-12-mini": 999, // 12 Pages (Mini)
+    "sz-14-mini": 1099, // 14 Pages (Mini)
+    "sz-16-mini": 1199, // 16 Pages (Mini)
+    "sz-18-mini": 1349, // 18 Pages (Mini)
+    "sz-20-mini": 1499, // 20 Pages (Mini)
+  },
+
 
   // -------------------------------------------------------
   // ADD-ONS

@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { CATALOG, STRIP_TIERS, STRIP_MAX, COMBO_RECIPES, COUPON_FREEBIES, type Product, type Category } from "./catalog";
+import { CATALOG, STRIP_TIERS, STRIP_MAX, COMBO_RECIPES, COUPON_FREEBIES, type Product, type Category, type SizeFormat } from "./catalog";
 
 
 export type CartItem = {
@@ -21,6 +21,8 @@ export type CartItem = {
 
 type State = {
   cart: CartItem[];
+  // Magazine trim format the customer is shopping in — picked before a size.
+  format: SizeFormat;
   selectedSizeId: string | null;
   selectedTemplateIds: string[];
   stripSelections: string[];
@@ -30,6 +32,7 @@ type State = {
 
   addItem: (category: Category, product: Product, note?: string) => void;
   removeItem: (key: string) => void;
+  setFormat: (format: SizeFormat) => void;
   setSize: (sizeId: string) => void;
   toggleTemplate: (id: string) => boolean; // returns success
   randomizeTemplates: () => number; // returns count picked
@@ -70,12 +73,28 @@ const COMBO_MANAGED: Category[] = ["sizes", "templates", "addons", "polaroids", 
 
 export const useStore = create<State>((set, get) => ({
   cart: [],
+  format: "standard",
   selectedSizeId: null,
   selectedTemplateIds: [],
   stripSelections: [],
   coupon: null,
   cartId: null,
   customer: null,
+
+  // Switching format invalidates any size/template pick (IDs are
+  // format-specific) and any active combo (combo recipes are Standard-only,
+  // so a Mini switch would leave the cart misrepresenting the order).
+  setFormat: (format) => set((s) => {
+    if (s.format === format) return s;
+    return {
+      format,
+      selectedSizeId: null,
+      selectedTemplateIds: [],
+      cart: dropCombo(s.cart).filter((c) => c.category !== "sizes" && c.category !== "templates"),
+    };
+  }),
+
+
 
 
   addItem: (category, product, note) => {
