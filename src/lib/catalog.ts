@@ -4,6 +4,8 @@
 // ===========================================================
 
 import { SITE } from "./site-content";
+// ALL PRICES LIVE IN prices.ts — edit that file, not this one.
+import { PRICES, priceOf } from "./prices";
 
 export const CONFIG = {
   GAS_URL: "https://script.google.com/macros/s/AKfycbwoqxri-OOv5wTYTw3iLPJC1ZJ7nru5b2SFQ8E080e6L_OY1LJAK_BR__VTdTh3gFQq2g/exec",
@@ -36,16 +38,17 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
   templates: Product[];
 } = {
   sizes: [
-    { id: "sz-4",  name: "4 Pages",  price: 699,  templateLimit: 1,  desc: "4 pages + front & back cover. 1 template." },
-    { id: "sz-6",  name: "6 Pages",  price: 799,  templateLimit: 3,  desc: "6 pages + front & back cover. 3 templates." },
-    { id: "sz-8",  name: "8 Pages",  price: 999,  templateLimit: 5,  desc: "8 pages + front & back cover. 5 templates." },
-    { id: "sz-12", name: "12 Pages", price: 1200, templateLimit: 9,  desc: "12 pages + front & back cover. 9 templates." },
-    { id: "sz-14", name: "14 Pages", price: 1325, templateLimit: 11, desc: "14 pages + front & back cover. 11 templates." },
-    { id: "sz-16", name: "16 Pages", price: 1449, templateLimit: 13, desc: "16 pages + front & back cover. 13 templates." },
-    { id: "sz-18", name: "18 Pages", price: 1650, templateLimit: 15, desc: "18 pages + front & back cover. 15 templates." },
-    { id: "sz-20", name: "20 Pages", price: 1850, templateLimit: 17, desc: "20 pages + front & back cover. 17 templates." },
+    { id: "sz-4",  name: "4 Pages",  price: priceOf("sizes", "sz-4"),  templateLimit: 1,  desc: "4 pages + front & back cover. 1 template." },
+    { id: "sz-6",  name: "6 Pages",  price: priceOf("sizes", "sz-6"),  templateLimit: 3,  desc: "6 pages + front & back cover. 3 templates." },
+    { id: "sz-8",  name: "8 Pages",  price: priceOf("sizes", "sz-8"),  templateLimit: 5,  desc: "8 pages + front & back cover. 5 templates." },
+    { id: "sz-12", name: "12 Pages", price: priceOf("sizes", "sz-12"), templateLimit: 9,  desc: "12 pages + front & back cover. 9 templates." },
+    { id: "sz-14", name: "14 Pages", price: priceOf("sizes", "sz-14"), templateLimit: 11, desc: "14 pages + front & back cover. 11 templates." },
+    { id: "sz-16", name: "16 Pages", price: priceOf("sizes", "sz-16"), templateLimit: 13, desc: "16 pages + front & back cover. 13 templates." },
+    { id: "sz-18", name: "18 Pages", price: priceOf("sizes", "sz-18"), templateLimit: 15, desc: "18 pages + front & back cover. 15 templates." },
+    { id: "sz-20", name: "20 Pages", price: priceOf("sizes", "sz-20"), templateLimit: 17, desc: "20 pages + front & back cover. 17 templates." },
   ],
   // Count lives in site-content.ts (SITE.templateCount) — bump it there.
+
   templates: Array.from({ length: SITE.templateCount }, (_, i) => ({
     id: `tpl-${i + 1}`,
     name: `Template ${i + 1}`,
@@ -53,36 +56,36 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
     desc: "Curated aesthetic layout — included with your chosen package.",
   })),
   addons: [
-    { id: "add-wrap",   name: "Gift Wrap",           price: 99,  desc: "Pastel gift wrap with ribbon." },
-    { id: "add-letter", name: "Handwritten Letter",  price: 149, desc: "A personal letter, penned by us." },
-    { id: "add-combo",  name: "Combo (Wrap + Letter)", price: 219, desc: "Both — because why not?" },
+    { id: "add-wrap",   name: "Gift Wrap",           price: priceOf("addons", "add-wrap"),   desc: "Pastel gift wrap with ribbon." },
+    { id: "add-letter", name: "Handwritten Letter",  price: priceOf("addons", "add-letter"), desc: "A personal letter, penned by us." },
+    { id: "add-combo",  name: "Combo (Wrap + Letter)", price: priceOf("addons", "add-combo"), desc: "Both — because why not?" },
   ],
   combos: [
     {
       id: "combo-main",
       name: "Main Character Pack",
-      price: 1049,
+      price: priceOf("combos", "combo-main"),
       desc: "8-Page Custom Magazine + Gift Wrap + Personalized Letter. Everything you need to feel like the main character. You save ₹50.",
     },
     {
       id: "combo-core",
       name: "Core Memory Pack",
-      price: 1379,
+      price: priceOf("combos", "combo-core"),
       desc: "12-Page Custom Magazine + Classic Polaroid Pack (18 Photos) + 1 Polaroid Strip. A whole core memory in a box. You save ₹71.",
     },
     {
       id: "combo-soft",
       name: "Soft Launch Bundle",
-      price: 1699,
+      price: priceOf("combos", "combo-soft"),
       desc: "16-Page Custom Magazine + Memory Polaroid Pack (27 Photos) + Gift Wrap + Personalized Letter. The full soft launch treatment. You save ₹70.",
     },
   ],
 
   polaroids: [
-    { id: "pol-mini",    name: "Mini Pack",    price: 80,  desc: "9 mini polaroids — matte finish, keepsake-ready." },
-    { id: "pol-classic", name: "Classic Pack", price: 150, desc: "18 classic polaroids — the everyday memory stack." },
-    { id: "pol-memory",  name: "Memory Pack",  price: 220, desc: "27 polaroids to tell the whole story." },
-    { id: "pol-premium", name: "Premium Pack", price: 280, desc: "36 premium polaroids — the full collection." },
+    { id: "pol-mini",    name: "Mini Pack",    price: priceOf("polaroids", "pol-mini"),    desc: "9 mini polaroids — matte finish, keepsake-ready." },
+    { id: "pol-classic", name: "Classic Pack", price: priceOf("polaroids", "pol-classic"), desc: "18 classic polaroids — the everyday memory stack." },
+    { id: "pol-memory",  name: "Memory Pack",  price: priceOf("polaroids", "pol-memory"),  desc: "27 polaroids to tell the whole story." },
+    { id: "pol-premium", name: "Premium Pack", price: priceOf("polaroids", "pol-premium"), desc: "36 premium polaroids — the full collection." },
   ],
   strips: [
     { id: "strip-1", name: "Strip 1", price: 0, desc: "Editorial polaroid strip — design 1." },
@@ -92,8 +95,8 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
     { id: "strip-5", name: "Strip 5", price: 0, desc: "Editorial polaroid strip — design 5." },
   ],
   delivery: [
-    { id: "del-std", name: "Standard Delivery", price: 0,   desc: "Free — arrives in 7-8 days." },
-    { id: "del-exp", name: "Express Shipping",  price: 149, desc: "Priority — arrives in 3-4 days." },
+    { id: "del-std", name: "Standard Delivery", price: priceOf("delivery", "del-std"), desc: "Free — arrives in 7-8 days." },
+    { id: "del-exp", name: "Express Shipping",  price: priceOf("delivery", "del-exp"), desc: "Priority — arrives in 3-4 days." },
   ],
 
   // A small, standalone product — not part of the magazine builder or any
@@ -102,10 +105,11 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
     {
       id: "news-mag",
       name: "Newspaper Magazine",
-      price: 250,
+      price: priceOf("newspaper", "news-mag"),
       desc: "A special broadsheet-style keepsake with space for two landscape spreads.",
     },
   ],
+
 
   // Free items granted by redeeming a Spin-the-Wheel coupon code — never sold
   // directly, only ever added by applyCouponFreebie() in store.ts.
@@ -133,14 +137,10 @@ export const COUPON_FREEBIES: Record<string, string> = {
 };
 
 // Tier pricing for polaroid strips, indexed by number of strips selected (1..5).
-export const STRIP_TIERS: Record<number, number> = {
-  1: 100,
-  2: 125,
-  3: 175,
-  4: 220,
-  5: 275,
-};
-export const STRIP_MAX = 5;
+// Numbers live in prices.ts → PRICES.stripTiers.
+export const STRIP_TIERS: Record<number, number> = { ...PRICES.stripTiers };
+export const STRIP_MAX = Object.keys(PRICES.stripTiers).length;
+
 
 // ===========================================================
 // COMBO RECIPES — what a combo auto-selects when chosen.
