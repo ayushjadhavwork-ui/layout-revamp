@@ -271,11 +271,23 @@ export const SITE = {
       "tpl-23": ["/media/templates/23.jpg"],
       "tpl-24": ["/media/templates/24.jpg"],
 
-    // ── Package / sizes (optional cover imagery) ─────────────────
-    // "sz-4":  ["/media/products/sizes/4.jpg"],
-    // "sz-6":  ["/media/products/sizes/6.jpg"],
-    // ...
-    // "sz-20": ["/media/products/sizes/20.jpg"],
+    // ── Package / sizes thumbnails + size guides ─────────────────
+    // By default the site auto-loads:
+    //   Standard (A4): /media/sizes/<pages>_pages_magazine.jpg      (thumbnail)
+    //                  /media/sizes/<pages>_pages_sizeGuide.jpg     (detail)
+    //   Mini (A5):     /media/sizes-mini/<pages>_pages_magazine.jpg (thumbnail)
+    //                  /media/sizes-mini/<pages>_pages_sizeGuide.jpg(detail)
+    // To use a different file, uncomment a line below and change the path.
+    // First image = thumbnail, any following images = detail gallery.
+    // Standard (A4):
+    // "sz-4":  ["/media/sizes/4_pages_magazine.jpg", "/media/sizes/4_pages_sizeGuide.jpg"],
+    // "sz-6":  ["/media/sizes/6_pages_magazine.jpg", "/media/sizes/6_pages_sizeGuide.jpg"],
+    // ... sz-8, sz-12, sz-14, sz-16, sz-18, sz-20
+    // Mini (A5):
+    // "sz-4-mini":  ["/media/sizes-mini/4_pages_magazine.jpg", "/media/sizes-mini/4_pages_sizeGuide.jpg"],
+    // "sz-6-mini":  ["/media/sizes-mini/6_pages_magazine.jpg", "/media/sizes-mini/6_pages_sizeGuide.jpg"],
+    // ... sz-8-mini, sz-12-mini, sz-14-mini, sz-16-mini, sz-18-mini, sz-20-mini
+
 
 
 
