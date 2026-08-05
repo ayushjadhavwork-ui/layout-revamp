@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Heart, Sparkles, Rocket, Check, Package, Eye } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Heart, Sparkles, Rocket, Check, Package, Eye, X } from "lucide-react";
 import { toast } from "sonner";
 import { CATALOG, fmt, comboRealTotal } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
@@ -105,7 +106,7 @@ export function CombosSection() {
 
                 <div
                   onClick={(e) => { e.stopPropagation(); setOpenId(item.id); }}
-                  className="mt-1 sm:mt-2 mx-auto relative w-full aspect-[4/3] overflow-hidden rounded-sm sm:rounded-xl bg-white/5 grid place-items-center cursor-zoom-in"
+                  className="mt-1 sm:mt-2 mx-auto relative w-full aspect-[2480/1754] overflow-hidden rounded-sm sm:rounded-xl bg-white/5 grid place-items-center cursor-zoom-in"
                 >
                   {hero ? (
                     <img src={hero} alt={item.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
@@ -184,9 +185,11 @@ function ComboModal({
   const item = comboId ? CATALOG.combos.find((c) => c.id === comboId) ?? null : null;
   const cart = useStore((s) => s.cart);
   const selectCombo = useStore((s) => s.selectCombo);
+  const [lightbox, setLightbox] = useState(false);
 
-  useEffect(() => { /* noop */ }, [open, item?.id]);
+  useEffect(() => { setLightbox(false); }, [open, item?.id]);
   if (!open || !item) return null;
+
 
   const meta = COMBO_META[item.id];
   const Icon = meta?.icon ?? Package;
@@ -196,22 +199,34 @@ function ComboModal({
   const save = Math.max(0, original - item.price);
 
   return (
-    <ModalShell onClose={onClose} maxW="max-w-3xl">
-      <div className="grid gap-6 md:grid-cols-12">
-        <div className="md:col-span-5 flex justify-center">
-          <div className="w-full max-w-[340px] aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-pink-mist/40 to-blush-rose/40 shadow-2xl ring-1 ring-rose-wine/10 relative grid place-items-center">
+    <>
+    <ModalShell onClose={onClose} maxW="max-w-4xl">
+      <div className="grid gap-6 md:grid-cols-12 items-start">
+        <div className="md:col-span-6 flex justify-center">
+          <div
+            onClick={() => hero && setLightbox(true)}
+            className={`w-full max-w-[560px] rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10 ${hero ? "cursor-zoom-in" : ""}`}
+          >
             {hero ? (
-              <img src={hero} alt={item.name} className="absolute inset-0 h-full w-full object-cover" />
+              <img src={hero} alt={item.name} className="w-full h-auto object-contain" />
             ) : (
-              <div className="flex flex-col items-center gap-3 text-rose-wine">
-                <span className="text-6xl">{meta?.emoji ?? "🎁"}</span>
-                <Icon className="h-14 w-14" strokeWidth={1.25} />
+              <div className="aspect-[2480/1754] relative grid place-items-center bg-gradient-to-br from-pink-mist/40 to-blush-rose/40">
+                <div className="flex flex-col items-center gap-3 text-rose-wine">
+                  <span className="text-6xl">{meta?.emoji ?? "🎁"}</span>
+                  <Icon className="h-14 w-14" strokeWidth={1.25} />
+                </div>
               </div>
             )}
           </div>
         </div>
+        {hero && (
+          <p className="md:col-span-6 -mt-3 text-center text-[0.7rem] uppercase tracking-[0.2em] text-dusty-rose md:hidden">
+            tap image to view full
+          </p>
+        )}
 
-        <div className="md:col-span-7 flex flex-col">
+        <div className="md:col-span-6 flex flex-col">
+
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">Curated combo</p>
           <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">{item.name}</h3>
 
@@ -247,5 +262,30 @@ function ComboModal({
         </div>
       </div>
     </ModalShell>
+
+    {lightbox && hero && createPortal(
+      <div
+        className="fixed inset-0 z-[120] bg-black/90 p-4 grid place-items-center"
+        onClick={() => setLightbox(false)}
+      >
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={() => setLightbox(false)}
+          className="absolute top-4 right-4 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <img
+          src={hero}
+          alt={item.name}
+          onClick={(e) => e.stopPropagation()}
+          className="max-h-[92vh] max-w-[96vw] object-contain"
+        />
+      </div>,
+      document.body,
+    )}
+    </>
   );
 }
+
