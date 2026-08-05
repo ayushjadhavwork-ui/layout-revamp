@@ -99,13 +99,13 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
       id: "combo-core",
       name: "Core Memory Pack",
       price: priceOf("combos", "combo-core"),
-      desc: "12-Page Custom Magazine + Classic Polaroid Pack (18 Photos) + 1 Polaroid Strip. A whole core memory in a box. You save ₹71.",
+      desc: "12-Page Custom Magazine + Classic Polaroid Pack (18 Photos) + 1 Polaroid Strip. A whole core memory in a box. You save ₹51.",
     },
     {
       id: "combo-soft",
       name: "Soft Launch Bundle",
       price: priceOf("combos", "combo-soft"),
-      desc: "16-Page Custom Magazine + Memory Polaroid Pack (27 Photos) + Gift Wrap + Personalized Letter. The full soft launch treatment. You save ₹70.",
+      desc: "16-Page Custom Magazine + Memory Polaroid Pack (27 Photos) + Gift Wrap + Personalized Letter. The full soft launch treatment. You save ₹130.",
     },
   ],
 
