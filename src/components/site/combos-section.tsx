@@ -196,20 +196,27 @@ function ComboModal({
   const save = Math.max(0, original - item.price);
 
   return (
-    <ModalShell onClose={onClose} maxW="max-w-3xl">
-      <div className="grid gap-6 md:grid-cols-12">
-        <div className="md:col-span-5 flex justify-center">
-          <div className="w-full max-w-[340px] aspect-square rounded-2xl overflow-hidden bg-gradient-to-br from-pink-mist/40 to-blush-rose/40 shadow-2xl ring-1 ring-rose-wine/10 relative grid place-items-center">
+    <>
+    <ModalShell onClose={onClose} maxW="max-w-4xl">
+      <div className="grid gap-6 md:grid-cols-12 items-start">
+        <div className="md:col-span-6 flex justify-center">
+          <div
+            onClick={() => hero && setLightbox(true)}
+            className={`w-full max-w-[560px] rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10 ${hero ? "cursor-zoom-in" : ""}`}
+          >
             {hero ? (
-              <img src={hero} alt={item.name} className="absolute inset-0 h-full w-full object-cover" />
+              <img src={hero} alt={item.name} className="w-full h-auto object-contain" />
             ) : (
-              <div className="flex flex-col items-center gap-3 text-rose-wine">
-                <span className="text-6xl">{meta?.emoji ?? "🎁"}</span>
-                <Icon className="h-14 w-14" strokeWidth={1.25} />
+              <div className="aspect-[2480/1754] relative grid place-items-center bg-gradient-to-br from-pink-mist/40 to-blush-rose/40">
+                <div className="flex flex-col items-center gap-3 text-rose-wine">
+                  <span className="text-6xl">{meta?.emoji ?? "🎁"}</span>
+                  <Icon className="h-14 w-14" strokeWidth={1.25} />
+                </div>
               </div>
             )}
           </div>
         </div>
+
 
         <div className="md:col-span-7 flex flex-col">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">Curated combo</p>
