@@ -184,9 +184,11 @@ function ComboModal({
   const item = comboId ? CATALOG.combos.find((c) => c.id === comboId) ?? null : null;
   const cart = useStore((s) => s.cart);
   const selectCombo = useStore((s) => s.selectCombo);
+  const [lightbox, setLightbox] = useState(false);
 
-  useEffect(() => { /* noop */ }, [open, item?.id]);
+  useEffect(() => { setLightbox(false); }, [open, item?.id]);
   if (!open || !item) return null;
+
 
   const meta = COMBO_META[item.id];
   const Icon = meta?.icon ?? Package;
