@@ -261,5 +261,30 @@ function ComboModal({
         </div>
       </div>
     </ModalShell>
+
+    {lightbox && hero && createPortal(
+      <div
+        className="fixed inset-0 z-[120] bg-black/90 p-4 grid place-items-center"
+        onClick={() => setLightbox(false)}
+      >
+        <button
+          type="button"
+          aria-label="Close"
+          onClick={() => setLightbox(false)}
+          className="absolute top-4 right-4 grid h-10 w-10 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+        >
+          <X className="h-5 w-5" />
+        </button>
+        <img
+          src={hero}
+          alt={item.name}
+          onClick={(e) => e.stopPropagation()}
+          className="max-h-[92vh] max-w-[96vw] object-contain"
+        />
+      </div>,
+      document.body,
+    )}
+    </>
   );
 }
+
