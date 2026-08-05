@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { Heart, Sparkles, Rocket, Check, Package, Eye } from "lucide-react";
+import { createPortal } from "react-dom";
+import { Heart, Sparkles, Rocket, Check, Package, Eye, X } from "lucide-react";
 import { toast } from "sonner";
 import { CATALOG, fmt, comboRealTotal } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
@@ -105,7 +106,7 @@ export function CombosSection() {
 
                 <div
                   onClick={(e) => { e.stopPropagation(); setOpenId(item.id); }}
-                  className="mt-1 sm:mt-2 mx-auto relative w-full aspect-[4/3] overflow-hidden rounded-sm sm:rounded-xl bg-white/5 grid place-items-center cursor-zoom-in"
+                  className="mt-1 sm:mt-2 mx-auto relative w-full aspect-[2480/1754] overflow-hidden rounded-sm sm:rounded-xl bg-white/5 grid place-items-center cursor-zoom-in"
                 >
                   {hero ? (
                     <img src={hero} alt={item.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
