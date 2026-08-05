@@ -218,9 +218,14 @@ function ComboModal({
             )}
           </div>
         </div>
+        {hero && (
+          <p className="md:col-span-6 -mt-3 text-center text-[0.7rem] uppercase tracking-[0.2em] text-dusty-rose md:hidden">
+            tap image to view full
+          </p>
+        )}
 
+        <div className="md:col-span-6 flex flex-col">
 
-        <div className="md:col-span-7 flex flex-col">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">Curated combo</p>
           <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">{item.name}</h3>
 
