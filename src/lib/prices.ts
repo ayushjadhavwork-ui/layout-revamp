@@ -27,9 +27,9 @@ export const PRICES = {
     "sz-6": 799, // 6 Pages
     "sz-8": 999, // 8 Pages
     "sz-12": 1200, // 12 Pages
-    "sz-14": 1325, // 14 Pages
+    "sz-14": 1300, // 14 Pages
     "sz-16": 1449, // 16 Pages
-    "sz-18": 1650, // 18 Pages
+    "sz-18": 1600, // 18 Pages
     "sz-20": 1850, // 20 Pages
   },
 
@@ -38,14 +38,14 @@ export const PRICES = {
   // Same page counts, smaller trim size, its own prices.
   // -------------------------------------------------------
   sizesMini: {
-    "sz-4-mini": 549, // 4 Pages (Mini)
-    "sz-6-mini": 649, // 6 Pages (Mini)
-    "sz-8-mini": 799, // 8 Pages (Mini)
-    "sz-12-mini": 999, // 12 Pages (Mini)
-    "sz-14-mini": 1099, // 14 Pages (Mini)
-    "sz-16-mini": 1199, // 16 Pages (Mini)
-    "sz-18-mini": 1349, // 18 Pages (Mini)
-    "sz-20-mini": 1499, // 20 Pages (Mini)
+    "sz-4-mini": 350, // 4 Pages (Mini)
+    "sz-6-mini": 450, // 6 Pages (Mini)
+    "sz-8-mini": 550, // 8 Pages (Mini)
+    "sz-12-mini": 600, // 12 Pages (Mini)
+    "sz-14-mini": 650, // 14 Pages (Mini)
+    "sz-16-mini": 750, // 16 Pages (Mini)
+    "sz-18-mini": 800, // 18 Pages (Mini)
+    "sz-20-mini": 999, // 20 Pages (Mini)
   },
 
 
@@ -53,9 +53,9 @@ export const PRICES = {
   // ADD-ONS
   // -------------------------------------------------------
   addons: {
-    "add-wrap": 99, // Gift Wrap
-    "add-letter": 149, // Handwritten Letter
-    "add-combo": 219, // Combo (Wrap + Letter)
+    "add-wrap": 50, // Gift Wrap
+    "add-letter": 50, // Handwritten Letter
+    "add-combo": 80, // Combo (Wrap + Letter)
   },
 
   // -------------------------------------------------------
@@ -65,8 +65,8 @@ export const PRICES = {
   // -------------------------------------------------------
   combos: {
     "combo-main": 1049, // Main Character Pack
-    "combo-core": 1379, // Core Memory Pack
-    "combo-soft": 1699, // Soft Launch Bundle
+    "combo-core": 1399, // Core Memory Pack
+    "combo-soft": 1649, // Soft Launch Bundle
   },
 
   // -------------------------------------------------------
@@ -75,7 +75,7 @@ export const PRICES = {
   polaroids: {
     "pol-mini": 80, // Mini Pack (9 photos)
     "pol-classic": 150, // Classic Pack (18 photos)
-    "pol-memory": 220, // Memory Pack (27 photos)
+    "pol-memory": 230, // Memory Pack (27 photos)
     "pol-premium": 280, // Premium Pack (36 photos)
   },
 
@@ -97,7 +97,7 @@ export const PRICES = {
   // -------------------------------------------------------
   delivery: {
     "del-std": 0, // Standard Delivery (free)
-    "del-exp": 149, // Express Shipping
+    "del-exp": 100, // Express Shipping
   },
 
   // -------------------------------------------------------
