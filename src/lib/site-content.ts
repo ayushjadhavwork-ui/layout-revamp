@@ -203,7 +203,31 @@ export const SITE = {
   //   images: ["/media/happy-customers/1.jpg", "/media/happy-customers/2.jpg"],
   // },
   // ────────────────────────────────────────────────────────────────
-  happyCustomers: [] as { heading: string; images: string[] }[],
+  happyCustomers: [
+      {heading: "Balasubramanian",
+       images: ["/media/happy_customers/1.jpg",]
+      },
+      {heading: "Anushka",
+       images: ["/media/happy_customers/2.jpg",]
+      },
+      {heading: "Riya",
+       images: ["/media/happy_customers/3.jpg",]
+      },
+      {heading: "Harsh",
+       images: ["/media/happy_customers/4.jpg",]
+      },
+      {heading: "Pushkar",
+       images: ["/media/happy_customers/5.jpg",]
+      },
+      {heading: "Cindrella, Mumbai",
+       images: ["/media/happy_customers/6.jpg",]
+      },
+      
+    
+
+
+
+  ] as { heading: string; images: string[] }[],
 
   // ────────────────────────────────────────────────────────────────
   // TEMPLATE COUNT
@@ -284,8 +308,14 @@ export const SITE = {
     // "sz-6":  ["/media/sizes/6_pages_magazine.jpg", "/media/sizes/6_pages_sizeGuide.jpg"],
     // ... sz-8, sz-12, sz-14, sz-16, sz-18, sz-20
     // Mini (A5):
-    // "sz-4-mini":  ["/media/sizes-mini/4_pages_magazine.jpg", "/media/sizes-mini/4_pages_sizeGuide.jpg"],
-    // "sz-6-mini":  ["/media/sizes-mini/6_pages_magazine.jpg", "/media/sizes-mini/6_pages_sizeGuide.jpg"],
+    "sz-4-mini":  ["/media/sizes-mini/4_pages_mini_magazine.jpg", "/media/sizes-mini/4_mini_sizeGuide.jpg"],
+    "sz-6-mini":  ["/media/sizes-mini/6_pages_mini_magazine.jpg", "/media/sizes-mini/6_mini_sizeGuide.jpg"],
+    "sz-8-mini" :  ["/media/sizes-mini/8_pages_mini_magazine.jpg", "/media/sizes-mini/8_mini_sizeGuide.jpg"],
+    "sz-12-mini" :  ["/media/sizes-mini/12_pages_mini_magazine.jpg", "/media/sizes-mini/12_mini_sizeGuide.jpg"],
+    "sz-14-mini" :  ["/media/sizes-mini/14_pages_mini_magazine.jpg", "/media/sizes-mini/14_mini_sizeGuide.jpg"],
+    "sz-16-mini" :  ["/media/sizes-mini/16_pages_mini_magazine.jpg", "/media/sizes-mini/16_mini_sizeGuide.jpg"],
+    "sz-18-mini" :  ["/media/sizes-mini/18_pages_mini_magazine.jpg", "/media/sizes-mini/18_mini_sizeGuide.jpg"],
+    "sz-20-mini" :  ["/media/sizes-mini/20_pages_mini_magazine.jpg", "/media/sizes-mini/20_mini_sizeGuide.jpg"],
     // ... sz-8-mini, sz-12-mini, sz-14-mini, sz-16-mini, sz-18-mini, sz-20-mini
 
 
@@ -298,10 +328,10 @@ export const SITE = {
       "strip-4": ["/media/strips/4.jpeg"] as string[],
       "strip-5": ["/media/strips/5.jpeg"] as string[],
       // Polaroid packs
-      "pol-mini":    [] as string[],
-      "pol-classic": [] as string[],
-      "pol-memory":  [] as string[],
-      "pol-premium": [] as string[],
+      "pol-mini":    ["/media/polaroids/1.jpg"] as string[],
+      "pol-classic": ["/media/polaroids/2.jpg"] as string[],
+      "pol-memory":  ["/media/polaroids/3.jpg"] as string[],
+      "pol-premium": ["/media/polaroids/4.jpg"] as string[],
 
       // Add-ons
       "add-wrap":   ["/media/addons/wrap.png"] as string[],
@@ -309,9 +339,9 @@ export const SITE = {
       "add-combo":  ["/media/addons/combo.png"] as string[],
 
       // Combos (Curated bundles section) — optional cover imagery.
-      // "combo-main": ["/media/combos/main.jpg"],
-      // "combo-core": ["/media/combos/core.jpg"],
-      // "combo-soft": ["/media/combos/soft.jpg"],
+      "combo-main": ["/media/combos/main_character_pack.jpg"],
+      "combo-core": ["/media/combos/core_memory_pack.jpg"],
+      "combo-soft": ["/media/combos/soft_launch_pack.jpg"],
 
       // Delivery (Step 6) — optional cover imagery.
       // "del-std": ["/media/delivery/standard.jpg"],
