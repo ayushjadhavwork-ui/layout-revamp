@@ -22,21 +22,23 @@ function sizeFolder(format?: SizeFormat): string {
   return format === "mini" ? "sizes-mini" : "sizes";
 }
 
-// Thumbnails are shared between formats — always the /media/sizes/ magazine shot.
-// Only the size guide differs per format (see sizeGallery below).
-function sizeHero(id: string, _format?: SizeFormat): string | undefined {
+// Thumbnail + size guide both come from the format's own folder, so Mini (A5)
+// and Standard (A4) can show different artwork. Override either in
+// SITE.productImages["sz-<n>"] / ["sz-<n>-mini"] (first entry = thumbnail).
+function sizeHero(id: string, format?: SizeFormat): string | undefined {
   const override = SITE.productImages?.[id]?.[0];
   if (override) return override;
   const n = pageCount(id);
-  return n ? `/media/sizes/${n}_pages_magazine.jpg` : undefined;
+  return n ? `/media/${sizeFolder(format)}/${n}_pages_magazine.jpg` : undefined;
 }
 
 function sizeGallery(id: string, format?: SizeFormat): string[] {
   const override = SITE.productImages?.[id];
-  if (override && override.length > 1) return override;
+  if (override && override.length > 1) return override.slice(1);
   const n = pageCount(id);
   return n ? [`/media/${sizeFolder(format)}/${n}_pages_sizeGuide.jpg`] : [];
 }
+
 
 
 
