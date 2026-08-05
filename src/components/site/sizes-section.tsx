@@ -22,11 +22,13 @@ function sizeFolder(format?: SizeFormat): string {
   return format === "mini" ? "sizes-mini" : "sizes";
 }
 
-function sizeHero(id: string, format?: SizeFormat): string | undefined {
+// Thumbnails are shared between formats — always the /media/sizes/ magazine shot.
+// Only the size guide differs per format (see sizeGallery below).
+function sizeHero(id: string, _format?: SizeFormat): string | undefined {
   const override = SITE.productImages?.[id]?.[0];
   if (override) return override;
   const n = pageCount(id);
-  return n ? `/media/${sizeFolder(format)}/${n}_pages_magazine.jpg` : undefined;
+  return n ? `/media/sizes/${n}_pages_magazine.jpg` : undefined;
 }
 
 function sizeGallery(id: string, format?: SizeFormat): string[] {
