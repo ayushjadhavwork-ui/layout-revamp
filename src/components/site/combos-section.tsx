@@ -58,9 +58,6 @@ export function CombosSection() {
           <p className="mt-2 text-xs uppercase tracking-[0.35em] text-pink-mist">
             ✧ Bundles that save you more ✧
           </p>
-          <p className="mt-3 font-display italic text-off-white/80 text-sm md:text-base">
-            Gen-Z coded. Premium wrapped. Made to be gifted.
-          </p>
         </div>
 
         <div className="grid grid-cols-3 gap-1.5 sm:gap-5">
