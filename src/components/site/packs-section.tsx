@@ -95,7 +95,7 @@ export function PacksSection() {
           <p className="mt-2 text-xs uppercase tracking-[0.35em] text-pink-mist">Add-on to your order</p>
         </div>
 
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-5">
+        <div className="grid grid-cols-4 gap-2 sm:gap-5">
           {items.map((item) => {
             const cartItem = cart.find((c) => c.category === "polaroids" && c.id === item.id);
             const active = !!cartItem;
