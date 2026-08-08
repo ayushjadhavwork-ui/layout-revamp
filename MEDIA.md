@@ -200,3 +200,67 @@ Use SVG only for crisp geometric/flat art (no photo content).
 After editing, save the file. The site reloads automatically. If something
 doesn't appear, double-check the file path in `site-content.ts` starts with
 `/media/…` and the file actually exists in `public/media/…`.
+
+---
+
+## 6. Packages (A4 Standard vs A5 Mini)
+
+The "Choose your package" section has a **format toggle**. Each format reads
+its own folder, so the two can look completely different:
+
+| Format             | Thumbnail file                                     | Size-guide file (opens on click)              |
+| ------------------ | -------------------------------------------------- | --------------------------------------------- |
+| Standard (A4)      | `public/media/sizes/<N>_pages_magazine.jpg`        | `public/media/sizes/<N>_pages_sizeGuide.jpg`  |
+| Mini (A5)          | `public/media/sizes-mini/<N>_pages_mini_magazine.jpg` | `public/media/sizes-mini/<N>_mini_sizeGuide.jpg` |
+
+`<N>` is the page count: 4, 6, 8, 12, 14, 16, 18, 20.
+To override any of them by hand, add an entry under `productImages` in
+`site-content.ts` keyed `"sz-8"` (Standard) or `"sz-8-mini"` (Mini) — the
+first path in the list is the thumbnail, the rest are gallery images.
+Combos are Standard-only by design.
+
+---
+
+## 7. Polaroid strips & polaroid packs
+
+| Section          | Folder                  | Notes                                                        |
+| ---------------- | ----------------------- | ------------------------------------------------------------ |
+| Polaroid strips  | `public/media/strips/`  | Tall 3:8 images, one per design (Strip 1–5).                  |
+| Polaroid packs   | `public/media/polaroids/` | Square 1:1 photos — the polaroid frame is drawn by the site. |
+
+Strips are priced as a **bundle** — the individual strips carry no price; the
+total is decided by how many are selected (1→₹100, 2→₹125, 3→₹175, 4→₹220,
+5→₹275). Selecting a 6th strip is blocked. Those numbers live in
+`src/lib/prices.ts` (see § 8), not in the strips component.
+
+---
+
+## 8. Changing prices
+
+**All prices live in one file: `src/lib/prices.ts`.** Every number is
+commented with what it belongs to. Change the number, save, done — the cart,
+the product cards, and the modals all read from it.
+
+Things intentionally priced at 0: magazine templates, individual strips, and
+promo/spin-wheel items (they either come with a package or are bundle-priced).
+
+If you add a brand-new product id in `catalog.ts` without a price entry, the
+site logs a loud dev-time warning telling you exactly which id is missing.
+
+---
+
+## 9. Spin-the-Wheel prizes
+
+The wheel is **not** edited in code. Its prizes, odds, colours, and on/off
+state all come from the `Spin Config` tab of the backend Google Sheet — see
+`BACKEND_SETUP.md` § 7. Emptying/deactivating that tab hides the wheel
+entirely.
+
+---
+
+## 10. Happy customers page
+
+`/happy-customers` is driven by `photoGallery`-style entries under
+`happyCustomers` in `site-content.ts`, with screenshots in
+`public/media/happy_customers/`. The public reviews link used across the site
+is `links.customerReviews`.
