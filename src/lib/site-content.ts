@@ -130,7 +130,7 @@ export const SITE = {
     youtube:         "https://www.youtube.com/@Layoutt",
     blog:            "https://thelayouttco.myportfolio.com/behind-the-scenes-1",
     whatsapp:        "https://wa.me/919137353151",
-    customerReviews: "https://thelayouttco.myportfolio.com/customer-reviews",
+    customerReviews: "https://thelayout.vercel.app/happy-customers",
   },
 
   // ────────────────────────────────────────────────────────────────
