@@ -33,17 +33,45 @@ function doPost(e) {
 
   switch (body.action) {
     case "logCart":
-      return jsonOut(logCart(body));
+      return jsonOut(withScriptLock_(function () { return logCart(body); }));
     case "completeOrder":
-      return jsonOut(completeOrder(body));
+      return jsonOut(withScriptLock_(function () { return completeOrder(body); }));
     case "submitReview":
-      return jsonOut(submitReview(body));
+      return jsonOut(withScriptLock_(function () { return submitReview(body); }));
     case "deleteReview":
-      return jsonOut(deleteReview(body));
+      return jsonOut(withScriptLock_(function () { return deleteReview(body); }));
     case "spinLead":
-      return jsonOut(handleSpinLead(body));
+      return jsonOut(withScriptLock_(function () { return handleSpinLead(body); }));
+    case "logError":
+      // Best-effort client telemetry — never worth lock-contending with a
+      // real order/cart write over, so it's the one write left unlocked.
+      return jsonOut(logError(body));
     default:
       return jsonOut({ ok: false, error: "Unknown action: " + body.action });
+  }
+}
+
+/* ============================================================ */
+/* Concurrency                                                    */
+/* ============================================================ */
+// Every write handler below does an appendRow (and often an ensureHeaders
+// read-modify-write on row 1) with no locking. Under concurrent traffic two
+// requests can interleave mid-write — e.g. both read row 1 as the same
+// "before" state, both append their own missing headers, and one order row
+// ends up misaligned under the wrong columns, or a row is silently
+// overwritten. A script-wide lock serializes every write handler so each
+// runs start-to-finish before the next begins.
+function withScriptLock_(fn) {
+  const lock = LockService.getScriptLock();
+  try {
+    lock.waitLock(30000);
+  } catch (err) {
+    return { ok: false, success: false, error: "Server is busy — please try again in a moment." };
+  }
+  try {
+    return fn();
+  } finally {
+    lock.releaseLock();
   }
 }
 
@@ -120,11 +148,15 @@ function completeOrder(body) {
   if (body.screenshot && body.screenshotName) {
     try {
       const folder = getOrCreateFolder("The Layout — Payment Screenshots");
-      // Accept either a full data URI ("data:image/png;base64,...") or a
-      // bare base64 string, in case the caller ever sends one without a prefix.
+      // Accept either a full data URI ("data:image/jpeg;base64,...") or a
+      // bare base64 string, in case the caller ever sends one without a
+      // prefix. The frontend downscales screenshots to JPEG client-side, so
+      // the mime type is read from the data URI rather than assumed.
       const raw = String(body.screenshot);
+      const mimeMatch = raw.match(/^data:([^;]+);base64,/);
+      const mimeType = mimeMatch ? mimeMatch[1] : "image/jpeg";
       const base64 = raw.includes(",") ? raw.split(",")[1] : raw;
-      const blob = Utilities.newBlob(Utilities.base64Decode(base64), "image/png", body.screenshotName);
+      const blob = Utilities.newBlob(Utilities.base64Decode(base64), mimeType, body.screenshotName);
       const file = folder.createFile(blob);
       file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
       screenshotUrl = file.getUrl();
@@ -221,12 +253,25 @@ function buildInvoiceHtml_(order) {
   const subtotal = cart.reduce((sum, c) => sum + (Number(c.price) || 0), 0);
   const discount = Math.max(0, subtotal - (Number(order.total) || 0));
 
-  const rows = cart.map((item) => {
-    const label = item.category === "sizes" ? ("Custom Magazine (" + item.name + ")") : item.name;
+  // Templates are always zero-cost picks tied to the magazine's page size —
+  // one invoice row per template just pads the itemized list with a run of
+  // ₹0.00 lines. Fold them into a single subtext line under the magazine
+  // (sizes) row instead, same spirit as the on-site cart summary.
+  const templateItems = cart.filter((c) => c.category === "templates");
+  const templateLabels = templateItems.map((t) => {
+    const m = String(t.id).match(/tpl-(\d+)/);
+    return m ? m[1] : escapeHtml_(t.name);
+  });
+  const invoiceCart = cart.filter((c) => c.category !== "templates");
+
+  const rows = invoiceCart.map((item) => {
+    const isSize = item.category === "sizes";
+    const label = isSize ? ("Custom Magazine (" + item.name + ")") : item.name;
     const notes = [];
     if (item.note) notes.push(escapeHtml_(item.note));
     if (item.comboId) notes.push("Included in " + escapeHtml_(comboNameById[item.comboId] || "combo"));
     if (item.promoCode) notes.push("Free — redeemed with " + escapeHtml_(item.promoCode));
+    if (isSize && templateLabels.length) notes.push("Templates:- " + templateLabels.join(", "));
     const noteHtml = notes.length ? ('<div class="item-note">' + notes.join(" · ") + "</div>") : "";
     return (
       "<tr>" +
@@ -381,6 +426,34 @@ function deleteReview(body) {
     }
   }
   return { ok: false, error: "Not found or not yours" };
+}
+
+/* ============================================================ */
+/* Error Telemetry                                                */
+/* ============================================================ */
+// Fed by src/lib/telemetry.ts — uncaught client errors and unhandled
+// rejections, capped and deduped on the frontend before they ever get here.
+// If the "Errors" tab doesn't exist yet, the report is silently dropped
+// rather than breaking sendBeacon's fire-and-forget POST.
+function logError(body) {
+  const sheet = ss().getSheetByName("Errors");
+  if (!sheet) return { ok: true };
+  ensureHeaders(sheet, ["timestamp", "message", "stack", "url", "userAgent", "extra"]);
+
+  const known = { message: 1, stack: 1, url: 1, userAgent: 1, ts: 1, action: 1 };
+  const extra = {};
+  Object.keys(body).forEach((k) => { if (!known[k]) extra[k] = body[k]; });
+
+  sheet.appendRow([
+    body.ts || new Date().toISOString(),
+    String(body.message || "").slice(0, 2000),
+    String(body.stack || "").slice(0, 4000),
+    String(body.url || ""),
+    String(body.userAgent || ""),
+    Object.keys(extra).length ? JSON.stringify(extra) : "",
+  ]);
+
+  return { ok: true };
 }
 
 /* ============================================================ */

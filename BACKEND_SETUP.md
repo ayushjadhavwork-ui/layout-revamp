@@ -46,6 +46,16 @@ a valid 0%-off coupon, and the frontend grants the matching free item
 does not auto-create it, and `getReviews` needs the header row to map
 columns.
 
+### Tab: `Errors` (new)
+| timestamp | message | stack | url | userAgent | extra |
+
+(Headers auto-created on first write.) Fed by `src/lib/telemetry.ts`, which
+catches uncaught client errors and unhandled promise rejections, dedupes
+them, caps each browser session at 10 reports, and fire-and-forget POSTs a
+`logError` action here. If this tab doesn't exist yet, `logError` just
+no-ops instead of failing — you don't need to create it before deploying,
+only before you want errors to actually start showing up somewhere.
+
 ---
 
 ## 2. Add the Apps Script
@@ -81,6 +91,13 @@ Every code change needs a new **version** to go live:
 **Deploy → Manage deployments → pencil icon → Version: New version → Deploy**.
 The URL stays the same.
 
+**This applies to the concurrency/telemetry update in this `Code.gs`** — it
+adds `LockService` locking around every write handler (`logCart`,
+`completeOrder`, `submitReview`, `deleteReview`, `spinLead`), a new
+`logError` action, screenshot mime-type detection, and the invoice
+template-row aggregation. None of it takes effect until you push a new
+deployment version.
+
 ---
 
 ## 4. Wire it into the frontend
@@ -113,6 +130,14 @@ preflight); the body is JSON. Apps Script reads it from
 | `completeOrder` | POST | `{ action, orderId, cartId, customer, cart, total, coupon?, screenshot?, screenshotName?, ts }` | `{ ok, orderId }` |
 | `submitReview` | POST | `{ action, productId, name, rating, text, reviewerId }` | `{ ok, id }` |
 | `deleteReview` | POST | `{ action, id, reviewerId }` | `{ ok }` |
+| `logError` | POST | `{ action, message, stack?, url, userAgent, ts, ...extra }` | `{ ok }` |
+
+`logCart`, `completeOrder`, `submitReview`, `deleteReview`, and `spinLead`
+all run inside a script-wide `LockService` lock (30s wait, then a `{ ok:
+false, error: "Server is busy…" }`/`{ success: false, ... }` response) so
+concurrent requests can't interleave mid-write. `logError` is intentionally
+left unlocked — it's best-effort telemetry, not worth contending with a real
+order write over.
 
 `screenshot` is a data URL (`data:image/png;base64,...`). The script
 strips the prefix, saves the file to a Drive folder called

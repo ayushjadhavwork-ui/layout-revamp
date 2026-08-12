@@ -1,4 +1,5 @@
 import { CONFIG } from "./catalog";
+import { reportError } from "./telemetry";
 
 /**
  * Google Apps Script bridge.
@@ -7,20 +8,93 @@ import { CONFIG } from "./catalog";
  *   GET  ?action=validateCoupon&code=XYZ
  *   POST { action: 'logCart',     ...payload }
  *   POST { action: 'completeOrder', ...payload }
+ *
+ * Every call goes through fetchWithTimeout + a res.ok/JSON-parse guard —
+ * when Apps Script hits its quota or the 6-min execution cap it returns an
+ * HTML error page instead of JSON, which used to make res.json() throw deep
+ * inside a promise chain and leave checkout spinning forever. Writes that
+ * aren't safe to duplicate (completeOrder, submitReview, spinLead) never
+ * auto-retry; idempotent reads and the best-effort cart log do.
  */
 
-async function post<T>(payload: Record<string, unknown>): Promise<T> {
+const DEFAULT_TIMEOUT_MS = 15000;
+
+function errMessage(err: unknown): string {
+  return err instanceof Error ? err.message : String(err);
+}
+
+function errStack(err: unknown): string | undefined {
+  return err instanceof Error ? err.stack : undefined;
+}
+
+function isTransportFailure(err: unknown): boolean {
+  // A dropped connection (TypeError from fetch) or our own abort-on-timeout
+  // (DOMException "AbortError") — the kind of failure where the request may
+  // never have reached the server, so retrying is safe. A non-ok HTTP
+  // status or unparsable body means the server *did* respond, so retrying
+  // immediately is unlikely to help and could duplicate a write.
+  if (err instanceof DOMException && err.name === "AbortError") return true;
+  return err instanceof TypeError;
+}
+
+async function fetchWithTimeout(url: string, init: RequestInit, timeoutMs: number): Promise<Response> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    return await fetch(url, { ...init, signal: controller.signal });
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function parseJson<T>(res: Response): Promise<T> {
+  const text = await res.text();
+  try {
+    return JSON.parse(text) as T;
+  } catch {
+    // Apps Script quota/crash pages come back as HTML with a 200 status.
+    throw new Error("Unexpected response from server");
+  }
+}
+
+async function requestJson<T>(
+  url: string,
+  init: RequestInit,
+  { timeoutMs = DEFAULT_TIMEOUT_MS, retries = 0, action }: { timeoutMs?: number; retries?: number; action: string },
+): Promise<T> {
+  let lastErr: unknown;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetchWithTimeout(url, init, timeoutMs);
+      if (!res.ok) throw new Error(`Server error (${res.status})`);
+      return await parseJson<T>(res);
+    } catch (err) {
+      lastErr = err;
+      if (!isTransportFailure(err) || attempt === retries) break;
+    }
+  }
+  reportError(`gas.${action} failed: ${errMessage(lastErr)}`, { stack: errStack(lastErr), action });
+  throw lastErr instanceof Error ? lastErr : new Error("Request failed");
+}
+
+async function post<T>(
+  payload: Record<string, unknown>,
+  opts: { timeoutMs?: number; retries?: number } = {},
+): Promise<T> {
   if (CONFIG.GAS_URL.startsWith("REPLACE")) {
     // No backend configured — return a mock success so the UI stays usable.
-    console.warn("[GAS] URL not configured — returning mock response for", payload);
+    console.warn(`[GAS] URL not configured — returning mock response for action "${payload.action}"`);
     return { ok: true, mock: true } as T;
   }
-  const res = await fetch(CONFIG.GAS_URL, {
-    method: "POST",
-    headers: { "Content-Type": "text/plain;charset=utf-8" }, // avoids CORS preflight
-    body: JSON.stringify(payload),
-  });
-  return (await res.json()) as T;
+  return requestJson<T>(
+    CONFIG.GAS_URL,
+    {
+      method: "POST",
+      headers: { "Content-Type": "text/plain;charset=utf-8" }, // avoids CORS preflight
+      body: JSON.stringify(payload),
+    },
+    { ...opts, action: String(payload.action) },
+  );
 }
 
 export async function validateCoupon(code: string): Promise<{ valid: boolean; percent?: number; message?: string }> {
@@ -29,16 +103,21 @@ export async function validateCoupon(code: string): Promise<{ valid: boolean; pe
     if (code.trim().toUpperCase() === "LAYOUT10") return { valid: true, percent: 10 };
     return { valid: false, message: "Invalid code (backend not configured)" };
   }
-  const url = `${CONFIG.GAS_URL}?action=validateCoupon&code=${encodeURIComponent(code)}`;
-  const res = await fetch(url);
-  return res.json();
+  try {
+    const url = `${CONFIG.GAS_URL}?action=validateCoupon&code=${encodeURIComponent(code)}`;
+    return await requestJson(url, { method: "GET" }, { retries: 1, action: "validateCoupon" });
+  } catch {
+    return { valid: false, message: "Could not validate — check your connection and try again." };
+  }
 }
 
 export const logCart = (payload: Record<string, unknown>) =>
-  post<{ ok: boolean; cartId?: string }>({ action: "logCart", ...payload });
+  post<{ ok: boolean; cartId?: string }>({ action: "logCart", ...payload }, { retries: 1 });
 
+// No auto-retry — a retried write after a timed-out-but-succeeded request
+// would log the same order twice.
 export const completeOrder = (payload: Record<string, unknown>) =>
-  post<{ ok: boolean; orderId?: string }>({ action: "completeOrder", ...payload });
+  post<{ ok: boolean; orderId?: string }>({ action: "completeOrder", ...payload }, { timeoutMs: 60000, retries: 0 });
 
 export type Review = {
   id: string;
@@ -55,17 +134,21 @@ export async function getReviews(productId: string): Promise<Review[]> {
     console.warn("[GAS] URL not configured — returning empty reviews for", productId);
     return [];
   }
-  const url = `${CONFIG.GAS_URL}?action=getReviews&productId=${encodeURIComponent(productId)}`;
-  const res = await fetch(url);
-  const data = await res.json();
-  return data.reviews ?? [];
+  try {
+    const url = `${CONFIG.GAS_URL}?action=getReviews&productId=${encodeURIComponent(productId)}`;
+    const data = await requestJson<{ reviews?: Review[] }>(url, { method: "GET" }, { retries: 1, action: "getReviews" });
+    return data.reviews ?? [];
+  } catch {
+    return [];
+  }
 }
 
+// Not safe to retry — a duplicated write would post the same review twice.
 export const submitReview = (payload: Record<string, unknown>) =>
-  post<{ ok: boolean; id?: string }>({ action: "submitReview", ...payload });
+  post<{ ok: boolean; id?: string }>({ action: "submitReview", ...payload }, { retries: 0 });
 
 export const deleteReview = (id: string, reviewerId: string) =>
-  post<{ ok: boolean }>({ action: "deleteReview", id, reviewerId });
+  post<{ ok: boolean }>({ action: "deleteReview", id, reviewerId }, { retries: 1 });
 
 export function getReviewerId(): string {
   if (typeof window === "undefined") return ""; // SSR — resolved for real on client hydration
@@ -114,10 +197,18 @@ function weightedPick(segments: SpinSegment[]): SpinSegment {
 }
 
 // Cached for the lifetime of the page — cleared naturally on a fresh reload.
+// A *failed* fetch is deliberately not cached (see getSpinConfig), so a
+// transient quota/network blip doesn't permanently hide the wheel for the
+// rest of the session.
 let spinConfigPromise: Promise<SpinConfigResult> | null = null;
 
 export function getSpinConfig(): Promise<SpinConfigResult> {
-  if (!spinConfigPromise) spinConfigPromise = fetchSpinConfig();
+  if (!spinConfigPromise) {
+    spinConfigPromise = fetchSpinConfig().then((result) => {
+      if (!result.success) spinConfigPromise = null;
+      return result;
+    });
+  }
   return spinConfigPromise;
 }
 
@@ -128,8 +219,11 @@ async function fetchSpinConfig(): Promise<SpinConfigResult> {
   }
   try {
     const url = `${CONFIG.GAS_URL}?action=getSpinConfig`;
-    const res = await fetch(url);
-    const data = await res.json();
+    const data = await requestJson<{ success: boolean; segments?: SpinSegment[]; error?: string }>(
+      url,
+      { method: "GET" },
+      { retries: 1, action: "getSpinConfig" },
+    );
     if (!data.success || !Array.isArray(data.segments) || data.segments.length === 0) {
       return { success: false, segments: [], error: data.error || "Spin wheel is not configured" };
     }
@@ -147,13 +241,13 @@ export async function spinLead(payload: {
     const won = weightedPick(MOCK_SPIN_SEGMENTS);
     return { label: won.label, code: won.code };
   }
-  const res = await post<{ success: boolean; alreadySpun?: boolean; result?: SpinResult; error?: string }>({
-    action: "spinLead",
-    ...payload,
-  });
+  // Not safe to retry — a duplicated write would roll (and log) a second prize.
+  const res = await post<{ success: boolean; alreadySpun?: boolean; result?: SpinResult; error?: string }>(
+    { action: "spinLead", ...payload },
+    { retries: 0 },
+  );
   if (!res.success || !res.result) {
     throw new Error(res.error || "Could not spin — try again.");
   }
   return res.result;
 }
-

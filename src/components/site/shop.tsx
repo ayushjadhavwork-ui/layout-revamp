@@ -737,6 +737,76 @@ export function CustomerInfoModal({
 /*                        PAYMENT MODAL                             */
 /* ================================================================ */
 
+// A phone photo of a payment screenshot can be 15-20MB, which becomes
+// ~27MB of base64 JSON with no upper bound — slow/failed on mobile data and
+// large enough to risk hitting Apps Script's request-size limits. Redraw it
+// through a canvas at a capped resolution, stepping quality (then size) down
+// until the resulting JPEG data URL fits under the target.
+const SCREENSHOT_MAX_BYTES = 1.5 * 1024 * 1024;
+const SCREENSHOT_MAX_DIM = 1600;
+
+function loadImage(file: File): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const url = URL.createObjectURL(file);
+    const img = new Image();
+    img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
+    img.onerror = () => { URL.revokeObjectURL(url); reject(new Error("Could not read image")); };
+    img.src = url;
+  });
+}
+
+function fileToDataUrl(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result));
+    reader.onerror = () => reject(new Error("Could not read file"));
+    reader.readAsDataURL(file);
+  });
+}
+
+async function downscaleScreenshot(file: File): Promise<string> {
+  if (!file.type.startsWith("image/")) return fileToDataUrl(file);
+
+  let img: HTMLImageElement;
+  try {
+    img = await loadImage(file);
+  } catch {
+    return fileToDataUrl(file); // fall back to the original rather than block checkout
+  }
+
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+  if (!ctx) return fileToDataUrl(file);
+
+  let width = img.naturalWidth || img.width;
+  let height = img.naturalHeight || img.height;
+  if (width > SCREENSHOT_MAX_DIM || height > SCREENSHOT_MAX_DIM) {
+    const scale = SCREENSHOT_MAX_DIM / Math.max(width, height);
+    width = Math.round(width * scale);
+    height = Math.round(height * scale);
+  }
+
+  let quality = 0.9;
+  let dataUrl = "";
+  for (let attempt = 0; attempt < 8; attempt++) {
+    canvas.width = width;
+    canvas.height = height;
+    ctx.clearRect(0, 0, width, height);
+    ctx.drawImage(img, 0, 0, width, height);
+    dataUrl = canvas.toDataURL("image/jpeg", quality);
+    // Base64 runs ~4/3 the size of the decoded bytes.
+    const approxBytes = (dataUrl.length * 3) / 4;
+    if (approxBytes <= SCREENSHOT_MAX_BYTES) return dataUrl;
+    if (quality > 0.5) {
+      quality -= 0.15;
+    } else {
+      width = Math.round(width * 0.8);
+      height = Math.round(height * 0.8);
+    }
+  }
+  return dataUrl; // best effort after the attempt budget — still far smaller than the original
+}
+
 export function PaymentModal({
   open,
   onClose,
@@ -753,6 +823,7 @@ export function PaymentModal({
   const coupon = useStore((s) => s.coupon);
   const [file, setFile] = useState<File | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [lastError, setLastError] = useState<string | null>(null);
 
   if (!open) return null;
 
@@ -762,23 +833,23 @@ export function PaymentModal({
   const submit = async () => {
     if (!file) return toast.error("Upload payment screenshot first.");
     setSubmitting(true);
+    setLastError(null);
     try {
-      const reader = new FileReader();
-      const dataUrl: string = await new Promise((res, rej) => {
-        reader.onload = () => res(String(reader.result));
-        reader.onerror = rej;
-        reader.readAsDataURL(file);
-      });
+      const dataUrl = await downscaleScreenshot(file);
       const orderId = cartId || `TL-${Date.now().toString(36).toUpperCase()}`;
       await completeOrder({
         orderId, cartId, customer, cart, total,
         coupon: coupon?.code || null,
-        screenshotName: file.name,
+        screenshotName: file.name.replace(/\.\w+$/, "") + ".jpg",
         screenshot: dataUrl,
         ts: new Date().toISOString(),
       });
       onDone(orderId);
-    } catch {
+    } catch (err) {
+      const message = err instanceof Error && err.message
+        ? "Order could not be submitted — " + err.message + ". Your details are saved; tap Retry."
+        : "Order could not be submitted. Your details are saved; tap Retry.";
+      setLastError(message);
       toast.error("Order could not be submitted. Try again.");
     } finally {
       setSubmitting(false);
@@ -803,11 +874,12 @@ export function PaymentModal({
       <input
         type="file"
         accept="image/*"
-        onChange={(e) => setFile(e.target.files?.[0] || null)}
+        onChange={(e) => { setFile(e.target.files?.[0] || null); setLastError(null); }}
         className="mt-1 w-full rounded-xl border border-rose-wine/20 bg-white/60 p-2 text-sm file:mr-3 file:rounded-full file:border-0 file:bg-rose-wine file:px-4 file:py-1.5 file:text-white"
       />
+      {lastError && <p className="mt-2 text-xs text-rose-wine">{lastError}</p>}
       <button onClick={submit} disabled={submitting || !file} className="pill-btn pill-btn-hover pill-primary w-full mt-5 disabled:opacity-50">
-        {submitting ? "Submitting…" : "Complete order"}
+        {submitting ? "Submitting…" : lastError ? "Retry" : "Complete order"}
       </button>
     </ModalShell>
   );

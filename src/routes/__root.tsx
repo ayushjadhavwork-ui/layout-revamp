@@ -11,6 +11,8 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import logoAsset from "../assets/logo.png.asset.json";
+import { useStore } from "@/lib/store";
+import { installTelemetry } from "@/lib/telemetry";
 
 function NotFoundComponent() {
   return (
@@ -75,6 +77,10 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => {
+    installTelemetry();
+    useStore.persist.rehydrate();
+  }, []);
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />

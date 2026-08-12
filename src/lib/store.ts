@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { persist } from "zustand/middleware";
 import { CATALOG, STRIP_TIERS, STRIP_MAX, COMBO_RECIPES, COUPON_FREEBIES, type Product, type Category } from "./catalog";
 
 
@@ -68,7 +69,9 @@ const COMBO_INDEPENDENT: Category[] = ["delivery", "newspaper", "promotions"];
 // for e.g. the page size their combo already includes).
 const COMBO_MANAGED: Category[] = ["sizes", "templates", "addons", "polaroids", "strips"];
 
-export const useStore = create<State>((set, get) => ({
+export const useStore = create<State>()(
+  persist(
+    (set, get) => ({
   cart: [],
   selectedSizeId: null,
   selectedTemplateIds: [],
@@ -335,4 +338,27 @@ export const useStore = create<State>((set, get) => ({
     if (!s.selectedSizeId) return 0;
     return CATALOG.sizes.find((sz) => sz.id === s.selectedSizeId)?.templateLimit ?? 0;
   },
-}));
+    }),
+    {
+      name: "the-layout-cart",
+      version: 1,
+      // Hydration is triggered manually (see __root.tsx) after mount, not
+      // automatically at store-creation time — the store module re-evaluates
+      // fresh on the client, so an automatic hydrate would apply localStorage
+      // state before React's first client render, mismatching the
+      // server-rendered (always-empty) HTML and tripping hydration errors.
+      skipHydration: true,
+      // customer is deliberately excluded — re-collecting shipping/contact
+      // details after a refresh is a small ask next to losing the whole cart,
+      // and it avoids quietly resurrecting stale PII from localStorage.
+      partialize: (s) => ({
+        cart: s.cart,
+        selectedSizeId: s.selectedSizeId,
+        selectedTemplateIds: s.selectedTemplateIds,
+        stripSelections: s.stripSelections,
+        coupon: s.coupon,
+        cartId: s.cartId,
+      }),
+    },
+  ),
+);
