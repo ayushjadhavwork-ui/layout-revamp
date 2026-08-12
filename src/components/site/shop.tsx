@@ -1042,6 +1042,11 @@ function CartSummaryPanel() {
   );
 }
 
+// Formats a date as "15 Aug".
+function etaLabel(d: Date) {
+  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+}
+
 function DeliveryEta() {
   const cart = useStore((s) => s.cart);
   const delivery = cart.find((c) => c.category === "delivery");
@@ -1050,17 +1055,22 @@ function DeliveryEta() {
     ? { min: 3, max: 4, label: "Express Shipping" }
     : { min: 7, max: 8, label: "Standard Shipping" };
 
+  // Estimated window = shipping range + a 3-day production/dispatch buffer.
+  const BUFFER_DAYS = 3;
+  const now = new Date();
+  const start = new Date(now);
+  start.setDate(start.getDate() + range.min + BUFFER_DAYS);
+  const end = new Date(now);
+  end.setDate(end.getDate() + range.max + BUFFER_DAYS);
+
   return (
     <div className="rounded-xl bg-rose-wine/5 px-3 py-2 text-xs leading-relaxed text-rose-wine">
       {delivery ? (
         <>
           <span className="font-semibold">{range.label}</span> · Estimated delivery:{" "}
-          <span className="font-semibold">{range.min}–{range.max} days</span> after your magazine is
-          completed by our team, based on the delivery option selected.
-          <span className="block mt-1 text-rose-wine/70">
-            Production time is separate from shipping time — the delivery window begins once your
-            magazine is finalised and dispatched.
-          </span>
+          <span className="font-semibold">{etaLabel(start)} – {etaLabel(end)}</span>{" "}
+          ({range.min}–{range.max} days of shipping, plus a short window for your magazine to be
+          finalised and dispatched).
         </>
       ) : (
         <>

@@ -1,49 +1,58 @@
+/**
+ * Lightweight production error telemetry.
+ *
+ * Any uncaught error, unhandled promise rejection, or explicitly reported
+ * failure is sent (fire-and-forget) to the Google Apps Script backend, which
+ * appends it to an "Errors" sheet tab. That tab is your production log —
+ * without it, breakage on a customer's phone is completely invisible.
+ *
+ * Nothing here can ever break the site: every send is wrapped, silently
+ * ignores failures, and is rate-limited so a render loop can't spam the sheet.
+ */
 import { CONFIG } from "./catalog";
 
-/**
- * Lightweight client-side error telemetry. Uncaught errors and unhandled
- * promise rejections are the only production signal we have besides
- * console.error (invisible once a customer closes the tab) — this ships
- * them to the same GAS backend as everything else, capped and deduped so a
- * tight error loop can't spam Apps Script or the customer's data plan.
- */
+const MAX_PER_SESSION = 10;
+let sent = 0;
+const seen = new Set<string>();
 
-const MAX_ERRORS_PER_SESSION = 10;
-let sentCount = 0;
-let installed = false;
-const seenKeys = new Set<string>();
-
-function dedupeKey(message: string, stack?: string): string {
-  return `${message}::${(stack ?? "").slice(0, 300)}`;
+function describe(err: unknown): { message: string; stack: string } {
+  if (err instanceof Error) return { message: err.message, stack: String(err.stack || "") };
+  try {
+    return { message: typeof err === "string" ? err : JSON.stringify(err), stack: "" };
+  } catch {
+    return { message: "Unknown error", stack: "" };
+  }
 }
 
-export function reportError(message: string, extra?: Record<string, unknown>): void {
-  if (typeof window === "undefined") return;
-  if (CONFIG.GAS_URL.startsWith("REPLACE")) return; // no backend configured
-  if (sentCount >= MAX_ERRORS_PER_SESSION) return;
-
-  const stack = typeof extra?.stack === "string" ? extra.stack : undefined;
-  const key = dedupeKey(message, stack);
-  if (seenKeys.has(key)) return;
-  seenKeys.add(key);
-  sentCount += 1;
-
-  const payload = JSON.stringify({
-    action: "logError",
-    message: String(message).slice(0, 2000),
-    url: window.location.href,
-    userAgent: navigator.userAgent,
-    ts: new Date().toISOString(),
-    ...extra,
-  });
-
+/** Report a handled-but-notable failure (e.g. a checkout call that failed). */
+export function reportError(err: unknown, context?: string) {
   try {
-    const sent = navigator.sendBeacon?.(
-      CONFIG.GAS_URL,
-      new Blob([payload], { type: "text/plain;charset=utf-8" }),
-    );
-    if (!sent) {
-      fetch(CONFIG.GAS_URL, {
+    if (typeof window === "undefined") return;
+    if (CONFIG.GAS_URL.startsWith("REPLACE")) return; // no backend configured
+    if (sent >= MAX_PER_SESSION) return;
+
+    const { message, stack } = describe(err);
+    // Collapse duplicates — the same error re-firing adds no information.
+    const fingerprint = `${context || ""}|${message}`;
+    if (seen.has(fingerprint)) return;
+    seen.add(fingerprint);
+    sent += 1;
+
+    const payload = JSON.stringify({
+      action: "logError",
+      message: message.slice(0, 500),
+      stack: stack.slice(0, 2000),
+      context: context || "",
+      url: window.location.href,
+      userAgent: navigator.userAgent,
+      ts: new Date().toISOString(),
+    });
+
+    // sendBeacon survives page unload; fetch+keepalive is the fallback.
+    if (navigator.sendBeacon) {
+      navigator.sendBeacon(CONFIG.GAS_URL, new Blob([payload], { type: "text/plain;charset=utf-8" }));
+    } else {
+      void fetch(CONFIG.GAS_URL, {
         method: "POST",
         headers: { "Content-Type": "text/plain;charset=utf-8" },
         body: payload,
@@ -51,29 +60,16 @@ export function reportError(message: string, extra?: Record<string, unknown>): v
       }).catch(() => {});
     }
   } catch {
-    // Telemetry must never itself throw.
+    /* telemetry must never throw */
   }
 }
 
-// Idempotent — safe to call from every route/layout mount.
-export function installTelemetry(): void {
+let installed = false;
+
+/** Called once on the client (see src/routes/__root.tsx). */
+export function installTelemetry() {
   if (installed || typeof window === "undefined") return;
   installed = true;
-
-  window.addEventListener("error", (event) => {
-    reportError(event.message || "Uncaught error", {
-      stack: event.error instanceof Error ? event.error.stack : undefined,
-      source: event.filename,
-      line: event.lineno,
-    });
-  });
-
-  window.addEventListener("unhandledrejection", (event) => {
-    const reason = event.reason;
-    const message = reason instanceof Error ? reason.message : String(reason);
-    reportError(message, {
-      stack: reason instanceof Error ? reason.stack : undefined,
-      kind: "unhandledrejection",
-    });
-  });
+  window.addEventListener("error", (e) => reportError(e.error ?? e.message, "window.onerror"));
+  window.addEventListener("unhandledrejection", (e) => reportError(e.reason, "unhandledrejection"));
 }

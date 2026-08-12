@@ -234,3 +234,30 @@ without touching code.
 
 The frontend falls back to a small local mock config if `GAS_URL` is not
 yet configured, so the popup still works end-to-end during development.
+
+---
+
+## 8. Final build checklist (current state)
+
+- `CONFIG.GAS_URL` in `src/lib/catalog.ts` **is** set to a deployed `/exec`
+  URL, so the site is live against the sheet (not mock mode).
+- Tabs the deployed script needs: `Coupons`, `Cart Logs`, `Completed Orders`,
+  `Reviews` (header row must be added manually), `Spin Config` (optional —
+  falls back to defaults), `Spin Leads`.
+- After any edit to `Code.gs`, publish a **new version** of the deployment or
+  the live site keeps running the old code.
+
+### What order handling does today (no invoices)
+
+There is **no automatic invoice or PDF generation, and no online payment
+gateway**. The flow is:
+
+1. Cart is logged to `Cart Logs` (`logCart`) with customer details + totals.
+2. Customer pays out-of-band and uploads a **payment screenshot**.
+3. `completeOrder` writes the row to `Completed Orders` with an order id,
+   itemised cart, total, coupon and the Drive link to that screenshot.
+4. Confirmation continues over WhatsApp.
+
+The `Completed Orders` sheet is therefore the order/receipt record. If a real
+invoice (numbered PDF emailed to the customer) or a payment gateway is wanted,
+that's a separate build.
