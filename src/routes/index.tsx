@@ -112,6 +112,7 @@ function Home() {
   const [orderId, setOrderId] = useState<string | null>(null);
   const clear = useStore((s) => s.clear);
   const customer = useStore((s) => s.customer);
+  const cart = useStore((s) => s.cart);
   const cartCount = useStore((s) => s.cart.length);
   const total = useStore((s) => s.total());
   const selectedSizeId = useStore((s) => s.selectedSizeId);
@@ -135,6 +136,11 @@ function Home() {
     }
     if (total < SITE.commerce.minOrderValue) {
       toast.error(`Minimum order value is ${CONFIG.CURRENCY}${SITE.commerce.minOrderValue}. Add ${CONFIG.CURRENCY}${SITE.commerce.minOrderValue - total} more.`);
+      return;
+    }
+    if (!cart.some((c) => c.category === "delivery")) {
+      toast.error("Choose a delivery option before ordering.");
+      document.getElementById("extras")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     setCartOpen(false);

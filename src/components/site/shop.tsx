@@ -531,6 +531,7 @@ export function CartDrawer({
   const minOrder = SITE.commerce.minOrderValue;
   const belowMin = cart.length > 0 && total < minOrder;
   const templatesIncomplete = !!selectedSizeId && selectedTemplateIds.length < templateLimit;
+  const deliveryMissing = cart.length > 0 && !cart.some((c) => c.category === "delivery");
 
   const activeCombo = cart.find((c) => c.category === "combos");
   const comboOriginal = activeCombo ? comboRealTotal(activeCombo.id) : 0;
@@ -640,11 +641,16 @@ export function CartDrawer({
                 Select {templateLimit - selectedTemplateIds.length} more template{templateLimit - selectedTemplateIds.length === 1 ? "" : "s"} for your magazine ({selectedTemplateIds.length}/{templateLimit} picked) before checking out.
               </p>
             )}
+            {deliveryMissing && (
+              <p className="text-center text-xs text-rose-wine">
+                Choose a delivery option before checking out.
+              </p>
+            )}
           </div>
 
           <button
             onClick={onCheckout}
-            disabled={cart.length === 0 || belowMin || templatesIncomplete}
+            disabled={cart.length === 0 || belowMin || templatesIncomplete || deliveryMissing}
             className="pill-btn pill-btn-hover pill-primary mt-5 w-full disabled:opacity-50"
           >
             Checkout <ArrowUpRight className="h-4 w-4" />
