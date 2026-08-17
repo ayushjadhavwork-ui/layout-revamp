@@ -8,10 +8,10 @@ import { ModalShell } from "./shop";
 import { useProductReviews } from "@/lib/use-product-reviews";
 import { ReviewsPanel, ReviewStars } from "./reviews-panel";
 
-import miniPhoto from "@/assets/polaroids/mini.jpg";
-import classicPhoto from "@/assets/polaroids/classic.jpg";
-import memoryPhoto from "@/assets/polaroids/memory.jpg";
-import premiumPhoto from "@/assets/polaroids/premium.jpg";
+import miniPhoto from "@/assets/polaroids/mini.webp";
+import classicPhoto from "@/assets/polaroids/classic.webp";
+import memoryPhoto from "@/assets/polaroids/memory.webp";
+import premiumPhoto from "@/assets/polaroids/premium.webp";
 
 const PACK_META: Record<string, { photo: string; count: string }> = {
   "pol-mini":    { photo: miniPhoto,    count: "9 POLAROIDS" },
@@ -231,7 +231,7 @@ function PackModal({
             <div className="bg-white rounded-sm shadow-2xl p-4 pb-12">
               <div className="aspect-square overflow-hidden bg-neutral-100">
                 {photo ? (
-                  <img src={photo} alt={item.name} className="h-full w-full object-cover" />
+                  <img src={photo} alt={item.name} loading="lazy" className="h-full w-full object-cover" />
                 ) : (
                   <div className="h-full w-full grid place-items-center text-neutral-400">
                     <Camera className="h-10 w-10" />

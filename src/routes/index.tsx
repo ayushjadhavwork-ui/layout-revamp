@@ -542,8 +542,11 @@ function Showreel() {
         the border, and the shadow. 
       */}
       <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
+        {/* preload="auto": the tag is autoPlay, so the browser fetches the
+            whole file regardless — "metadata" would only delay first paint
+            without saving any bandwidth. */}
         <video
-          autoPlay muted loop playsInline
+          autoPlay muted loop playsInline preload="auto"
           className="absolute inset-0 h-full w-full object-cover"
         >
           <source src={SITE.showreelVideo} type="video/mp4" />
@@ -865,7 +868,7 @@ function CustomImageSection() {
         3. Kept the aspect ratio and object-cover so the text stays perfectly centered.
       */}
       <img
-        src="/media/bg/2.svg"
+        src="/media/bg/2.webp"
         alt="Showcase"
         className="block w-full h-auto object-center"
       />
@@ -889,7 +892,7 @@ function CreateMagazineSection() {
   return (
     <section className="relative z-10 w-full">
       <img 
-        src="/media/bg/3.svg" 
+        src="/media/bg/3.webp"
         alt="Showcase" 
         // Swapped aspect-[4/3] and object-cover for h-auto
         // This makes the image scale proportionally without ever cropping the sides

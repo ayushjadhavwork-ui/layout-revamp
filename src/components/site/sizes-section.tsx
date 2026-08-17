@@ -11,8 +11,8 @@ import { useProductReviews } from "@/lib/use-product-reviews";
 import { ReviewsPanel, ReviewStars } from "./reviews-panel";
 
 // Each package has two images, matched by page count and format:
-//   Standard → /public/media/sizes/<n>_pages_magazine.jpg  +  <n>_pages_sizeGuide.jpg
-//   Mini     → /public/media/sizes-mini/<n>_pages_magazine.jpg  +  <n>_pages_sizeGuide.jpg
+//   Standard → /public/media/sizes/<n>_pages_magazine.webp  +  <n>_pages_sizeGuide.webp
+//   Mini     → /public/media/sizes-mini/<n>_pages_magazine.webp  +  <n>_pages_sizeGuide.webp
 // Override either by adding paths under SITE.productImages["sz-<n>"] / ["sz-<n>-mini"].
 function pageCount(id: string): string {
   return id.replace(/\D/g, "");
@@ -29,14 +29,14 @@ function sizeHero(id: string, format?: SizeFormat): string | undefined {
   const override = SITE.productImages?.[id]?.[0];
   if (override) return override;
   const n = pageCount(id);
-  return n ? `/media/${sizeFolder(format)}/${n}_pages_magazine.jpg` : undefined;
+  return n ? `/media/${sizeFolder(format)}/${n}_pages_magazine.webp` : undefined;
 }
 
 function sizeGallery(id: string, format?: SizeFormat): string[] {
   const override = SITE.productImages?.[id];
   if (override && override.length > 1) return override.slice(1);
   const n = pageCount(id);
-  return n ? [`/media/${sizeFolder(format)}/${n}_pages_sizeGuide.jpg`] : [];
+  return n ? [`/media/${sizeFolder(format)}/${n}_pages_sizeGuide.webp`] : [];
 }
 
 

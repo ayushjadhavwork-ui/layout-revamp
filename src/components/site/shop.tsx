@@ -104,6 +104,7 @@ export function ProductGrid({
                     <img
                       src={thumb}
                       alt={item.name}
+                      loading="lazy"
                       className="absolute inset-0 h-full w-full object-contain p-2"
                     />
                   ) : (
@@ -254,7 +255,7 @@ export function ProductModal({
                       }`}
                     >
                       {photos.length > 0 ? (
-                        <img src={photos[i]} alt="" className="h-full w-full object-cover" />
+                        <img src={photos[i]} alt="" loading="lazy" className="h-full w-full object-cover" />
                       ) : (
                         <div className={`h-full w-full grid place-items-center bg-gradient-to-br ${gradients[i]} font-display text-white text-sm`}>
                           {initials}
@@ -275,6 +276,7 @@ export function ProductModal({
                   <img
                     src={photos[currentSlide]}
                     alt={product.name}
+                    loading="lazy"
                     className="absolute inset-0 h-full w-full object-contain p-3"
                   />
                 ) : (
@@ -326,7 +328,7 @@ export function ProductModal({
                     }`}
                   >
                     {photos.length > 0 ? (
-                      <img src={photos[i]} alt="" className="h-full w-full object-cover" />
+                      <img src={photos[i]} alt="" loading="lazy" className="h-full w-full object-cover" />
                     ) : (
                       <div className={`h-full w-full grid place-items-center bg-gradient-to-br ${gradients[i]} font-display text-white text-sm`}>{initials}</div>
                     )}

@@ -133,6 +133,7 @@ function HappyCustomerLightbox({
         <img
           src={entry.images[current]}
           alt={entry.heading || `Screenshot ${current + 1}`}
+          loading="lazy"
           className="block w-full max-h-[70vh] object-contain"
         />
         {count > 1 && (
