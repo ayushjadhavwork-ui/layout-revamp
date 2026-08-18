@@ -1,0 +1,264 @@
+import { useState } from "react";
+import { BookOpen, Check, Shuffle } from "lucide-react";
+
+import { toast } from "sonner";
+import { CATALOG } from "@/lib/catalog";
+import { useStore } from "@/lib/store";
+import { SITE } from "@/lib/site-content";
+import { ModalShell } from "./shop";
+import { useProductReviews } from "@/lib/use-product-reviews";
+import { ReviewsPanel, ReviewStars } from "./reviews-panel";
+
+/* Decorative magazine-spread placeholder (uses only design tokens) */
+function TemplatePlaceholder({ n }: { n: number }) {
+  const palettes = [
+    ["#f4c9d1", "#8b3a52"],
+    ["#eadfd0", "#6e4a2c"],
+    ["#f2d6c9", "#7a2a2a"],
+    ["#dfe7d5", "#3f6b48"],
+    ["#e0d3ee", "#4a3f7a"],
+  ];
+  const [c1, c2] = palettes[(n - 1) % palettes.length];
+  return (
+    <div className="absolute inset-0 grid grid-cols-2">
+      <div
+        className="flex items-center justify-center border-r border-white/60"
+        style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}
+      >
+        <span className="font-display italic text-white/90 text-lg">Left</span>
+      </div>
+      <div
+        className="flex items-center justify-center"
+        style={{ background: `linear-gradient(225deg, ${c1}, ${c2})` }}
+      >
+        <span className="font-display italic text-white/90 text-lg">Right</span>
+      </div>
+    </div>
+  );
+}
+
+function templateHero(id: string): string | undefined {
+  return SITE.productImages?.[id]?.[0];
+}
+
+/* -------------------------------------------------------------- */
+/* Section                                                         */
+/* -------------------------------------------------------------- */
+export function TemplatesSection() {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const selectedSizeId = useStore((s) => s.selectedSizeId);
+  const selectedIds = useStore((s) => s.selectedTemplateIds);
+  const limit = useStore((s) => s.templateLimit());
+  const toggleTemplate = useStore((s) => s.toggleTemplate);
+  const randomizeTemplates = useStore((s) => s.randomizeTemplates);
+
+
+  const items = CATALOG.templates;
+
+  const handleToggle = (id: string, name: string) => {
+    if (!selectedSizeId) return toast.error("Pick a page package first.");
+    const already = selectedIds.includes(id);
+    const ok = toggleTemplate(id);
+    if (!ok) return toast.error(`You can only pick ${limit} template(s) for this package.`);
+    toast.success(already ? `${name} removed` : `${name} selected`);
+  };
+
+  return (
+    <>
+      <div className="mt-6 rounded-3xl p-6 md:p-10 bg-rose-wine">
+        <div className="text-center mb-6">
+          <div className="inline-flex items-center gap-2 text-off-white">
+            <BookOpen className="h-5 w-5" />
+            <span className="font-display text-2xl tracking-[0.2em]">RIGHT – LEFT SIDE TEMPLATES</span>
+          </div>
+          <p className="mt-2 text-xs uppercase tracking-[0.35em] text-pink-mist">
+            {selectedSizeId
+              ? `${selectedIds.length} of ${limit} selected`
+              : "Pick a package first to unlock"}
+          </p>
+        </div>
+
+        <div className="mb-6 flex justify-center">
+          <button
+            type="button"
+            onClick={() => {
+              if (!selectedSizeId) return toast.error("Pick a page package first.");
+              const n = randomizeTemplates();
+              if (n > 0) toast.success(`Randomised ${n} template${n === 1 ? "" : "s"} ✨`);
+            }}
+            disabled={!selectedSizeId}
+            className="group inline-flex items-center gap-2 rounded-full bg-off-white px-5 py-2.5 text-xs font-semibold uppercase tracking-[0.25em] text-rose-wine shadow-lg ring-1 ring-pink-mist/40 transition hover:scale-[1.03] hover:bg-pink-mist/90 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            <Shuffle className="h-4 w-4 transition group-hover:rotate-180" />
+            Randomise for me
+          </button>
+        </div>
+
+
+        <div className="grid grid-cols-2 md:grid-cols-3 gap-4 md:gap-5">
+          {items.map((item, idx) => {
+            const active = selectedIds.includes(item.id);
+            const disabled =
+              !selectedSizeId || (selectedIds.length >= limit && !active);
+            const hero = templateHero(item.id);
+            const label = `Template ${String(idx + 1).padStart(2, "0")}`;
+
+            return (
+              <div
+                key={item.id}
+                onClick={() => handleToggle(item.id, label)}
+                className={`relative rounded-xl p-3 md:p-4 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
+                  active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
+                } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {active && (
+                  <span className="absolute top-2 right-2 grid h-6 w-6 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10">
+                    <Check className="h-3.5 w-3.5" />
+                  </span>
+                )}
+
+                <div
+                  onClick={(e) => { e.stopPropagation(); setOpenId(item.id); }}
+                  className="relative w-full aspect-[2480/1754] overflow-hidden rounded-md bg-white/5 cursor-zoom-in"
+                >
+                  {hero ? (
+                    <img
+                      src={hero}
+                      alt={label}
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full object-cover"
+                    />
+                  ) : (
+                    <TemplatePlaceholder n={idx + 1} />
+                  )}
+                </div>
+
+                <p className="mt-3 font-display tracking-[0.2em] text-xs text-off-white">
+                  {label}
+                </p>
+
+                <div className="mt-3 flex gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => handleToggle(item.id, label)}
+                    className={`flex-1 min-w-0 rounded-full px-3 py-1.5 text-[0.7rem] font-medium transition border truncate ${
+                      active
+                        ? "bg-off-white text-rose-wine border-off-white"
+                        : "bg-transparent text-off-white border-pink-mist/50 hover:bg-off-white/10"
+                    } disabled:cursor-not-allowed`}
+                  >
+                    {active ? "Selected" : "Select"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOpenId(item.id)}
+                    className="shrink-0 rounded-full px-3 py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
+                  >
+                    View
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <p className="mt-6 text-center text-xs tracking-[0.2em] text-pink-mist">
+          ♡ mix &amp; match your favourite spreads ♡
+        </p>
+      </div>
+
+      <TemplateModal
+        open={!!openId}
+        templateIndex={items.findIndex((t) => t.id === openId)}
+        onClose={() => setOpenId(null)}
+      />
+    </>
+  );
+}
+
+/* -------------------------------------------------------------- */
+/* Modal                                                           */
+/* -------------------------------------------------------------- */
+function TemplateModal({
+  open,
+  templateIndex,
+  onClose,
+}: {
+  open: boolean;
+  templateIndex: number;
+  onClose: () => void;
+}) {
+  const item = templateIndex >= 0 ? CATALOG.templates[templateIndex] : null;
+  const selectedIds = useStore((s) => s.selectedTemplateIds);
+  const selectedSizeId = useStore((s) => s.selectedSizeId);
+  const limit = useStore((s) => s.templateLimit());
+  const toggleTemplate = useStore((s) => s.toggleTemplate);
+  const {
+    reviews, loading, posting, avg, reviewerId,
+    rvName, setRvName, rvText, setRvText, rvRating, setRvRating,
+    submitReview, deleteReview,
+  } = useProductReviews(item?.id ?? null);
+
+  if (!open || !item) return null;
+
+  const label = `Template ${String(templateIndex + 1).padStart(2, "0")}`;
+  const hero = templateHero(item.id);
+  const active = selectedIds.includes(item.id);
+
+  const handleToggle = () => {
+    if (!selectedSizeId) return toast.error("Pick a page package first.");
+    const already = active;
+    const ok = toggleTemplate(item.id);
+    if (!ok) return toast.error(`You can only pick ${limit} template(s) for this package.`);
+    toast.success(already ? `${label} removed` : `${label} selected`);
+  };
+
+  return (
+    <ModalShell onClose={onClose} maxW="max-w-4xl">
+      <div className="grid gap-6 md:grid-cols-12 items-start">
+        <div className="md:col-span-6 flex justify-center">
+          <div className="w-full max-w-[560px] rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10">
+            {hero ? (
+              <img src={hero} alt={label} className="w-full h-auto object-contain" />
+            ) : (
+              <div className="aspect-[2480/1754] relative">
+                <TemplatePlaceholder n={templateIndex + 1} />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="md:col-span-6 flex flex-col">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">Magazine Spread</p>
+          <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">{label}</h3>
+          <ReviewStars avg={avg} count={reviews.length} />
+          <p className="mt-4 text-3xl font-semibold text-blush-rose">Included</p>
+          <div className="mt-4 h-px bg-rose-wine/10" />
+          <p className="mt-4 text-sm leading-relaxed text-neutral-700">{item.desc}</p>
+          <ul className="mt-3 space-y-1.5 text-sm text-neutral-700">
+            <li>• Symmetric right–left spread</li>
+            <li>• Editorial typography &amp; grid</li>
+            <li>• Fully customised with your photos</li>
+          </ul>
+
+          <button
+            onClick={handleToggle}
+            className={`pill-btn pill-btn-hover mt-6 w-full !py-3 !text-base ${
+              active ? "!bg-rose-wine !text-white !border-rose-wine" : "pill-primary"
+            }`}
+          >
+            {active ? "Remove from selection" : "Add to selection"}
+          </button>
+        </div>
+      </div>
+
+      <ReviewsPanel
+        reviews={reviews} loading={loading} posting={posting} reviewerId={reviewerId}
+        rvName={rvName} setRvName={setRvName} rvText={rvText} setRvText={setRvText}
+        rvRating={rvRating} setRvRating={setRvRating}
+        onSubmit={submitReview} onDelete={deleteReview}
+      />
+    </ModalShell>
+  );
+}

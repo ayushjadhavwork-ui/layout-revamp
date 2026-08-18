@@ -1,0 +1,263 @@
+# Backend Setup — Google Apps Script (Code.gs)
+
+This project uses a Google Sheet + Apps Script Web App as its backend for
+coupons, cart logs, completed orders, and product reviews. The frontend
+talks to it through `src/lib/gas.ts` using the URL in
+`CONFIG.GAS_URL` (see `src/lib/catalog.ts`).
+
+---
+
+## 1. Create the Google Sheet
+
+Create a new Google Sheet named e.g. **"The Layout — Backend"** with these
+tabs and header rows (row 1). Header names must match exactly.
+
+### Tab: `Coupons`
+| code | percent | active |
+|------|---------|--------|
+| LAYOUT10 | 10 | TRUE |
+
+- `code`: coupon code (case-insensitive on validate)
+- `percent`: number, e.g. `10` for 10%
+- `active`: `TRUE` or `FALSE`
+
+**You don't need a row here for SPINPOLA / SPINLETTER / SPINSTICK.**
+`validateCoupon` now falls back to the `Spin Config` tab (see §7) when a code
+isn't found in `Coupons` — any active spin-wheel prize code is automatically
+a valid 0%-off coupon, and the frontend grants the matching free item
+(polaroid strip / letter / sticker pack) instead of a discount. Only add a
+`Coupons` row for a code if you want it to give a real % discount (like
+`LAYOUT10` or `SPIN10`).
+
+### Tab: `Cart Logs`
+| cartId | name | phone | email | address | cart | total | timestamp |
+
+(Headers auto-created on first write; you can leave the sheet empty.)
+
+### Tab: `Completed Orders`
+| orderId | cartId | name | phone | email | address | cart | total | coupon | screenshotUrl | timestamp |
+
+(Headers auto-created on first write.)
+
+### Tab: `Reviews`
+| id | productId | name | rating | text | reviewerId | timestamp |
+
+**Important:** Add this header row manually before first use — the script
+does not auto-create it, and `getReviews` needs the header row to map
+columns.
+
+### Tab: `Errors` (new)
+| timestamp | message | stack | url | userAgent | extra |
+
+(Headers auto-created on first write.) Fed by `src/lib/telemetry.ts`, which
+catches uncaught client errors and unhandled promise rejections, dedupes
+them, caps each browser session at 10 reports, and fire-and-forget POSTs a
+`logError` action here. If this tab doesn't exist yet, `logError` just
+no-ops instead of failing — you don't need to create it before deploying,
+only before you want errors to actually start showing up somewhere.
+
+---
+
+## 2. Add the Apps Script
+
+1. In the sheet: **Extensions → Apps Script**.
+2. Replace `Code.gs` with the project's `Code.gs` (the one you provided).
+3. Save the project (name it e.g. "The Layout Backend").
+
+### Optional hardening (recommended)
+
+Add this at the top of `submitReview` so the Reviews sheet is
+auto-initialized if empty:
+
+```js
+ensureHeaders(sheet, ["id","productId","name","rating","text","reviewerId","timestamp"]);
+```
+
+---
+
+## 3. Deploy as Web App
+
+1. Click **Deploy → New deployment**.
+2. Type: **Web app**.
+3. Description: `The Layout API v1`.
+4. **Execute as**: `Me` (your Google account).
+5. **Who has access**: `Anyone` (required — the site calls it without login).
+6. Click **Deploy**, authorize the scopes when prompted
+   (Sheets + Drive — Drive is needed to save payment screenshots).
+7. Copy the **Web app URL** (ends in `/exec`).
+
+### Re-deploying after edits
+Every code change needs a new **version** to go live:
+**Deploy → Manage deployments → pencil icon → Version: New version → Deploy**.
+The URL stays the same.
+
+**This applies to the concurrency/telemetry update in this `Code.gs`** — it
+adds `LockService` locking around every write handler (`logCart`,
+`completeOrder`, `submitReview`, `deleteReview`, `spinLead`), a new
+`logError` action, screenshot mime-type detection, and the invoice
+template-row aggregation. None of it takes effect until you push a new
+deployment version.
+
+---
+
+## 4. Wire it into the frontend
+
+Open `src/lib/catalog.ts` and set:
+
+```ts
+export const CONFIG = {
+  GAS_URL: "https://script.google.com/macros/s/XXXXXXXXXXXXXX/exec",
+  // ...
+};
+```
+
+Until this is set, `src/lib/gas.ts` runs in mock mode
+(coupon `LAYOUT10` = 10%, empty reviews, no writes).
+
+---
+
+## 5. API contract (what the frontend sends)
+
+All POSTs use `Content-Type: text/plain;charset=utf-8` (to avoid a CORS
+preflight); the body is JSON. Apps Script reads it from
+`e.postData.contents`.
+
+| Action | Method | Payload | Response |
+|--------|--------|---------|----------|
+| `validateCoupon` | GET `?action=validateCoupon&code=XYZ` | — | `{ valid, percent?, message? }` |
+| `getReviews` | GET `?action=getReviews&productId=strip-1` | — | `{ reviews: [...] }` |
+| `logCart` | POST | `{ action, cartId, customer, cart, total, ts }` | `{ ok, cartId }` |
+| `completeOrder` | POST | `{ action, orderId, cartId, customer, cart, total, coupon?, screenshot?, screenshotName?, ts }` | `{ ok, orderId }` |
+| `submitReview` | POST | `{ action, productId, name, rating, text, reviewerId }` | `{ ok, id }` |
+| `deleteReview` | POST | `{ action, id, reviewerId }` | `{ ok }` |
+| `logError` | POST | `{ action, message, stack?, url, userAgent, ts, ...extra }` | `{ ok }` |
+
+`logCart`, `completeOrder`, `submitReview`, `deleteReview`, and `spinLead`
+all run inside a script-wide `LockService` lock (30s wait, then a `{ ok:
+false, error: "Server is busy…" }`/`{ success: false, ... }` response) so
+concurrent requests can't interleave mid-write. `logError` is intentionally
+left unlocked — it's best-effort telemetry, not worth contending with a real
+order write over.
+
+`screenshot` is a data URL (`data:image/png;base64,...`). The script
+strips the prefix, saves the file to a Drive folder called
+**"The Layout — Payment Screenshots"**, and stores the shareable URL.
+
+---
+
+## 6. Troubleshooting
+
+- **"Invalid code (backend not configured)"** — `GAS_URL` still starts with
+  `REPLACE`. Set it in `src/lib/catalog.ts`.
+- **CORS error** — you edited `gas.ts` to send `application/json`. Keep it
+  as `text/plain` so the browser skips the preflight.
+- **`SpreadsheetApp.getActiveSpreadsheet()` returns null** — the script
+  isn't bound to a sheet. Open the sheet → Extensions → Apps Script (do
+  not create the script from script.google.com standalone).
+- **Reviews return empty / column undefined** — the `Reviews` tab is
+  missing the header row. Add it manually (see §1).
+- **Changes not showing after edit** — you didn't publish a new version.
+  Deploy → Manage deployments → New version.
+- **Drive permission error on screenshots** — re-run the deployment flow
+  and grant Drive access when prompted.
+- **Still failing after granting Drive access + redeploying** — check
+  whether `appsscript.json` has a manually-added `oauthScopes` array. Once
+  that key exists, Apps Script stops auto-detecting scopes from your code
+  and grants *only* what's listed — so a missing or too-narrow entry (e.g.
+  `drive.file` instead of `drive`; `getFoldersByName` needs the full
+  `https://www.googleapis.com/auth/drive` scope since it searches all of
+  Drive, not just app-created files) will keep Drive calls failing even
+  though "Google Drive" shows up as an authorized permission. Easiest fix:
+  delete the `oauthScopes` key entirely and let Apps Script auto-manage
+  scopes, then re-authorize (run any function that calls `DriveApp` once
+  manually from the editor) and deploy a new version. The exact failure
+  reason is always in the `screenshotUrl` column as `ERROR: <message>` —
+  check that first before guessing.
+
+---
+
+## 7. Spin-the-Wheel lead capture
+
+The wheel's prizes are entirely sheet-driven — there is nothing to edit in
+code to add, remove, reorder, reweight, or pause a prize. `Code.gs` already
+implements `getSpinConfig` and `handleSpinLead`; you only need to create the
+two tabs below.
+
+**You don't have to create `Spin Config` before the wheel works.** If that
+tab doesn't exist yet, the backend uses a built-in default prize list (the
+same one shown in the example rows below) so spins still work and get
+recorded in `Spin Leads` immediately. Once you create the tab, it fully
+takes over.
+
+### Tab: `Spin Config`
+| Order | Label | Icon | Code | Weight | Active | Color |
+|-------|-------|------|------|--------|--------|-------|
+| 1 | FREE 1 Polaroid Strip | polaroid | SPINPOLA | 20 | TRUE | |
+| 2 | FREE Personalized Letter | envelope | SPINLETTER | 20 | TRUE | |
+| 3 | 10% OFF Your Magazine Order | tag | SPIN10 | 25 | TRUE | |
+| 4 | FREE Sticker Pack | sticker | SPINSTICK | 20 | TRUE | |
+| 5 | Better Luck Next Time | clover | | 15 | TRUE | |
+
+- **Order**: controls slice position clockwise from the top (1, 2, 3…).
+- **Label**: shown on the wheel slice and the result screen.
+- **Icon**: a key the frontend maps to an icon — `polaroid`, `envelope`,
+  `tag`, `sticker`, `clover`. An unrecognized key falls back to a default
+  gift icon (and logs a console warning) instead of breaking anything.
+- **Code**: coupon code to grant; leave blank for a non-prize segment
+  ("Better luck next time").
+- **Weight**: relative odds, any positive number — doesn't need to sum to
+  100.
+- **Active**: `TRUE`/`FALSE` (or `1`/`0`) — `FALSE` rows are excluded from
+  both the wheel and the win-picking logic, so you can pause a prize
+  without deleting its row/history.
+- **Color**: optional hex code for the slice fill. Leave blank to let the
+  frontend cycle through its default palette.
+
+Add, remove, reorder, or edit rows any time — the site picks up changes on
+the next page load, no redeploy required.
+
+### Tab: `Spin Leads`
+| Timestamp | Email | Marketing Opt-in | Segment Won | Coupon Code | Session ID | Redeemed | Expires At |
+
+(Headers auto-created on first write.)
+
+The homepage popup posts `{ action: "spinLead", email, optIn, sessionId }`;
+the server enforces one spin per email and picks the winning segment
+server-side (never trust the client) by reading the same `Spin Config` tab
+the wheel rendered from, so the visible odds and the actual odds can never
+drift apart. If `Spin Config` exists but every row is inactive (or the
+sheet is emptied out), both `getSpinConfig` and `handleSpinLead` return
+`{ success: false, error: "Spin wheel is not configured" }` instead of
+crashing — the frontend responds by hiding the spin trigger entirely. This
+is a deliberate kill-switch: emptying the sheet pauses the whole feature
+without touching code.
+
+The frontend falls back to a small local mock config if `GAS_URL` is not
+yet configured, so the popup still works end-to-end during development.
+
+---
+
+## 8. Final build checklist (current state)
+
+- `CONFIG.GAS_URL` in `src/lib/catalog.ts` **is** set to a deployed `/exec`
+  URL, so the site is live against the sheet (not mock mode).
+- Tabs the deployed script needs: `Coupons`, `Cart Logs`, `Completed Orders`,
+  `Reviews` (header row must be added manually), `Spin Config` (optional —
+  falls back to defaults), `Spin Leads`.
+- After any edit to `Code.gs`, publish a **new version** of the deployment or
+  the live site keeps running the old code.
+
+### What order handling does today (no invoices)
+
+There is **no automatic invoice or PDF generation, and no online payment
+gateway**. The flow is:
+
+1. Cart is logged to `Cart Logs` (`logCart`) with customer details + totals.
+2. Customer pays out-of-band and uploads a **payment screenshot**.
+3. `completeOrder` writes the row to `Completed Orders` with an order id,
+   itemised cart, total, coupon and the Drive link to that screenshot.
+4. Confirmation continues over WhatsApp.
+
+The `Completed Orders` sheet is therefore the order/receipt record. If a real
+invoice (numbered PDF emailed to the customer) or a payment gateway is wanted,
+that's a separate build.
