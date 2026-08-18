@@ -177,7 +177,9 @@ function Home() {
         <HowToOrder />
       </TiledSection>
 
-      
+      <ImageUploadSection />
+
+
       <CreateMagazineSection />
 
       <section className="pattern-satin">
@@ -884,6 +886,18 @@ function CustomImageSection() {
           View our blog posts <ArrowUpRight className="h-4 w-4" />
         </a>
       </div>
+    </section>
+  );
+}
+
+function ImageUploadSection() {
+  return (
+    <section className="relative z-10 w-full">
+      <img
+        src="/media/bg/image_upload.webp"
+        alt="Showcase"
+        className="block w-full h-auto object-center"
+      />
     </section>
   );
 }
