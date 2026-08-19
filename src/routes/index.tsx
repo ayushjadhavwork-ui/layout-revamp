@@ -163,7 +163,8 @@ function Home() {
       <Nav onCart={() => setCartOpen(true)} />
       <Showreel />
       <CustomImageSection />
-      
+      <OrderWaitTimeSection />
+
       <Hero />
 
 
@@ -886,6 +887,22 @@ function CustomImageSection() {
           View our blog posts <ArrowUpRight className="h-4 w-4" />
         </a>
       </div>
+    </section>
+  );
+}
+
+function OrderWaitTimeSection() {
+  return (
+    // Same "full-bleed, scale by width, never crop" treatment as the other
+    // bg banners (CustomImageSection/CreateMagazineSection) — w-full + h-auto
+    // keeps the image's own aspect ratio intact at every screen size, so it
+    // scales down cleanly on mobile instead of being stretched/squished.
+    <section className="relative z-10 w-full">
+      <img
+        src="/media/bg/order_waittime.webp"
+        alt="Order today, get it soon — Express shipping in 7 days or Normal shipping in 12 days"
+        className="block w-full h-auto object-center"
+      />
     </section>
   );
 }

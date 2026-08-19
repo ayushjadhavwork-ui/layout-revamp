@@ -266,7 +266,12 @@ function buildInvoiceHtml_(order) {
 
   const rows = invoiceCart.map((item) => {
     const isSize = item.category === "sizes";
-    const label = isSize ? ("Custom Magazine (" + item.name + ")") : item.name;
+    // Standard and Mini share the same item.name ("8 Pages", etc.) — the
+    // format only shows up in the id suffix (sz-8 vs sz-8-mini) — so spell
+    // it out here or the invoice can't tell the customer which one they got.
+    const isMini = isSize && /-mini$/.test(String(item.id));
+    const formatLabel = isMini ? "Mini Magazine, A5" : "Normal Magazine, A4";
+    const label = isSize ? ("Custom Magazine (" + item.name + ", " + formatLabel + ")") : item.name;
     const notes = [];
     if (item.note) notes.push(escapeHtml_(item.note));
     if (item.comboId) notes.push("Included in " + escapeHtml_(comboNameById[item.comboId] || "combo"));
