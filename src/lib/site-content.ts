@@ -366,7 +366,11 @@ export const SITE = {
 
 
     howToOrder: {
+<<<<<<< HEAD
       repeat: "/media/bg/4.svg",
+=======
+      repeat: "/media/bg/4.webp",
+>>>>>>> 820c9aa7e3b42d8f5ae6906f0e41d15e74bffabd
     } as Tiles,
 
     journey:  {} as Tiles,
@@ -381,7 +385,11 @@ export const SITE = {
     // },
     
     founders: {
+<<<<<<< HEAD
       tail: "/media/bg/1.svg"
+=======
+      tail: "/media/bg/1.webp"
+>>>>>>> 820c9aa7e3b42d8f5ae6906f0e41d15e74bffabd
     } as Tiles,
   } as Record<string, Tiles>,
 };
