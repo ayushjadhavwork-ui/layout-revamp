@@ -38,19 +38,19 @@ function PolaroidTile({
   active: boolean;
 }) {
   return (
-    <div className="relative w-full max-w-[220px] mx-auto aspect-square">
+    <div className="polaroid-tile relative w-full max-w-[220px] mx-auto aspect-square">
       {/* Backdrop cards for the "stack" effect */}
       <div
-        className="absolute inset-0 bg-white rounded-sm shadow-md"
+        className="polaroid-tile-backdrop-a absolute inset-0 bg-white rounded-sm shadow-md"
         style={{ transform: "rotate(-6deg) translate(-6px, 4px)" }}
       />
       <div
-        className="absolute inset-0 bg-white rounded-sm shadow-md"
+        className="polaroid-tile-backdrop-b absolute inset-0 bg-white rounded-sm shadow-md"
         style={{ transform: "rotate(3deg) translate(4px, 2px)" }}
       />
       {/* Front polaroid: photo + white bottom frame */}
       <div
-        className={`absolute inset-0 bg-white rounded-sm shadow-lg flex flex-col p-2.5 pb-6 transition ${
+        className={`polaroid-tile-frame absolute inset-0 bg-white rounded-sm shadow-lg flex flex-col p-2.5 pb-6 transition ${
           active ? "ring-2 ring-rose-wine" : ""
         }`}
       >
@@ -64,7 +64,7 @@ function PolaroidTile({
             />
           ) : (
             <div className="h-full w-full grid place-items-center text-neutral-400">
-              <Camera className="h-8 w-8" />
+              <Camera className="polaroid-tile-cam-icon h-8 w-8" />
             </div>
           )}
         </div>
@@ -95,7 +95,7 @@ export function PacksSection() {
           <p className="mt-2 text-xs uppercase tracking-[0.35em] text-pink-mist">Add-on to your order</p>
         </div>
 
-        <div className="grid grid-cols-4 gap-2 sm:gap-5">
+        <div className="polaroid-pack-grid grid grid-cols-4 gap-2 sm:gap-5">
           {items.map((item) => {
             const cartItem = cart.find((c) => c.category === "polaroids" && c.id === item.id);
             const active = !!cartItem;
@@ -114,44 +114,44 @@ export function PacksSection() {
               <div
                 key={item.id}
                 onClick={handleToggle}
-                className={`relative rounded-xl p-3 sm:p-4 md:p-5 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
+                className={`polaroid-pack-card relative rounded-xl p-3 sm:p-4 md:p-5 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
                   active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
                 }`}
               >
                 {active && (
-                  <span className="absolute top-2 right-2 sm:top-3 sm:right-3 grid h-6 w-6 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10">
+                  <span className="polaroid-pack-badge absolute top-2 right-2 sm:top-3 sm:right-3 grid h-6 w-6 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10">
                     <Check className="h-3.5 w-3.5" />
                   </span>
                 )}
 
-                <div className="flex items-center gap-1.5 text-pink-mist mb-2">
+                <div className="polaroid-pack-camicon flex items-center gap-1.5 text-pink-mist mb-2">
                   <Camera className="h-4 w-4" />
                 </div>
-                <h4 className="font-display uppercase tracking-[0.2em] text-xs sm:text-sm text-off-white leading-tight">
+                <h4 className="polaroid-pack-title font-display uppercase tracking-[0.2em] text-xs sm:text-sm text-off-white leading-tight">
                   {item.name}
                 </h4>
 
                 <div
                   onClick={(e) => { e.stopPropagation(); setOpenId(item.id); }}
-                  className="mt-3 sm:mt-4 w-full cursor-zoom-in"
+                  className="polaroid-pack-photo-wrap mt-3 sm:mt-4 w-full cursor-zoom-in"
                 >
                   <PolaroidTile photo={packPhoto(item.id)} active={active} />
                 </div>
 
-                <p className="mt-4 sm:mt-5 font-display tracking-[0.2em] text-[0.65rem] sm:text-xs text-off-white">
+                <p className="polaroid-pack-count mt-4 sm:mt-5 font-display tracking-[0.2em] text-[0.65rem] sm:text-xs text-off-white">
                   {meta?.count ?? ""}
                 </p>
-                <div className="my-2 h-px w-12 sm:w-16 bg-pink-mist/40" />
-                <p className="text-[0.55rem] sm:text-[0.6rem] uppercase tracking-[0.3em] text-pink-mist">Selling price</p>
-                <p className="mt-1 inline-block rounded-md px-3 sm:px-4 py-1 font-display text-lg sm:text-xl text-rose-wine bg-off-white">
+                <div className="polaroid-pack-divider my-2 h-px w-12 sm:w-16 bg-pink-mist/40" />
+                <p className="polaroid-pack-label text-[0.55rem] sm:text-[0.6rem] uppercase tracking-[0.3em] text-pink-mist">Selling price</p>
+                <p className="polaroid-pack-price mt-1 inline-block rounded-md px-3 sm:px-4 py-1 font-display text-lg sm:text-xl text-rose-wine bg-off-white">
                   {fmt(item.price)}
                 </p>
 
-                <div className="mt-4 flex gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
+                <div className="polaroid-pack-actions mt-4 flex gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
                   <button
                     type="button"
                     onClick={handleToggle}
-                    className={`flex-1 min-w-0 rounded-full px-2 sm:px-3 py-1.5 text-[0.65rem] sm:text-[0.7rem] font-medium transition border truncate ${
+                    className={`polaroid-pack-select flex-1 min-w-0 rounded-full px-2 sm:px-3 py-1.5 text-[0.65rem] sm:text-[0.7rem] font-medium transition border truncate ${
                       active
                         ? "bg-off-white text-rose-wine border-off-white"
                         : "bg-transparent text-off-white border-pink-mist/50 hover:bg-off-white/10"
@@ -163,7 +163,7 @@ export function PacksSection() {
                     type="button"
                     onClick={() => setOpenId(item.id)}
                     aria-label={`View ${item.name}`}
-                    className="grid shrink-0 place-items-center rounded-full px-2.5 sm:px-3 py-1.5 text-[0.65rem] sm:text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
+                    className="polaroid-pack-view grid shrink-0 place-items-center rounded-full px-2.5 sm:px-3 py-1.5 text-[0.65rem] sm:text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
                   >
                     <Eye className="h-3 w-3 sm:hidden" />
                     <span className="hidden sm:inline">View</span>

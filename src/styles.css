@@ -164,3 +164,92 @@
   from { opacity: 0; transform: scale(1.04); }
   to { opacity: 1; transform: scale(1); }
 }
+
+/* --- Polaroid packs: keep all 4 cards on one row on mobile, shrunk
+   down to a miniature of the desktop layout instead of stacking/scrolling. --- */
+@media (max-width: 768px) {
+  .polaroid-pack-grid {
+    gap: clamp(4px, 1.4vw, 10px);
+  }
+
+  .polaroid-pack-card {
+    padding: clamp(4px, 1.6vw, 10px) clamp(3px, 1.2vw, 8px);
+    border-radius: 10px;
+  }
+
+  .polaroid-pack-camicon {
+    margin-bottom: 2px;
+  }
+  .polaroid-pack-camicon svg {
+    width: 9px;
+    height: 9px;
+  }
+
+  .polaroid-pack-badge {
+    width: 14px;
+    height: 14px;
+    top: 3px;
+    right: 3px;
+  }
+  .polaroid-pack-badge svg {
+    width: 7px;
+    height: 7px;
+  }
+
+  .polaroid-pack-title {
+    font-size: clamp(6.5px, 2vw, 9px);
+    letter-spacing: 0.04em;
+    word-break: break-word;
+  }
+
+  .polaroid-pack-photo-wrap {
+    margin-top: clamp(4px, 1.2vw, 8px) !important;
+  }
+
+  .polaroid-tile-frame {
+    padding: clamp(2px, 0.8vw, 5px) clamp(2px, 0.8vw, 5px) clamp(6px, 1.6vw, 10px);
+  }
+  .polaroid-tile-backdrop-a {
+    transform: rotate(-6deg) translate(-2px, 1.5px) !important;
+  }
+  .polaroid-tile-backdrop-b {
+    transform: rotate(3deg) translate(1.5px, 1px) !important;
+  }
+  .polaroid-tile-cam-icon {
+    width: 16px;
+    height: 16px;
+  }
+
+  .polaroid-pack-count {
+    font-size: clamp(5px, 1.5vw, 7px);
+    letter-spacing: 0.06em;
+    margin-top: clamp(4px, 1.2vw, 8px) !important;
+  }
+
+  .polaroid-pack-divider {
+    width: 20px;
+    margin: 4px auto !important;
+  }
+
+  .polaroid-pack-label {
+    font-size: clamp(4.2px, 1.2vw, 5.5px);
+    letter-spacing: 0.08em;
+  }
+
+  .polaroid-pack-price {
+    font-size: clamp(9px, 2.6vw, 13px);
+    padding: clamp(2px, 0.8vw, 4px) clamp(5px, 1.6vw, 10px);
+    margin-top: 2px !important;
+  }
+
+  .polaroid-pack-actions {
+    gap: 3px;
+    margin-top: clamp(4px, 1.2vw, 8px) !important;
+  }
+
+  .polaroid-pack-select,
+  .polaroid-pack-view {
+    font-size: clamp(5.5px, 1.6vw, 7.5px);
+    padding: clamp(3px, 1vw, 5px) clamp(3px, 1vw, 6px);
+  }
+}
