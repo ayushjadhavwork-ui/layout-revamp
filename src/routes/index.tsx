@@ -871,7 +871,7 @@ function CustomImageSection() {
         3. Kept the aspect ratio and object-cover so the text stays perfectly centered.
       */}
       <img
-        src="/media/bg/2.webp"
+        src="/media/bg/2.svg"
         alt="Showcase"
         className="block w-full h-auto object-center"
       />
@@ -923,7 +923,7 @@ function CreateMagazineSection() {
   return (
     <section className="relative z-10 w-full">
       <img 
-        src="/media/bg/3.webp"
+        src="/media/bg/3.svg"
         alt="Showcase" 
         // Swapped aspect-[4/3] and object-cover for h-auto
         // This makes the image scale proportionally without ever cropping the sides
