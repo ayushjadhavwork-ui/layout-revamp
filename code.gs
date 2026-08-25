@@ -256,27 +256,41 @@ function buildInvoiceHtml_(order) {
   // Templates are always zero-cost picks tied to the magazine's page size —
   // one invoice row per template just pads the itemized list with a run of
   // ₹0.00 lines. Fold them into a single subtext line under the magazine
-  // (sizes) row instead, same spirit as the on-site cart summary.
+  // (sizes) row instead, same spirit as the on-site cart summary. The Pocket
+  // Magazine is a separate standalone product with its own template picks
+  // (category "pocket-templates"), folded the same way under its own row —
+  // never mixed with the normal magazine's "templates" list.
   const templateItems = cart.filter((c) => c.category === "templates");
   const templateLabels = templateItems.map((t) => {
     const m = String(t.id).match(/tpl-(\d+)/);
     return m ? m[1] : escapeHtml_(t.name);
   });
-  const invoiceCart = cart.filter((c) => c.category !== "templates");
+  const pocketTemplateItems = cart.filter((c) => c.category === "pocket-templates");
+  const pocketTemplateLabels = pocketTemplateItems.map((t) => {
+    const m = String(t.id).match(/tpl-(\d+)/);
+    return m ? m[1] : escapeHtml_(t.name);
+  });
+  const invoiceCart = cart.filter((c) => c.category !== "templates" && c.category !== "pocket-templates");
 
   const rows = invoiceCart.map((item) => {
     const isSize = item.category === "sizes";
+    const isPocket = item.category === "pocket";
     // Standard and Mini share the same item.name ("8 Pages", etc.) — the
     // format only shows up in the id suffix (sz-8 vs sz-8-mini) — so spell
     // it out here or the invoice can't tell the customer which one they got.
     const isMini = isSize && /-mini$/.test(String(item.id));
     const formatLabel = isMini ? "Mini Magazine, A5" : "Normal Magazine, A4";
-    const label = isSize ? ("Custom Magazine (" + item.name + ", " + formatLabel + ")") : item.name;
+    const label = isSize
+      ? ("Custom Magazine (" + item.name + ", " + formatLabel + ")")
+      : isPocket
+        ? "Pocket Magazine (6 Pages, Pocket Size)"
+        : item.name;
     const notes = [];
     if (item.note) notes.push(escapeHtml_(item.note));
     if (item.comboId) notes.push("Included in " + escapeHtml_(comboNameById[item.comboId] || "combo"));
     if (item.promoCode) notes.push("Free — redeemed with " + escapeHtml_(item.promoCode));
     if (isSize && templateLabels.length) notes.push("Templates:- " + templateLabels.join(", "));
+    if (isPocket && pocketTemplateLabels.length) notes.push("Templates:- " + pocketTemplateLabels.join(", "));
     const noteHtml = notes.length ? ('<div class="item-note">' + notes.join(" · ") + "</div>") : "";
     return (
       "<tr>" +

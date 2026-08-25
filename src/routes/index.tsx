@@ -16,6 +16,7 @@ import { StripsSection } from "@/components/site/strips-section";
 import { PacksSection } from "@/components/site/packs-section";
 import { TemplatesSection } from "@/components/site/templates-section";
 import { SizesSection } from "@/components/site/sizes-section";
+import { PocketMagazineSection } from "@/components/site/pocket-section";
 import { AddonsSection } from "@/components/site/addons-section";
 import { CombosSection } from "@/components/site/combos-section";
 import { NewspaperSection } from "@/components/site/newspaper-section";
@@ -118,6 +119,9 @@ function Home() {
   const selectedSizeId = useStore((s) => s.selectedSizeId);
   const selectedTemplateIds = useStore((s) => s.selectedTemplateIds);
   const templateLimit = useStore((s) => s.templateLimit());
+  const selectedPocketTemplateIds = useStore((s) => s.selectedPocketTemplateIds);
+  const pocketTemplateLimit = useStore((s) => s.pocketTemplateLimit());
+  const pocketInCart = cart.some((c) => c.category === "pocket");
 
   const openProduct = (cat: Category) => (p: Product) => {
     setModalCat(cat);
@@ -131,6 +135,11 @@ function Home() {
     }
     if (selectedSizeId && selectedTemplateIds.length < templateLimit) {
       toast.error(`Pick your ${templateLimit} template${templateLimit === 1 ? "" : "s"} before ordering — ${selectedTemplateIds.length}/${templateLimit} selected.`);
+      document.getElementById("templates")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    if (pocketInCart && selectedPocketTemplateIds.length < pocketTemplateLimit) {
+      toast.error(`Pick your ${pocketTemplateLimit} Pocket Magazine template${pocketTemplateLimit === 1 ? "" : "s"} before ordering — ${selectedPocketTemplateIds.length}/${pocketTemplateLimit} selected.`);
       document.getElementById("templates")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
@@ -205,8 +214,12 @@ function Home() {
           </div>
         </div>
 
-
-
+        <div className="relative z-10 px-4 py-12 sm:py-20">
+          <div className="mx-auto max-w-6xl">
+            <SectionHead eyebrow="Step 1" title="Pocket Magazine" sub="A standalone product of its own — strictly 6 pages, pocket-sized, ₹250 flat. Add it alongside your magazine above, or all on its own." />
+            <PocketMagazineSection />
+          </div>
+        </div>
 
 
 

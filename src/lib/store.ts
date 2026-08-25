@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { CATALOG, STRIP_TIERS, STRIP_MAX, COMBO_RECIPES, COUPON_FREEBIES, type Product, type Category, type SizeFormat } from "./catalog";
+import { CATALOG, STRIP_TIERS, STRIP_MAX, POCKET_TEMPLATE_LIMIT, COMBO_RECIPES, COUPON_FREEBIES, type Product, type Category, type SizeFormat } from "./catalog";
 
 
 export type CartItem = {
@@ -26,6 +26,10 @@ type State = {
   format: SizeFormat;
   selectedSizeId: string | null;
   selectedTemplateIds: string[];
+  // The Pocket Magazine's own template picks — kept separate from
+  // selectedTemplateIds because a customer can have both a normal magazine
+  // and the Pocket Magazine in cart at once, each with its own template set.
+  selectedPocketTemplateIds: string[];
   stripSelections: string[];
   coupon: { code: string; percent: number } | null;
   cartId: string | null;
@@ -37,6 +41,8 @@ type State = {
   setSize: (sizeId: string) => void;
   toggleTemplate: (id: string) => boolean; // returns success
   randomizeTemplates: () => number; // returns count picked
+  togglePocketTemplate: (id: string) => boolean; // returns success
+  randomizePocketTemplates: () => number; // returns count picked
   toggleStrip: (id: string) => boolean; // returns success; false if cap reached
   setCoupon: (c: State["coupon"]) => void;
   applyCouponFreebie: (code: string) => void;
@@ -50,6 +56,7 @@ type State = {
   discount: () => number;
   total: () => number;
   templateLimit: () => number;
+  pocketTemplateLimit: () => number;
 };
 
 
@@ -62,9 +69,9 @@ const key = (cat: Category, id: string) => `${cat}:${id}`;
 const dropCombo = (cart: CartItem[]) => cart.filter((c) => c.category !== "combos" && !c.comboId);
 
 // Categories no combo recipe ever touches — picking these alongside an active
-// combo (delivery, the unrelated Newspaper Magazine product, or a coupon
-// freebie) must not blow away the combo.
-const COMBO_INDEPENDENT: Category[] = ["delivery", "newspaper", "promotions"];
+// combo (delivery, the unrelated Newspaper/Pocket Magazine products, or a
+// coupon freebie) must not blow away the combo.
+const COMBO_INDEPENDENT: Category[] = ["delivery", "newspaper", "pocket", "pocket-templates", "promotions"];
 
 // Categories a combo recipe can auto-populate — selecting a combo must clear
 // any of these picked manually beforehand, or their real price would sit in
@@ -79,6 +86,7 @@ export const useStore = create<State>()(
   format: "standard",
   selectedSizeId: null,
   selectedTemplateIds: [],
+  selectedPocketTemplateIds: [],
   stripSelections: [],
   coupon: null,
   cartId: null,
@@ -102,7 +110,7 @@ export const useStore = create<State>()(
 
   addItem: (category, product, note) => {
     // Single-choice categories (only one active at a time)
-    const singleChoice: Category[] = ["addons", "polaroids", "strips", "delivery", "sizes", "combos", "newspaper"];
+    const singleChoice: Category[] = ["addons", "polaroids", "strips", "delivery", "sizes", "combos", "newspaper", "pocket"];
     set((s) => {
       let cart = (category === "combos" || COMBO_INDEPENDENT.includes(category)) ? s.cart : dropCombo(s.cart);
       if (singleChoice.includes(category)) {
@@ -127,13 +135,25 @@ export const useStore = create<State>()(
       return;
     }
     set((s) => {
-      const patch: Partial<State> = { cart: s.cart.filter((c) => c.key !== k) };
+      let cart = s.cart.filter((c) => c.key !== k);
+      const patch: Partial<State> = { cart };
       if (item?.category === "sizes") {
         patch.selectedSizeId = null;
         patch.selectedTemplateIds = [];
       }
       if (item?.category === "templates") {
         patch.selectedTemplateIds = s.selectedTemplateIds.filter((id) => id !== item.id);
+      }
+      // Removing the Pocket Magazine itself must also drop any templates the
+      // customer had already picked for it — they're meaningless without it,
+      // same as normal-magazine templates when its size is removed.
+      if (item?.category === "pocket") {
+        patch.selectedPocketTemplateIds = [];
+        cart = cart.filter((c) => c.category !== "pocket-templates");
+        patch.cart = cart;
+      }
+      if (item?.category === "pocket-templates") {
+        patch.selectedPocketTemplateIds = s.selectedPocketTemplateIds.filter((id) => id !== item.id);
       }
       if (item?.category === "strips") {
         patch.stripSelections = [];
@@ -198,6 +218,55 @@ export const useStore = create<State>()(
         ...picked.map((tpl) => ({
           key: key("templates", tpl.id),
           category: "templates" as Category,
+          id: tpl.id,
+          name: tpl.name,
+          price: 0,
+        })),
+      ],
+    });
+    return picked.length;
+  },
+
+  togglePocketTemplate: (id) => {
+    const s = get();
+    const pocketActive = s.cart.some((c) => c.category === "pocket");
+    if (!pocketActive) return false;
+    const limit = POCKET_TEMPLATE_LIMIT;
+    const already = s.selectedPocketTemplateIds.includes(id);
+    if (!already && s.selectedPocketTemplateIds.length >= limit) return false;
+    const nextIds = already
+      ? s.selectedPocketTemplateIds.filter((t) => t !== id)
+      : [...s.selectedPocketTemplateIds, id];
+    const tpl = CATALOG.templates.find((t) => t.id === id)!;
+    set({
+      selectedPocketTemplateIds: nextIds,
+      cart: already
+        ? s.cart.filter((c) => c.key !== key("pocket-templates", id))
+        : [...s.cart, { key: key("pocket-templates", id), category: "pocket-templates", id, name: tpl.name, price: 0 }],
+    });
+    return true;
+  },
+
+  randomizePocketTemplates: () => {
+    const s = get();
+    const pocketActive = s.cart.some((c) => c.category === "pocket");
+    if (!pocketActive) return 0;
+    const limit = POCKET_TEMPLATE_LIMIT;
+    // Fisher–Yates shuffle
+    const pool = [...CATALOG.templates];
+    for (let i = pool.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [pool[i], pool[j]] = [pool[j], pool[i]];
+    }
+    const picked = pool.slice(0, limit);
+    const pickedIds = picked.map((t) => t.id);
+    set({
+      selectedPocketTemplateIds: pickedIds,
+      cart: [
+        ...s.cart.filter((c) => c.category !== "pocket-templates"),
+        ...picked.map((tpl) => ({
+          key: key("pocket-templates", tpl.id),
+          category: "pocket-templates" as Category,
           id: tpl.id,
           name: tpl.name,
           price: 0,
@@ -341,7 +410,7 @@ export const useStore = create<State>()(
     stripSelections: [],
   })),
 
-  clear: () => set({ cart: [], selectedSizeId: null, selectedTemplateIds: [], stripSelections: [], coupon: null, cartId: null }),
+  clear: () => set({ cart: [], selectedSizeId: null, selectedTemplateIds: [], selectedPocketTemplateIds: [], stripSelections: [], coupon: null, cartId: null }),
 
 
   subtotal: () => get().cart.reduce((s, c) => s + c.price, 0),
@@ -357,6 +426,7 @@ export const useStore = create<State>()(
     if (!s.selectedSizeId) return 0;
     return CATALOG.sizes.find((sz) => sz.id === s.selectedSizeId)?.templateLimit ?? 0;
   },
+  pocketTemplateLimit: () => POCKET_TEMPLATE_LIMIT,
     }),
     {
       name: "the-layout-cart",
@@ -375,6 +445,7 @@ export const useStore = create<State>()(
         format: s.format,
         selectedSizeId: s.selectedSizeId,
         selectedTemplateIds: s.selectedTemplateIds,
+        selectedPocketTemplateIds: s.selectedPocketTemplateIds,
         stripSelections: s.stripSelections,
         coupon: s.coupon,
         cartId: s.cartId,

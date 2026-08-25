@@ -350,6 +350,10 @@ export const SITE = {
       // only ever shows the two spreads below).
       "news-tpl-1":  ["/media/newspaper/1.webp"],
       "news-tpl-2":  ["/media/newspaper/2.webp"],
+
+      // Pocket Magazine — first entry is the product-card thumbnail, any
+      // further entries become extra gallery images in its modal.
+      "pocket-mag":  ["/media/pocket/pocket-hero.webp"],
   } as Record<string, string[]>,
 
   // ────────────────────────────────────────────────────────────────

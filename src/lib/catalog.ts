@@ -23,6 +23,8 @@ export type Category =
   | "strips"
   | "delivery"
   | "newspaper"
+  | "pocket"
+  | "pocket-templates"
   | "promotions";
 
 
@@ -51,8 +53,25 @@ const SIZE_ROWS: { pages: number; templateLimit: number }[] = [
   { pages: 20, templateLimit: 17 },
 ];
 
-export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
+// The pocket magazine is a strictly 6-page, single-SKU product — fixed page
+// count, fixed template allowance, no size variants like the standard/mini
+// packages above.
+export const POCKET_TEMPLATE_LIMIT = 3;
+
+// Reused by both the normal magazine's "templates" category and the pocket
+// magazine's "pocket-templates" category — same 24 designs, same artwork.
+// The category on the cart line (not the product id) is what distinguishes
+// which magazine a picked template belongs to.
+const TEMPLATES: Product[] = Array.from({ length: SITE.templateCount }, (_, i) => ({
+  id: `tpl-${i + 1}`,
+  name: `Template ${i + 1}`,
+  price: 0,
+  desc: "Curated aesthetic layout — included with your chosen package.",
+}));
+
+export const CATALOG: Record<Exclude<Category, "templates" | "pocket-templates">, Product[]> & {
   templates: Product[];
+  "pocket-templates": Product[];
 } = {
   sizes: [
     // Standard (A4)
@@ -77,12 +96,8 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
 
   // Count lives in site-content.ts (SITE.templateCount) — bump it there.
 
-  templates: Array.from({ length: SITE.templateCount }, (_, i) => ({
-    id: `tpl-${i + 1}`,
-    name: `Template ${i + 1}`,
-    price: 0,
-    desc: "Curated aesthetic layout — included with your chosen package.",
-  })),
+  templates: TEMPLATES,
+  "pocket-templates": TEMPLATES,
   addons: [
     { id: "add-wrap",   name: "Gift Wrap",           price: priceOf("addons", "add-wrap"),   desc: "Pastel gift wrap with ribbon." },
     { id: "add-letter", name: "Handwritten Letter",  price: priceOf("addons", "add-letter"), desc: "A personal letter, penned by us." },
@@ -138,6 +153,20 @@ export const CATALOG: Record<Exclude<Category, "templates">, Product[]> & {
     },
   ],
 
+  // A standalone product within Step 1 — strictly 6 pages, pocket-sized, and
+  // shoppable alongside (not instead of) a Standard/Mini magazine above.
+  // Its own template picks happen in Step 2, tracked separately under the
+  // "pocket-templates" category so they never collide with the main
+  // magazine's template selection.
+  pocket: [
+    {
+      id: "pocket-mag",
+      name: "Pocket Magazine",
+      price: priceOf("pocket", "pocket-mag"),
+      templateLimit: POCKET_TEMPLATE_LIMIT,
+      desc: "6 pages + front & back cover. 3 templates. Tiny in size, but made to hold the biggest memories — a pocket-sized magazine crafted with your photos and personality, stylish, personal, and easy to carry wherever you go.",
+    },
+  ],
 
   // Free items granted by redeeming a Spin-the-Wheel coupon code — never sold
   // directly, only ever added by applyCouponFreebie() in store.ts.

@@ -47,6 +47,7 @@ public/media/
 ├── combos/         ← combo bundle cover shots (see § 2d)
 ├── delivery/       ← delivery-option cover shots (see § 2d)
 ├── newspaper/      ← newspaper spread previews (see § 2d)
+├── pocket/         ← Pocket Magazine card thumbnail (see § 2d)
 └── bg/             ← background tiles (see § 3)
 ```
 
@@ -126,6 +127,7 @@ just uncomment and point them at your files:
 | Combos     | `combo-main`, `combo-core`, `combo-soft`  |
 | Delivery   | `del-std`, `del-exp`                      |
 | Newspaper  | `news-tpl-1`, `news-tpl-2` (the two fixed spread previews — the newspaper product itself has no separate cover slot) |
+| Pocket Magazine | `pocket-mag` (first entry = card thumbnail; its Step 2 template picks reuse the same `tpl-<n>` art as the normal magazine) |
 
 ---
 

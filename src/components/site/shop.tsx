@@ -530,9 +530,13 @@ export function CartDrawer({
   const selectedSizeId = useStore((s) => s.selectedSizeId);
   const selectedTemplateIds = useStore((s) => s.selectedTemplateIds);
   const templateLimit = useStore((s) => s.templateLimit());
+  const selectedPocketTemplateIds = useStore((s) => s.selectedPocketTemplateIds);
+  const pocketTemplateLimit = useStore((s) => s.pocketTemplateLimit());
+  const pocketInCart = cart.some((c) => c.category === "pocket");
   const minOrder = SITE.commerce.minOrderValue;
   const belowMin = cart.length > 0 && total < minOrder;
   const templatesIncomplete = !!selectedSizeId && selectedTemplateIds.length < templateLimit;
+  const pocketTemplatesIncomplete = pocketInCart && selectedPocketTemplateIds.length < pocketTemplateLimit;
   const deliveryMissing = cart.length > 0 && !cart.some((c) => c.category === "delivery");
 
   const activeCombo = cart.find((c) => c.category === "combos");
@@ -643,6 +647,11 @@ export function CartDrawer({
                 Select {templateLimit - selectedTemplateIds.length} more template{templateLimit - selectedTemplateIds.length === 1 ? "" : "s"} for your magazine ({selectedTemplateIds.length}/{templateLimit} picked) before checking out.
               </p>
             )}
+            {pocketTemplatesIncomplete && (
+              <p className="text-center text-xs text-rose-wine">
+                Select {pocketTemplateLimit - selectedPocketTemplateIds.length} more template{pocketTemplateLimit - selectedPocketTemplateIds.length === 1 ? "" : "s"} for your Pocket Magazine ({selectedPocketTemplateIds.length}/{pocketTemplateLimit} picked) before checking out.
+              </p>
+            )}
             {deliveryMissing && (
               <p className="text-center text-xs text-rose-wine">
                 Choose a delivery option before checking out.
@@ -652,7 +661,7 @@ export function CartDrawer({
 
           <button
             onClick={onCheckout}
-            disabled={cart.length === 0 || belowMin || templatesIncomplete || deliveryMissing}
+            disabled={cart.length === 0 || belowMin || templatesIncomplete || pocketTemplatesIncomplete || deliveryMissing}
             className="pill-btn pill-btn-hover pill-primary mt-5 w-full disabled:opacity-50"
           >
             Checkout <ArrowUpRight className="h-4 w-4" />
@@ -981,15 +990,25 @@ export function StepIndicator() {
   const selectedSizeId = useStore((s) => s.selectedSizeId);
   const selectedTemplateIds = useStore((s) => s.selectedTemplateIds);
   const limit = useStore((s) => s.templateLimit());
-  if (!selectedSizeId) return (
+  const cart = useStore((s) => s.cart);
+  const pocketInCart = cart.some((c) => c.category === "pocket");
+  const selectedPocketTemplateIds = useStore((s) => s.selectedPocketTemplateIds);
+  const pocketLimit = useStore((s) => s.pocketTemplateLimit());
+
+  if (!selectedSizeId && !pocketInCart) return (
     <p className="text-center text-sm text-dusty-rose mb-6">
-      <Plus className="inline h-4 w-4 -mt-0.5" /> Pick a page package below to unlock templates.
+      <Plus className="inline h-4 w-4 -mt-0.5" /> Pick a page package, or add the Pocket Magazine, below to unlock templates.
     </p>
   );
   return (
-    <p className="text-center text-sm text-rose-wine mb-6">
-      <Check className="inline h-4 w-4 -mt-0.5" /> Package selected — templates chosen {selectedTemplateIds.length}/{limit}
-    </p>
+    <div className="mb-6 space-y-1 text-center text-sm text-rose-wine">
+      {selectedSizeId && (
+        <p><Check className="inline h-4 w-4 -mt-0.5" /> Package selected — templates chosen {selectedTemplateIds.length}/{limit}</p>
+      )}
+      {pocketInCart && (
+        <p><Check className="inline h-4 w-4 -mt-0.5" /> Pocket Magazine selected — templates chosen {selectedPocketTemplateIds.length}/{pocketLimit}</p>
+      )}
+    </div>
   );
 }
 
@@ -1003,6 +1022,11 @@ function CartSummaryPanel() {
 
   const sizeItem = CATALOG.sizes.find((s) => s.id === selectedSizeId);
   const templates = cart.filter((c) => c.category === "templates").map((c) => {
+    const m = c.id.match(/tpl-(\d+)/);
+    return m ? Number(m[1]) : c.id;
+  });
+  const pocketItem = cart.find((c) => c.category === "pocket");
+  const pocketTemplates = cart.filter((c) => c.category === "pocket-templates").map((c) => {
     const m = c.id.match(/tpl-(\d+)/);
     return m ? Number(m[1]) : c.id;
   });
@@ -1046,6 +1070,19 @@ function CartSummaryPanel() {
           </p>
         </div>
       </div>
+
+      {pocketItem && (
+        <div className="mt-4 border-t border-white/60 pt-3 text-xs">
+          <p className="font-semibold text-rose-wine uppercase tracking-wider mb-2">Pocket Magazine</p>
+          <p className="text-neutral-700">
+            <span className="text-dusty-rose">Pages:</span> 6 Pages (Pocket Size)
+          </p>
+          <p className="mt-1 text-neutral-700">
+            <span className="text-dusty-rose">Templates:</span>{" "}
+            {pocketTemplates.length ? `[${pocketTemplates.join(", ")}]` : "—"}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
