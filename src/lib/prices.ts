@@ -113,6 +113,23 @@ export const PRICES = {
   pocket: {
     "pocket-mag": 250,
   },
+
+  // -------------------------------------------------------
+  // FRIENDSHIP CARD (standalone) — selling price actually charged.
+  // -------------------------------------------------------
+  friendship: {
+    "friend-single": 300, // Single Card
+    "friend-duo": 499, // Duo Card — BESTIE SET
+  },
+
+  // -------------------------------------------------------
+  // FRIENDSHIP CARD — MRP shown struck-through next to the selling price.
+  // Purely cosmetic; the amount actually charged is PRICES.friendship above.
+  // -------------------------------------------------------
+  friendshipMrp: {
+    "friend-single": 599,
+    "friend-duo": 899,
+  },
 } as const;
 
 // ===========================================================
@@ -132,4 +149,11 @@ export function priceOf(group: PriceGroup, id: string | number): number {
     return 0;
   }
   return value;
+}
+
+// Like priceOf, but for an optional cosmetic MRP group (e.g. "friendshipMrp")
+// — missing entries just mean "no strikethrough price to show", not an error.
+export function mrpOf(group: PriceGroup, id: string | number): number | undefined {
+  const value = (PRICES[group] as Record<string | number, number | undefined>)[id];
+  return typeof value === "number" ? value : undefined;
 }

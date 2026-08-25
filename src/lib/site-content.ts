@@ -35,6 +35,12 @@ export const SITE = {
   // Showreel video — drop your file at /public/media/showreel.mp4
   showreelVideo: "/showreel.mp4",
 
+  // Friendship Card — interactive 3D preview (.glb). Swap the file at the
+  // same path to update the model; no code change needed. This is a
+  // placeholder box model — replace with a real scan/model of the card
+  // whenever it's ready.
+  friendshipCardModel: "/media/friendship/friendship-card-placeholder.glb",
+
   // ────────────────────────────────────────────────────────────────
   // COMMERCE — cart rules
   // ────────────────────────────────────────────────────────────────

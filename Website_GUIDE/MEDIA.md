@@ -48,6 +48,7 @@ public/media/
 ├── delivery/       ← delivery-option cover shots (see § 2d)
 ├── newspaper/      ← newspaper spread previews (see § 2d)
 ├── pocket/         ← Pocket Magazine card thumbnail (see § 2d)
+├── friendship/     ← Friendship Card 3D model (see § 2e)
 └── bg/             ← background tiles (see § 3)
 ```
 
@@ -128,6 +129,25 @@ just uncomment and point them at your files:
 | Delivery   | `del-std`, `del-exp`                      |
 | Newspaper  | `news-tpl-1`, `news-tpl-2` (the two fixed spread previews — the newspaper product itself has no separate cover slot) |
 | Pocket Magazine | `pocket-mag` (first entry = card thumbnail; its Step 2 template picks reuse the same `tpl-<n>` art as the normal magazine) |
+
+### 2e. Friendship Card — 3D model
+
+Unlike every other product, the Friendship Card section shows an interactive,
+auto-rotating 3D model instead of a photo. To swap it:
+
+1. Export your model as a **.glb** file (glTF binary — the standard format
+   for web 3D; Blender, Sketchfab, and most 3D tools can export it directly).
+2. Drop it at `public/media/friendship/friendship-card-placeholder.glb`,
+   keeping the exact filename — or give it a new name and update
+   `friendshipCardModel` near the top of `site-content.ts`.
+3. Keep the file reasonably small (a few MB at most) — it downloads fully
+   before the model appears. Compress textures / reduce polygon count in
+   your 3D tool if it's large.
+
+The current file is a plain placeholder card shape (no real artwork) —
+replace it with a real scan or model whenever one's ready. No other code
+changes needed; the viewer (drag to rotate, pinch/scroll to zoom, slow
+auto-rotate) works with any valid .glb dropped in that same spot.
 
 ---
 

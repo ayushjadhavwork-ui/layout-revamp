@@ -71,7 +71,7 @@ const dropCombo = (cart: CartItem[]) => cart.filter((c) => c.category !== "combo
 // Categories no combo recipe ever touches — picking these alongside an active
 // combo (delivery, the unrelated Newspaper/Pocket Magazine products, or a
 // coupon freebie) must not blow away the combo.
-const COMBO_INDEPENDENT: Category[] = ["delivery", "newspaper", "pocket", "pocket-templates", "promotions"];
+const COMBO_INDEPENDENT: Category[] = ["delivery", "newspaper", "pocket", "pocket-templates", "friendship", "promotions"];
 
 // Categories a combo recipe can auto-populate — selecting a combo must clear
 // any of these picked manually beforehand, or their real price would sit in
@@ -110,7 +110,7 @@ export const useStore = create<State>()(
 
   addItem: (category, product, note) => {
     // Single-choice categories (only one active at a time)
-    const singleChoice: Category[] = ["addons", "polaroids", "strips", "delivery", "sizes", "combos", "newspaper", "pocket"];
+    const singleChoice: Category[] = ["addons", "polaroids", "strips", "delivery", "sizes", "combos", "newspaper", "pocket", "friendship"];
     set((s) => {
       let cart = (category === "combos" || COMBO_INDEPENDENT.includes(category)) ? s.cart : dropCombo(s.cart);
       if (singleChoice.includes(category)) {

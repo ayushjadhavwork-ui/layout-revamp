@@ -275,6 +275,7 @@ function buildInvoiceHtml_(order) {
   const rows = invoiceCart.map((item) => {
     const isSize = item.category === "sizes";
     const isPocket = item.category === "pocket";
+    const isFriendship = item.category === "friendship";
     // Standard and Mini share the same item.name ("8 Pages", etc.) — the
     // format only shows up in the id suffix (sz-8 vs sz-8-mini) — so spell
     // it out here or the invoice can't tell the customer which one they got.
@@ -284,7 +285,14 @@ function buildInvoiceHtml_(order) {
       ? ("Custom Magazine (" + item.name + ", " + formatLabel + ")")
       : isPocket
         ? "Pocket Magazine (6 Pages, Pocket Size)"
-        : item.name;
+        // "Single Card" / "Duo Card — BESTIE SET" read fine on-site (under a
+        // section already titled Friendship Card) but are ambiguous on a
+        // flat invoice line. Parenthesise rather than prefix with a dash —
+        // the item name already contains "Duo Card — BESTIE SET", and a
+        // second leading dash there reads as a typo, not two separate names.
+        : isFriendship
+          ? ("Friendship Card (" + item.name + ")")
+          : item.name;
     const notes = [];
     if (item.note) notes.push(escapeHtml_(item.note));
     if (item.comboId) notes.push("Included in " + escapeHtml_(comboNameById[item.comboId] || "combo"));

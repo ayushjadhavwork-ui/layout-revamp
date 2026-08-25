@@ -5,7 +5,7 @@
 
 import { SITE } from "./site-content";
 // ALL PRICES LIVE IN prices.ts — edit that file, not this one.
-import { PRICES, priceOf } from "./prices";
+import { PRICES, priceOf, mrpOf } from "./prices";
 
 export const CONFIG = {
   GAS_URL: "https://script.google.com/macros/s/AKfycbwoqxri-OOv5wTYTw3iLPJC1ZJ7nru5b2SFQ8E080e6L_OY1LJAK_BR__VTdTh3gFQq2g/exec",
@@ -25,6 +25,7 @@ export type Category =
   | "newspaper"
   | "pocket"
   | "pocket-templates"
+  | "friendship"
   | "promotions";
 
 
@@ -38,6 +39,8 @@ export type Product = {
   desc: string;
   templateLimit?: number;
   format?: SizeFormat;
+  // Struck-through "was" price — only Friendship Card entries carry this.
+  mrp?: number;
 };
 
 // Page count → how many templates that package includes. Shared by both
@@ -165,6 +168,27 @@ export const CATALOG: Record<Exclude<Category, "templates" | "pocket-templates">
       price: priceOf("pocket", "pocket-mag"),
       templateLimit: POCKET_TEMPLATE_LIMIT,
       desc: "6 pages + front & back cover. 3 templates. Tiny in size, but made to hold the biggest memories — a pocket-sized magazine crafted with your photos and personality, stylish, personal, and easy to carry wherever you go.",
+    },
+  ],
+
+  // A standalone product, same spirit as the Newspaper/Pocket Magazine —
+  // not part of the magazine builder. Fully custom-printed friendship card,
+  // sold as either a single card or a duo ("bestie") set. The 3D viewer and
+  // customisation copy live in friendship-section.tsx.
+  friendship: [
+    {
+      id: "friend-single",
+      name: "Single Card",
+      price: priceOf("friendship", "friend-single"),
+      mrp: mrpOf("friendshipMrp", "friend-single"),
+      desc: "One fully personalised friendship card — names, photo, a shared date and place, inside jokes, and your own special rights, printed on premium cardstock.",
+    },
+    {
+      id: "friend-duo",
+      name: "Duo Card — BESTIE SET",
+      price: priceOf("friendship", "friend-duo"),
+      mrp: mrpOf("friendshipMrp", "friend-duo"),
+      desc: "A matching pair of friendship cards for you and your bestie — same customisation as the Single Card, designed as a set.",
     },
   ],
 

@@ -20,6 +20,7 @@ import { PocketMagazineSection } from "@/components/site/pocket-section";
 import { AddonsSection } from "@/components/site/addons-section";
 import { CombosSection } from "@/components/site/combos-section";
 import { NewspaperSection } from "@/components/site/newspaper-section";
+import { FriendshipCardSection } from "@/components/site/friendship-section";
 import { SpinWheel } from "@/components/site/spin-wheel";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
@@ -235,6 +236,13 @@ function Home() {
           <div className="mx-auto max-w-6xl">
             <SectionHead eyebrow="Something different" title="Newspaper Magazine" sub="A special standalone keepsake — not part of the package above." />
             <NewspaperSection />
+          </div>
+        </div>
+
+        <div id="friendship-card" className="relative z-10 px-4 py-12 sm:py-20">
+          <div className="mx-auto max-w-6xl">
+            <SectionHead eyebrow="Something different" title="Friendship Card" sub="A fully personalised keepsake card — not part of the package above." />
+            <FriendshipCardSection />
           </div>
         </div>
 
