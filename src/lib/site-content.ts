@@ -234,7 +234,7 @@ export const SITE = {
   // "tpl-<n>": ["/media/templates/<n>.webp"] line into productImages
   // below (Template <n> just shows a placeholder until you do).
   // ────────────────────────────────────────────────────────────────
-  templateCount: 24,       
+  templateCount: 34,       
 
   // ────────────────────────────────────────────────────────────────
   // PRODUCT IMAGES (for the e-commerce modal)
@@ -292,6 +292,16 @@ export const SITE = {
       "tpl-22": ["/media/templates/22.webp"],
       "tpl-23": ["/media/templates/23.webp"],
       "tpl-24": ["/media/templates/24.webp"],
+      "tpl-25": ["/media/templates/25.webp"],
+      "tpl-26": ["/media/templates/26.webp"],
+      "tpl-27": ["/media/templates/27.webp"],
+      "tpl-28": ["/media/templates/28.webp"],
+      "tpl-29": ["/media/templates/29.webp"],
+      "tpl-30": ["/media/templates/30.webp"],
+      "tpl-31": ["/media/templates/31.webp"],
+      "tpl-32": ["/media/templates/32.webp"],
+      "tpl-33": ["/media/templates/33.webp"],
+      "tpl-34": ["/media/templates/34.webp"],
 
     // ── Package / sizes thumbnails + size guides ─────────────────
     // By default the site auto-loads:
