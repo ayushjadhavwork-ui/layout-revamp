@@ -39,7 +39,7 @@ export const SITE = {
   // same path to update the model; no code change needed. This is a
   // placeholder box model — replace with a real scan/model of the card
   // whenever it's ready.
-  friendshipCardModel: "/media/friendship/friendship-card-placeholder.glb",
+  friendshipCardModel: "/media/friendship/card.glb",
 
   // ────────────────────────────────────────────────────────────────
   // COMMERCE — cart rules
