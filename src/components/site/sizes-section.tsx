@@ -9,6 +9,7 @@ import { SITE } from "@/lib/site-content";
 import { ModalShell } from "./shop";
 import { useProductReviews } from "@/lib/use-product-reviews";
 import { ReviewsPanel, ReviewStars } from "./reviews-panel";
+import { ScrollHint } from "./scroll-hint";
 
 // Each package has two images, matched by page count and format:
 //   Standard → /public/media/sizes/<n>_pages_magazine.webp  +  <n>_pages_sizeGuide.webp
@@ -60,6 +61,8 @@ export function SizesSection() {
   const cart = useStore((s) => s.cart);
   const format = useStore((s) => s.format);
   const setFormat = useStore((s) => s.setFormat);
+  const selectedTemplateIds = useStore((s) => s.selectedTemplateIds);
+  const templateLimit = useStore((s) => s.templateLimit());
 
   const items = CATALOG.sizes.filter((s) => s.format === format);
 
@@ -187,6 +190,13 @@ export function SizesSection() {
         <p className="mt-6 text-center text-xs tracking-[0.2em] text-pink-mist">
           ♡ more pages, more stories to tell ♡
         </p>
+
+        {selectedSizeId && selectedTemplateIds.length < templateLimit && (
+          <ScrollHint
+            text={`Scroll down to pick your ${templateLimit} template${templateLimit === 1 ? "" : "s"}`}
+            targetId="templates"
+          />
+        )}
       </div>
 
       <SizeModal open={!!openId} sizeId={openId} onClose={() => setOpenId(null)} />

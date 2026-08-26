@@ -21,6 +21,9 @@ type ModelViewerAttributes = DetailedHTMLProps<HTMLAttributes<HTMLElement>, HTML
   "shadow-intensity"?: number | string;
   "shadow-softness"?: number | string;
   exposure?: number | string;
+  "environment-image"?: string;
+  "tone-mapping"?: "auto" | "aces" | "commerce" | "filmic" | "neutral";
+  orientation?: string;
   loading?: "auto" | "lazy" | "eager";
   reveal?: "auto" | "interaction" | "manual";
 };

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Wallet, Check, Eye } from "lucide-react";
+import { Wallet, Check, Eye, Plus, Minus, X } from "lucide-react";
 import { toast } from "sonner";
 import { CATALOG, fmt } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
@@ -7,6 +7,8 @@ import { SITE } from "@/lib/site-content";
 import { ModalShell } from "./shop";
 import { useProductReviews } from "@/lib/use-product-reviews";
 import { ReviewsPanel, ReviewStars } from "./reviews-panel";
+import { TemplateGrid, TemplateDetailModal } from "./template-picker";
+import { ScrollHint } from "./scroll-hint";
 
 function pocketHero(): string | undefined {
   return SITE.productImages?.["pocket-mag"]?.[0];
@@ -27,32 +29,48 @@ function PocketPlaceholder() {
   );
 }
 
-// A standalone product, same spirit as the Newspaper Magazine, except it's
-// surfaced right below "Choose your package" because it's conceptually part
-// of Step 1: a customer can add it alongside — or instead of — a
-// Standard/Mini magazine. Its own template picks happen in Step 2 (see
-// templates-section.tsx), tracked under the "pocket-templates" category so
-// they never collide with a normal magazine's template selection.
+// A standalone product surfaced after the normal magazine's templates
+// (Step 2) — deliberately positioned here rather than up in Step 1 so
+// choosing to buy one immediately reveals its own template picker right
+// below, instead of sending the customer hunting for it elsewhere. A
+// customer can buy several Pocket Magazines in one order; each gets its own
+// card + template picker below (tracked as one "unit" per Pocket Magazine —
+// see pocketUnits in store.ts), since each one needs its own templates.
 export function PocketMagazineSection() {
   const [openModal, setOpenModal] = useState(false);
-  const cart = useStore((s) => s.cart);
-  const addItem = useStore((s) => s.addItem);
-  const removeItem = useStore((s) => s.removeItem);
+  const [openUnitCtx, setOpenUnitCtx] = useState<{ uid: string; index: number } | null>(null);
+
+  const pocketUnits = useStore((s) => s.pocketUnits);
+  const addPocketUnit = useStore((s) => s.addPocketUnit);
+  const removePocketUnit = useStore((s) => s.removePocketUnit);
+  const togglePocketTemplate = useStore((s) => s.togglePocketTemplate);
+  const randomizePocketTemplates = useStore((s) => s.randomizePocketTemplates);
+  const pocketLimit = useStore((s) => s.pocketTemplateLimit());
 
   const product = CATALOG.pocket[0];
-  const cartItem = cart.find((c) => c.category === "pocket" && c.id === product.id);
-  const inCart = !!cartItem;
+  const quantity = pocketUnits.length;
+  const inCart = quantity > 0;
   const hero = pocketHero();
+  const items = CATALOG["pocket-templates"];
 
-  const handleToggle = () => {
-    if (inCart && cartItem) {
-      removeItem(cartItem.key);
-      toast.success("Pocket Magazine deselected");
-    } else {
-      addItem("pocket", product);
-      toast.success(`Pocket Magazine selected — pick ${product.templateLimit} template(s) below.`);
-    }
+  const handleAdd = () => {
+    addPocketUnit();
+    toast.success(
+      quantity === 0
+        ? `Pocket Magazine selected — pick ${product.templateLimit} template(s) below.`
+        : `Another Pocket Magazine added — pick ${product.templateLimit} template(s) for it below.`,
+    );
   };
+
+  const handleRemoveLast = () => {
+    const last = pocketUnits[pocketUnits.length - 1];
+    if (!last) return;
+    removePocketUnit(last.uid);
+    toast.success("Pocket Magazine removed");
+  };
+
+  const openUnitItem = openUnitCtx ? items[openUnitCtx.index] : null;
+  const openUnit = openUnitCtx ? pocketUnits.find((u) => u.uid === openUnitCtx.uid) : null;
 
   return (
     <>
@@ -66,15 +84,16 @@ export function PocketMagazineSection() {
             ✧ Tiny in size, made to hold the biggest memories ✧
           </p>
           <p className="mt-3 font-display italic text-off-white/80 text-sm md:text-base">
-            A standalone keepsake — add it alongside your magazine above, or all on its own.
+            A standalone keepsake — add it alongside your magazine above, or all on its own. Want more
+            than one? Add as many as you like — you'll pick templates for each individually below.
           </p>
         </div>
 
         <div className="mx-auto max-w-xs">
           <div
-            onClick={handleToggle}
-            className={`relative rounded-md sm:rounded-xl p-3 sm:p-4 md:p-5 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
-              inCart ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
+            onClick={() => (inCart ? undefined : handleAdd())}
+            className={`relative rounded-md sm:rounded-xl p-3 sm:p-4 md:p-5 flex flex-col items-center text-center transition bg-black/15 select-none ${
+              inCart ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30 cursor-pointer"
             }`}
           >
             {inCart && (
@@ -115,27 +134,45 @@ export function PocketMagazineSection() {
               {fmt(product.price)}
             </p>
 
-            <div className="mt-4 flex gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
-              <button
-                type="button"
-                onClick={handleToggle}
-                className={`flex-1 min-w-0 rounded-full px-3 py-1.5 text-[0.7rem] font-medium transition border truncate ${
-                  inCart
-                    ? "bg-off-white text-rose-wine border-off-white"
-                    : "bg-transparent text-off-white border-pink-mist/50 hover:bg-off-white/10"
-                }`}
-              >
-                {inCart ? "Selected" : "Select"}
-              </button>
-              <button
-                type="button"
-                onClick={() => setOpenModal(true)}
-                aria-label={`View ${product.name}`}
-                className="grid shrink-0 place-items-center rounded-full px-3 py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
-              >
-                <Eye className="h-3.5 w-3.5" />
-              </button>
-            </div>
+            {inCart ? (
+              <div className="mt-4 flex items-center gap-3" onClick={(e) => e.stopPropagation()}>
+                <button
+                  type="button"
+                  onClick={handleRemoveLast}
+                  aria-label="Remove one Pocket Magazine"
+                  className="grid h-8 w-8 place-items-center rounded-full border border-pink-mist/50 text-off-white hover:bg-off-white/10"
+                >
+                  <Minus className="h-3.5 w-3.5" />
+                </button>
+                <span className="min-w-10 font-display text-lg text-off-white">× {quantity}</span>
+                <button
+                  type="button"
+                  onClick={handleAdd}
+                  aria-label="Add another Pocket Magazine"
+                  className="grid h-8 w-8 place-items-center rounded-full border border-pink-mist/50 text-off-white hover:bg-off-white/10"
+                >
+                  <Plus className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            ) : (
+              <div className="mt-4 flex gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
+                <button
+                  type="button"
+                  onClick={handleAdd}
+                  className="flex-1 min-w-0 rounded-full px-3 py-1.5 text-[0.7rem] font-medium transition border truncate bg-transparent text-off-white border-pink-mist/50 hover:bg-off-white/10"
+                >
+                  Select
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setOpenModal(true)}
+                  aria-label={`View ${product.name}`}
+                  className="grid shrink-0 place-items-center rounded-full px-3 py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
+                >
+                  <Eye className="h-3.5 w-3.5" />
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -143,6 +180,68 @@ export function PocketMagazineSection() {
           ♡ a whole story, pocket-sized ♡
         </p>
       </div>
+
+      {pocketUnits.map((unit, i) => {
+        const anchorId = `pocket-unit-${unit.uid}`;
+        const incomplete = unit.templateIds.length < pocketLimit;
+        return (
+          <div key={unit.uid} id={anchorId} className="relative">
+            <div className="absolute right-4 top-4 z-10 sm:right-6 sm:top-6">
+              <button
+                type="button"
+                onClick={() => {
+                  removePocketUnit(unit.uid);
+                  toast.success(`Pocket Magazine #${i + 1} removed`);
+                }}
+                aria-label={`Remove Pocket Magazine #${i + 1}`}
+                className="grid h-7 w-7 place-items-center rounded-full bg-off-white/15 text-off-white hover:bg-off-white/25"
+              >
+                <X className="h-3.5 w-3.5" />
+              </button>
+            </div>
+            <TemplateGrid
+              icon={<Wallet className="h-5 w-5" />}
+              heading={`POCKET MAGAZINE #${i + 1} TEMPLATES`}
+              statusLabel={`${unit.templateIds.length} of ${pocketLimit} selected`}
+              items={items}
+              selectedIds={unit.templateIds}
+              limit={pocketLimit}
+              onToggle={(id, label) => {
+                const already = unit.templateIds.includes(id);
+                const ok = togglePocketTemplate(unit.uid, id);
+                if (!ok)
+                  return toast.error(
+                    `You can only pick ${pocketLimit} template(s) for this Pocket Magazine.`,
+                  );
+                toast.success(already ? `${label} removed` : `${label} selected`);
+              }}
+              onRandomize={() => {
+                const n = randomizePocketTemplates(unit.uid);
+                if (n > 0) toast.success(`Randomised ${n} template${n === 1 ? "" : "s"} ✨`);
+              }}
+              onOpen={(index) => setOpenUnitCtx({ uid: unit.uid, index })}
+            />
+            {incomplete && (
+              <ScrollHint
+                text={`Pick your ${pocketLimit} template${pocketLimit === 1 ? "" : "s"} for Pocket Magazine #${i + 1}`}
+                targetId={anchorId}
+              />
+            )}
+          </div>
+        );
+      })}
+
+      <TemplateDetailModal
+        open={!!openUnitCtx}
+        item={openUnitItem}
+        templateIndex={openUnitCtx?.index ?? -1}
+        active={!!openUnitItem && !!openUnit?.templateIds.includes(openUnitItem.id)}
+        limit={pocketLimit}
+        eyebrow="Pocket Magazine Spread"
+        limitErrorSuffix="for this Pocket Magazine"
+        onToggle={(id) => (openUnitCtx ? togglePocketTemplate(openUnitCtx.uid, id) : false)}
+        onClose={() => setOpenUnitCtx(null)}
+      />
 
       <PocketModal open={openModal} onClose={() => setOpenModal(false)} />
     </>
@@ -152,8 +251,8 @@ export function PocketMagazineSection() {
 /* -------------------------------------------------------------- */
 function PocketModal({ open, onClose }: { open: boolean; onClose: () => void }) {
   const product = CATALOG.pocket[0];
-  const cart = useStore((s) => s.cart);
-  const addItem = useStore((s) => s.addItem);
+  const pocketUnits = useStore((s) => s.pocketUnits);
+  const addPocketUnit = useStore((s) => s.addPocketUnit);
   const {
     reviews,
     loading,
@@ -172,7 +271,7 @@ function PocketModal({ open, onClose }: { open: boolean; onClose: () => void }) 
 
   if (!open) return null;
 
-  const inCart = cart.some((c) => c.category === "pocket" && c.id === product.id);
+  const inCart = pocketUnits.length > 0;
   const hero = pocketHero();
   const gallery = pocketGallery();
   const slides = gallery.length ? gallery : hero ? [hero] : [];
@@ -213,25 +312,24 @@ function PocketModal({ open, onClose }: { open: boolean; onClose: () => void }) 
           <ul className="mt-3 space-y-1.5 text-sm text-neutral-700">
             <li>• Strictly 6 pages + front &amp; back cover</li>
             <li>• Pocket-sized — stylish, personal, easy to carry</li>
-            <li>• Pick any 3 templates in Step 2 below</li>
+            <li>• Pick any 3 templates below, per Pocket Magazine</li>
+            <li>• Buy more than one — each gets its own template picks</li>
             <li>• Can be ordered alongside your Standard or Mini magazine</li>
           </ul>
 
           <button
             onClick={() => {
-              if (!inCart) {
-                addItem("pocket", product);
-                toast.success(
-                  `${product.name} selected — pick ${product.templateLimit} template(s).`,
-                );
-              }
+              addPocketUnit();
+              toast.success(
+                inCart
+                  ? `Another ${product.name} added — pick ${product.templateLimit} template(s) for it.`
+                  : `${product.name} selected — pick ${product.templateLimit} template(s).`,
+              );
               onClose();
             }}
-            className={`pill-btn pill-btn-hover mt-6 w-full !py-3 !text-base ${
-              inCart ? "!bg-rose-wine !text-white !border-rose-wine" : "pill-primary"
-            }`}
+            className="pill-btn pill-btn-hover pill-primary mt-6 w-full !py-3 !text-base"
           >
-            {inCart ? "Selected — click to close" : `Choose ${product.name}`}
+            {inCart ? "Add another one" : `Choose ${product.name}`}
           </button>
         </div>
       </div>

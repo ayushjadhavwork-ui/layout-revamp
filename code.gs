@@ -141,7 +141,7 @@ function completeOrder(body) {
   ensureHeaders(sheet, [
     "orderId", "cartId", "name", "phone", "email", "address",
     "cart", "total", "coupon", "screenshotUrl", "timestamp", "invoiceUrl",
-    "paymentVerified",
+    "paymentVerified", "shippingLabel",
   ]);
 
   let screenshotUrl = "";
@@ -166,19 +166,20 @@ function completeOrder(body) {
     }
   }
 
-  // Auto-generate + email a PDF invoice. Wrapped so a Drive/mail failure
-  // never blocks the order itself from being logged — same philosophy as
-  // the screenshot save above.
+  const order = {
+    orderId: body.orderId,
+    customer: body.customer,
+    cart: Array.isArray(body.cart) ? body.cart : [],
+    total: body.total,
+    coupon: body.coupon || "",
+    ts: body.ts,
+  };
+
+  // Auto-generate a PDF invoice. Wrapped so a Drive failure never blocks the
+  // order itself from being logged — same philosophy as the screenshot save
+  // above.
   let invoiceUrl = "";
   try {
-    const order = {
-      orderId: body.orderId,
-      customer: body.customer,
-      cart: Array.isArray(body.cart) ? body.cart : [],
-      total: body.total,
-      coupon: body.coupon || "",
-      ts: body.ts,
-    };
     const invoice = generateInvoicePdf_(order);
     invoiceUrl = invoice.url;
     // Not emailed automatically — the PDF is generated and saved to Drive
@@ -186,6 +187,16 @@ function completeOrder(body) {
     // auto-email later, uncomment: sendInvoiceEmail_(order, invoice.blob);
   } catch (err) {
     invoiceUrl = "ERROR: " + err.message;
+  }
+
+  // Same generate-and-save treatment as the invoice above, just a different
+  // document — a printable shipping label for whoever packs the order.
+  let shippingLabelUrl = "";
+  try {
+    const label = generateShippingLabelPdf_(order);
+    shippingLabelUrl = label.url;
+  } catch (err) {
+    shippingLabelUrl = "ERROR: " + err.message;
   }
 
   sheet.appendRow([
@@ -202,6 +213,7 @@ function completeOrder(body) {
     body.ts,
     invoiceUrl,
     "Pending...",
+    shippingLabelUrl,
   ]);
 
   return { ok: true, orderId: body.orderId };
@@ -265,10 +277,20 @@ function buildInvoiceHtml_(order) {
     const m = String(t.id).match(/tpl-(\d+)/);
     return m ? m[1] : escapeHtml_(t.name);
   });
+  // A customer can buy several Pocket Magazines in one order (see
+  // pocketUnits in store.ts) — each "pocket" cart line and its
+  // "pocket-templates" lines share a `unit` id, so group template labels by
+  // that unit instead of one flat list, or every Pocket Magazine row would
+  // show *every* unit's templates instead of just its own. Cart lines from
+  // before multi-unit Pocket Magazine existed have no `unit` field; those
+  // fall into the "" bucket together, same as the old flat-list behavior.
   const pocketTemplateItems = cart.filter((c) => c.category === "pocket-templates");
-  const pocketTemplateLabels = pocketTemplateItems.map((t) => {
+  const pocketTemplateLabelsByUnit = {};
+  pocketTemplateItems.forEach((t) => {
     const m = String(t.id).match(/tpl-(\d+)/);
-    return m ? m[1] : escapeHtml_(t.name);
+    const label = m ? m[1] : escapeHtml_(t.name);
+    const uk = t.unit || "";
+    (pocketTemplateLabelsByUnit[uk] = pocketTemplateLabelsByUnit[uk] || []).push(label);
   });
   const invoiceCart = cart.filter((c) => c.category !== "templates" && c.category !== "pocket-templates");
 
@@ -298,7 +320,10 @@ function buildInvoiceHtml_(order) {
     if (item.comboId) notes.push("Included in " + escapeHtml_(comboNameById[item.comboId] || "combo"));
     if (item.promoCode) notes.push("Free — redeemed with " + escapeHtml_(item.promoCode));
     if (isSize && templateLabels.length) notes.push("Templates:- " + templateLabels.join(", "));
-    if (isPocket && pocketTemplateLabels.length) notes.push("Templates:- " + pocketTemplateLabels.join(", "));
+    if (isPocket) {
+      const pocketLabels = pocketTemplateLabelsByUnit[item.unit || ""] || [];
+      if (pocketLabels.length) notes.push("Templates:- " + pocketLabels.join(", "));
+    }
     const noteHtml = notes.length ? ('<div class="item-note">' + notes.join(" · ") + "</div>") : "";
     return (
       "<tr>" +
@@ -398,6 +423,148 @@ function escapeHtml_(s) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+/* ============================================================ */
+/* Shipping labels                                                */
+/* ============================================================ */
+// Same generate-to-Drive shape as the invoice above (own folder, "anyone
+// with the link" sharing, wrapped so a Drive failure never blocks the order
+// row) but a different, purpose-built document: a compact label a packer
+// can print and stick straight on the parcel, styled after a physical
+// courier label rather than a billing document.
+function generateShippingLabelPdf_(order) {
+  const html = buildShippingLabelHtml_(order);
+  const htmlBlob = Utilities.newBlob(html, "text/html", "ShippingLabel-" + order.orderId + ".html");
+  const pdfBlob = htmlBlob.getAs("application/pdf").setName("ShippingLabel-" + order.orderId + ".pdf");
+
+  const folder = getOrCreateFolder("The Layout — Shipping Labels");
+  const file = folder.createFile(pdfBlob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+
+  return { url: file.getUrl(), blob: pdfBlob };
+}
+
+// Cart-line category → the generic product name that belongs on a shipping
+// label. Deliberately coarser than the invoice's per-item labels (no page
+// count, no format spelled out beyond A4/A5, no note text) — a packer needs
+// to know *what to grab off the shelf*, not the customer's exact spec.
+function shippingItemLabel_(item) {
+  switch (item.category) {
+    case "sizes": {
+      const isMini = /-mini$/.test(String(item.id));
+      return isMini ? "A5 Magazine" : "A4 Magazine";
+    }
+    case "pocket": return "Pocket Magazine";
+    case "newspaper": return "Newspaper Magazine";
+    case "friendship": return "Friendship Card";
+    case "polaroids": return "Polaroid Pack";
+    case "strips": return "Polaroid Strips";
+    case "addons": return "Add-on";
+    case "combos": return String(item.name || "Combo");
+    case "promotions": return String(item.name || "Free Gift");
+    default: return String(item.name || item.category || "Item");
+  }
+}
+
+// Builds the multi-line "ITEM" cell content: one line per distinct product
+// category in the order, collapsed to a count (e.g. "Pocket Magazine × 3")
+// rather than one line per unit — a 3-pocket-magazine order shouldn't
+// produce three identical lines. Templates are zero-cost sub-selections
+// (same reason the invoice folds them into a note, not a row) and delivery
+// drives the banner text instead of appearing here, so both are excluded;
+// combo-linked lines (comboId set) are skipped since the combo's own line
+// already represents them.
+function shippingItemSummaryHtml_(cart) {
+  const EXCLUDE = { templates: true, "pocket-templates": true, delivery: true };
+  const counts = {};
+  const order = [];
+  cart.forEach((item) => {
+    if (EXCLUDE[item.category]) return;
+    if (item.comboId) return;
+    const label = shippingItemLabel_(item);
+    if (!(label in counts)) order.push(label);
+    counts[label] = (counts[label] || 0) + 1;
+  });
+  if (!order.length) return "—";
+  return order
+    .map((label) => escapeHtml_(counts[label] > 1 ? (label + " × " + counts[label]) : label))
+    .join("<br/>");
+}
+
+// The reference label design shows a plain "999/-" style amount, not the
+// invoice's "₹999.00" — kept as its own formatter rather than reusing
+// formatINR_ so the two documents can diverge without one editing the other.
+function formatPlainINR_(n) {
+  const num = Math.round(Number(n) || 0);
+  return num.toLocaleString("en-IN") + "/-";
+}
+
+function buildShippingLabelHtml_(order) {
+  const cart = order.cart;
+  const customer = order.customer || {};
+
+  const delivery = cart.find((c) => c.category === "delivery");
+  // Express Shipping's id is "del-exp" — see CATALOG.delivery in catalog.ts.
+  const isExpress = !!delivery && /exp/i.test(String(delivery.id));
+  const bannerText = isExpress ? "EXPRESS SHIPPING" : "NORMAL SHIPPING";
+
+  const itemHtml = shippingItemSummaryHtml_(cart);
+  const addressHtml = escapeHtml_(customer.address || "").replace(/\n/g, "<br/>");
+  const logoTag = getLogoImgTag_().replace(
+    'style="height:64px;width:64px;object-fit:contain;margin-bottom:6px;"',
+    'style="height:46px;width:46px;object-fit:contain;"',
+  );
+
+  return (
+    "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>" +
+    "@page { size: 6in 4in; margin: 0; }" +
+    "* { box-sizing: border-box; }" +
+    "body { font-family: Arial, Helvetica, sans-serif; color: #111; margin: 0; padding: 0.18in; width: 6in; background: #fff; }" +
+    ".label { border: 3px solid #000; }" +
+    ".banner { background: #000; display: table; width: 100%; table-layout: fixed; }" +
+    ".banner-text { display: table-cell; vertical-align: middle; padding: 12px 14px; font-size: 26px; font-weight: 800; letter-spacing: 1px; color: #fff; }" +
+    ".banner-logo { display: table-cell; width: 66px; vertical-align: middle; text-align: center; padding: 6px; background: #fff; }" +
+    ".body-row { display: table; width: 100%; table-layout: fixed; border-bottom: 2px solid #000; min-height: 2.4in; }" +
+    ".col-left, .col-right { display: table-cell; vertical-align: top; padding: 12px 14px; }" +
+    ".col-left { width: 62%; }" +
+    ".col-right { width: 38%; border-left: 2px solid #000; padding: 0; }" +
+    ".field { margin-bottom: 10px; }" +
+    ".field:last-child { margin-bottom: 0; }" +
+    ".field-label { font-size: 9px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }" +
+    ".field-value { font-size: 11px; margin-top: 2px; line-height: 1.4; }" +
+    ".right-row { padding: 9px 14px; border-bottom: 1px solid #000; }" +
+    ".right-row:last-child { border-bottom: none; }" +
+    ".footer-row { display: table; width: 100%; table-layout: fixed; padding: 10px 14px; }" +
+    ".footer-left, .footer-right { display: table-cell; vertical-align: middle; }" +
+    ".footer-right { text-align: right; font-size: 10px; font-style: italic; line-height: 1.4; }" +
+    ".order-label { font-size: 9px; font-weight: 800; text-transform: uppercase; }" +
+    ".order-value { font-size: 18px; font-weight: 800; letter-spacing: 1px; }" +
+    "</style></head><body>" +
+    "<div class=\"label\">" +
+    "<div class=\"banner\"><div class=\"banner-text\">" + escapeHtml_(bannerText) + "</div>" +
+    "<div class=\"banner-logo\">" + logoTag + "</div></div>" +
+    "<div class=\"body-row\">" +
+    "<div class=\"col-left\">" +
+    "<div class=\"field\"><div class=\"field-label\">Name:</div><div class=\"field-value\">" + escapeHtml_(customer.name || "") + "</div></div>" +
+    "<div class=\"field\"><div class=\"field-label\">Phone No.</div><div class=\"field-value\">" + escapeHtml_(customer.phone || "") + "</div></div>" +
+    "<div class=\"field\"><div class=\"field-label\">Email ID:</div><div class=\"field-value\">" + escapeHtml_(customer.email || "") + "</div></div>" +
+    "<div class=\"field\"><div class=\"field-label\">Ship To:</div><div class=\"field-value\">" + addressHtml + "</div></div>" +
+    "</div>" +
+    "<div class=\"col-right\">" +
+    "<div class=\"right-row\"><div class=\"field-label\">From :</div><div class=\"field-value\">The Layout</div></div>" +
+    "<div class=\"right-row\"><div class=\"field-label\">Payment Status:</div><div class=\"field-value\">PRE-PAID</div></div>" +
+    "<div class=\"right-row\"><div class=\"field-label\">Amount:</div><div class=\"field-value\">" + formatPlainINR_(order.total) + "</div></div>" +
+    "<div class=\"right-row\"><div class=\"field-label\">Item :</div><div class=\"field-value\">" + itemHtml + "</div></div>" +
+    "</div>" +
+    "</div>" +
+    "<div class=\"footer-row\">" +
+    "<div class=\"footer-left\"><span class=\"order-label\">Order Number : </span><span class=\"order-value\">" + escapeHtml_(order.orderId) + "</span></div>" +
+    "<div class=\"footer-right\">Thank you for shopping<br/>from &quot;The Layout&quot; :)</div>" +
+    "</div>" +
+    "</div>" +
+    "</body></html>"
+  );
 }
 
 /* ============================================================ */

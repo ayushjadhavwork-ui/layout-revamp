@@ -36,6 +36,19 @@ const CUSTOMISABLE = [
 /* dist file to the same vendor path, and strip its trailing              */
 /* `//# sourceMappingURL=...` comment (no matching .map is shipped here). */
 /* ================================================================ */
+// model-viewer's built-in `auto-rotate` only turns the camera around the
+// model's Y axis (a turntable) — there's no attribute for spinning the
+// model itself. To get a Z-axis spin (the card twirling in the screen
+// plane, like a badge, rather than tumbling front-to-back) we drive the
+// model's own `orientation` attribute via rAF instead, leaving
+// `camera-controls` alone so drag-to-rotate still works normally.
+//
+// Which axis reads as "in-plane" depends on how the GLB's own local axes
+// are oriented — if a future model swap makes this spin look like it's
+// tumbling instead of twirling, change ROTATION_AXIS below to "x" or "y".
+const ROTATION_AXIS: "x" | "y" | "z" = "z";
+const ROTATION_DEG_PER_SEC = 24;
+
 let modelViewerLoad: Promise<void> | null = null;
 function loadModelViewer(): Promise<void> {
   if (typeof window === "undefined") return Promise.resolve();
@@ -56,6 +69,7 @@ function loadModelViewer(): Promise<void> {
 function FriendshipModelViewer({ className = "" }: { className?: string }) {
   const [ready, setReady] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const viewerRef = useRef<HTMLElement>(null);
 
   useEffect(() => {
     const el = containerRef.current;
@@ -80,6 +94,30 @@ function FriendshipModelViewer({ className = "" }: { className?: string }) {
     };
   }, []);
 
+  // Continuously spins the model on ROTATION_AXIS by writing the
+  // `orientation` attribute every frame — auto-rotate (camera-orbit around
+  // Y) is deliberately left off so this doesn't fight with it, and drag
+  // (camera-controls) keeps working since it only ever moves the camera.
+  useEffect(() => {
+    if (!ready) return;
+    const viewer = viewerRef.current;
+    if (!viewer) return;
+    let raf = 0;
+    let angle = 0;
+    let last = performance.now();
+    const tick = (now: number) => {
+      const dt = (now - last) / 1000;
+      last = now;
+      angle = (angle + ROTATION_DEG_PER_SEC * dt) % 360;
+      const parts = { x: "0deg", y: "0deg", z: "0deg" };
+      parts[ROTATION_AXIS] = `${angle}deg`;
+      viewer.setAttribute("orientation", `${parts.x} ${parts.y} ${parts.z}`);
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [ready]);
+
   return (
     <div
       ref={containerRef}
@@ -87,15 +125,16 @@ function FriendshipModelViewer({ className = "" }: { className?: string }) {
     >
       {ready ? (
         <model-viewer
+          ref={viewerRef}
           src={SITE.friendshipCardModel}
           alt="Interactive 3D preview of The Layout's Friendship Card"
-          auto-rotate
-          auto-rotate-delay="0"
-          rotation-per-second="14deg"
           camera-controls
           interaction-prompt="none"
-          shadow-intensity="1"
-          exposure="1.05"
+          environment-image="neutral"
+          tone-mapping="neutral"
+          shadow-intensity="1.1"
+          shadow-softness="0.9"
+          exposure="1.2"
           style={{ width: "100%", height: "100%", background: "transparent" }}
         />
       ) : (

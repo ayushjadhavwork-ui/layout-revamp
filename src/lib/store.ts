@@ -18,7 +18,14 @@ export type CartItem = {
   // (see applyCouponFreebie) — tracks which code granted it so a new coupon
   // can cleanly swap it out.
   promoCode?: string;
+  // Set on "pocket" and "pocket-templates" lines only — ties a Pocket
+  // Magazine cart line to its own template picks so multiple Pocket
+  // Magazines can be bought in one order, each with an independent
+  // template selection (see pocketUnits below).
+  unit?: string;
 };
+
+export type PocketUnit = { uid: string; templateIds: string[] };
 
 type State = {
   cart: CartItem[];
@@ -26,10 +33,10 @@ type State = {
   format: SizeFormat;
   selectedSizeId: string | null;
   selectedTemplateIds: string[];
-  // The Pocket Magazine's own template picks — kept separate from
-  // selectedTemplateIds because a customer can have both a normal magazine
-  // and the Pocket Magazine in cart at once, each with its own template set.
-  selectedPocketTemplateIds: string[];
+  // One entry per Pocket Magazine the customer has added — each carries its
+  // own independent template picks, so buying 2-3 Pocket Magazines together
+  // means picking templates for each individually.
+  pocketUnits: PocketUnit[];
   stripSelections: string[];
   coupon: { code: string; percent: number } | null;
   cartId: string | null;
@@ -41,8 +48,10 @@ type State = {
   setSize: (sizeId: string) => void;
   toggleTemplate: (id: string) => boolean; // returns success
   randomizeTemplates: () => number; // returns count picked
-  togglePocketTemplate: (id: string) => boolean; // returns success
-  randomizePocketTemplates: () => number; // returns count picked
+  addPocketUnit: () => void;
+  removePocketUnit: (uid: string) => void;
+  togglePocketTemplate: (uid: string, id: string) => boolean; // returns success
+  randomizePocketTemplates: (uid: string) => number; // returns count picked
   toggleStrip: (id: string) => boolean; // returns success; false if cap reached
   setCoupon: (c: State["coupon"]) => void;
   applyCouponFreebie: (code: string) => void;
@@ -62,6 +71,10 @@ type State = {
 
 
 const key = (cat: Category, id: string) => `${cat}:${id}`;
+
+// Identifies one Pocket Magazine among several in the same cart — never
+// persisted/parsed as meaningful data, just needs to be unique per unit.
+const genUid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
 
 // Manually picking a size/template/addon/strip overrides whatever a combo
 // auto-selected — drop the combo (and its linked lines) so we never end up
@@ -86,7 +99,7 @@ export const useStore = create<State>()(
   format: "standard",
   selectedSizeId: null,
   selectedTemplateIds: [],
-  selectedPocketTemplateIds: [],
+  pocketUnits: [],
   stripSelections: [],
   coupon: null,
   cartId: null,
@@ -109,8 +122,10 @@ export const useStore = create<State>()(
 
 
   addItem: (category, product, note) => {
-    // Single-choice categories (only one active at a time)
-    const singleChoice: Category[] = ["addons", "polaroids", "strips", "delivery", "sizes", "combos", "newspaper", "pocket", "friendship"];
+    // Single-choice categories (only one active at a time). Pocket Magazines
+    // are deliberately excluded — they're multi-unit and go through
+    // addPocketUnit/removePocketUnit, never through addItem.
+    const singleChoice: Category[] = ["addons", "polaroids", "strips", "delivery", "sizes", "combos", "newspaper", "friendship"];
     set((s) => {
       let cart = (category === "combos" || COMBO_INDEPENDENT.includes(category)) ? s.cart : dropCombo(s.cart);
       if (singleChoice.includes(category)) {
@@ -144,16 +159,21 @@ export const useStore = create<State>()(
       if (item?.category === "templates") {
         patch.selectedTemplateIds = s.selectedTemplateIds.filter((id) => id !== item.id);
       }
-      // Removing the Pocket Magazine itself must also drop any templates the
-      // customer had already picked for it — they're meaningless without it,
-      // same as normal-magazine templates when its size is removed.
+      // Removing a Pocket Magazine unit (e.g. via the cart drawer's trash
+      // icon) must also drop the templates picked for that specific unit —
+      // they're meaningless without it — but leave any other Pocket
+      // Magazine units in the cart untouched.
       if (item?.category === "pocket") {
-        patch.selectedPocketTemplateIds = [];
-        cart = cart.filter((c) => c.category !== "pocket-templates");
+        const uid = item.unit;
+        cart = cart.filter((c) => !(c.category === "pocket-templates" && c.unit === uid));
         patch.cart = cart;
+        patch.pocketUnits = s.pocketUnits.filter((u) => u.uid !== uid);
       }
       if (item?.category === "pocket-templates") {
-        patch.selectedPocketTemplateIds = s.selectedPocketTemplateIds.filter((id) => id !== item.id);
+        const uid = item.unit;
+        patch.pocketUnits = s.pocketUnits.map((u) =>
+          u.uid === uid ? { ...u, templateIds: u.templateIds.filter((id) => id !== item.id) } : u,
+        );
       }
       if (item?.category === "strips") {
         patch.stripSelections = [];
@@ -227,30 +247,59 @@ export const useStore = create<State>()(
     return picked.length;
   },
 
-  togglePocketTemplate: (id) => {
+  // Adds one more Pocket Magazine to the cart, independent of any other
+  // Pocket Magazine already there — each gets its own uid and empty
+  // template selection, so buying several means picking templates for each
+  // one separately.
+  addPocketUnit: () => {
+    const product = CATALOG.pocket[0];
+    const uid = genUid();
+    set((s) => ({
+      cart: [
+        ...s.cart,
+        {
+          key: key("pocket", `${product.id}#${uid}`),
+          category: "pocket",
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          unit: uid,
+        },
+      ],
+      pocketUnits: [...s.pocketUnits, { uid, templateIds: [] }],
+    }));
+  },
+
+  removePocketUnit: (uid) => set((s) => ({
+    cart: s.cart.filter((c) => !((c.category === "pocket" || c.category === "pocket-templates") && c.unit === uid)),
+    pocketUnits: s.pocketUnits.filter((u) => u.uid !== uid),
+  })),
+
+  togglePocketTemplate: (uid, id) => {
     const s = get();
-    const pocketActive = s.cart.some((c) => c.category === "pocket");
-    if (!pocketActive) return false;
+    const unit = s.pocketUnits.find((u) => u.uid === uid);
+    if (!unit) return false;
     const limit = POCKET_TEMPLATE_LIMIT;
-    const already = s.selectedPocketTemplateIds.includes(id);
-    if (!already && s.selectedPocketTemplateIds.length >= limit) return false;
+    const already = unit.templateIds.includes(id);
+    if (!already && unit.templateIds.length >= limit) return false;
     const nextIds = already
-      ? s.selectedPocketTemplateIds.filter((t) => t !== id)
-      : [...s.selectedPocketTemplateIds, id];
+      ? unit.templateIds.filter((t) => t !== id)
+      : [...unit.templateIds, id];
     const tpl = CATALOG.templates.find((t) => t.id === id)!;
+    const lineKey = `pocket-templates:${id}#${uid}`;
     set({
-      selectedPocketTemplateIds: nextIds,
+      pocketUnits: s.pocketUnits.map((u) => (u.uid === uid ? { ...u, templateIds: nextIds } : u)),
       cart: already
-        ? s.cart.filter((c) => c.key !== key("pocket-templates", id))
-        : [...s.cart, { key: key("pocket-templates", id), category: "pocket-templates", id, name: tpl.name, price: 0 }],
+        ? s.cart.filter((c) => c.key !== lineKey)
+        : [...s.cart, { key: lineKey, category: "pocket-templates", id, name: tpl.name, price: 0, unit: uid }],
     });
     return true;
   },
 
-  randomizePocketTemplates: () => {
+  randomizePocketTemplates: (uid) => {
     const s = get();
-    const pocketActive = s.cart.some((c) => c.category === "pocket");
-    if (!pocketActive) return 0;
+    const unit = s.pocketUnits.find((u) => u.uid === uid);
+    if (!unit) return 0;
     const limit = POCKET_TEMPLATE_LIMIT;
     // Fisher–Yates shuffle
     const pool = [...CATALOG.templates];
@@ -261,15 +310,16 @@ export const useStore = create<State>()(
     const picked = pool.slice(0, limit);
     const pickedIds = picked.map((t) => t.id);
     set({
-      selectedPocketTemplateIds: pickedIds,
+      pocketUnits: s.pocketUnits.map((u) => (u.uid === uid ? { ...u, templateIds: pickedIds } : u)),
       cart: [
-        ...s.cart.filter((c) => c.category !== "pocket-templates"),
+        ...s.cart.filter((c) => !(c.category === "pocket-templates" && c.unit === uid)),
         ...picked.map((tpl) => ({
-          key: key("pocket-templates", tpl.id),
+          key: `pocket-templates:${tpl.id}#${uid}`,
           category: "pocket-templates" as Category,
           id: tpl.id,
           name: tpl.name,
           price: 0,
+          unit: uid,
         })),
       ],
     });
@@ -410,7 +460,7 @@ export const useStore = create<State>()(
     stripSelections: [],
   })),
 
-  clear: () => set({ cart: [], selectedSizeId: null, selectedTemplateIds: [], selectedPocketTemplateIds: [], stripSelections: [], coupon: null, cartId: null }),
+  clear: () => set({ cart: [], selectedSizeId: null, selectedTemplateIds: [], pocketUnits: [], stripSelections: [], coupon: null, cartId: null }),
 
 
   subtotal: () => get().cart.reduce((s, c) => s + c.price, 0),
@@ -430,7 +480,26 @@ export const useStore = create<State>()(
     }),
     {
       name: "the-layout-cart",
-      version: 1,
+      // v2: selectedPocketTemplateIds (one flat array, one Pocket Magazine)
+      // replaced by pocketUnits (one entry per Pocket Magazine, each with
+      // its own template picks — see the CartItem.unit comment above). A
+      // plain merge would keep an old blob's "pocket" cart line(s) while
+      // pocketUnits silently started empty — the picker would never render
+      // for that line and the checkout gate (which walks pocketUnits)
+      // wouldn't catch it, letting an incomplete order through. migrate()
+      // strips any pre-v2 pocket/pocket-templates lines instead so old carts
+      // just lose that one item rather than shipping incomplete.
+      version: 2,
+      migrate: (persisted, version) => {
+        const s = persisted as Record<string, unknown>;
+        if (!s || typeof s !== "object" || version >= 2) return s;
+        const cart = Array.isArray(s.cart) ? (s.cart as CartItem[]) : [];
+        return {
+          ...s,
+          cart: cart.filter((c) => c.category !== "pocket" && c.category !== "pocket-templates"),
+          pocketUnits: [],
+        };
+      },
       // Hydration is triggered manually (see __root.tsx) after mount, not
       // automatically at store-creation time — the store module re-evaluates
       // fresh on the client, so an automatic hydrate would apply localStorage
@@ -445,7 +514,7 @@ export const useStore = create<State>()(
         format: s.format,
         selectedSizeId: s.selectedSizeId,
         selectedTemplateIds: s.selectedTemplateIds,
-        selectedPocketTemplateIds: s.selectedPocketTemplateIds,
+        pocketUnits: s.pocketUnits,
         stripSelections: s.stripSelections,
         coupon: s.coupon,
         cartId: s.cartId,

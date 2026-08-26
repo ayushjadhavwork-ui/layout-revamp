@@ -35,9 +35,16 @@ a valid 0%-off coupon, and the frontend grants the matching free item
 (Headers auto-created on first write; you can leave the sheet empty.)
 
 ### Tab: `Completed Orders`
-| orderId | cartId | name | phone | email | address | cart | total | coupon | screenshotUrl | timestamp |
+| orderId | cartId | name | phone | email | address | cart | total | coupon | screenshotUrl | timestamp | invoiceUrl | paymentVerified | shippingLabel |
 
-(Headers auto-created on first write.)
+(Headers auto-created on first write.) `invoiceUrl` and `shippingLabel` are
+Drive links to a generated PDF invoice and a generated PDF shipping label
+respectively (see `generateInvoicePdf_`/`generateShippingLabelPdf_` in
+`code.gs`) — either can read `ERROR: <message>` instead of a link if Drive
+generation failed for that order; that never blocks the order row itself
+from being written. `paymentVerified` defaults to `"Pending..."` — there's
+no UI for it, whoever manages the sheet edits it by hand after verifying
+payment.
 
 ### Tab: `Reviews`
 | id | productId | name | rating | text | reviewerId | timestamp |
@@ -247,17 +254,24 @@ yet configured, so the popup still works end-to-end during development.
 - After any edit to `Code.gs`, publish a **new version** of the deployment or
   the live site keeps running the old code.
 
-### What order handling does today (no invoices)
+### What order handling does today
 
-There is **no automatic invoice or PDF generation, and no online payment
-gateway**. The flow is:
+There is **no online payment gateway** — payment happens out-of-band and is
+confirmed manually. Invoice and shipping-label PDFs **are** generated
+automatically:
 
 1. Cart is logged to `Cart Logs` (`logCart`) with customer details + totals.
 2. Customer pays out-of-band and uploads a **payment screenshot**.
-3. `completeOrder` writes the row to `Completed Orders` with an order id,
-   itemised cart, total, coupon and the Drive link to that screenshot.
-4. Confirmation continues over WhatsApp.
+3. `completeOrder` generates a PDF invoice (`generateInvoicePdf_`) and a PDF
+   shipping label (`generateShippingLabelPdf_`), saving each to its own
+   Drive folder ("The Layout — Invoices" / "The Layout — Shipping Labels",
+   both shared "anyone with the link"), then writes the row to
+   `Completed Orders` with an order id, itemised cart, total, coupon, the
+   screenshot link, and links to both generated documents.
+4. Neither document is emailed automatically — both are for manual
+   review/printing from the Drive links in the sheet. Confirmation continues
+   over WhatsApp.
 
-The `Completed Orders` sheet is therefore the order/receipt record. If a real
-invoice (numbered PDF emailed to the customer) or a payment gateway is wanted,
+The `Completed Orders` sheet is therefore the order/receipt record. If a
+numbered invoice emailed to the customer or a payment gateway is wanted,
 that's a separate build.
