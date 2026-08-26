@@ -467,15 +467,17 @@ function shippingItemLabel_(item) {
   }
 }
 
-// Builds the multi-line "ITEM" cell content: one line per distinct product
-// category in the order, collapsed to a count (e.g. "Pocket Magazine × 3")
-// rather than one line per unit — a 3-pocket-magazine order shouldn't
-// produce three identical lines. Templates are zero-cost sub-selections
-// (same reason the invoice folds them into a note, not a row) and delivery
-// drives the banner text instead of appearing here, so both are excluded;
-// combo-linked lines (comboId set) are skipped since the combo's own line
-// already represents them.
-function shippingItemSummaryHtml_(cart) {
+// Builds the "ITEM" cell content as an array of label strings — one per
+// distinct product category in the order, collapsed to a count (e.g.
+// "Pocket Magazine × 3") rather than one line per unit — a 3-pocket-magazine
+// order shouldn't produce three identical lines. Templates are zero-cost
+// sub-selections (same reason the invoice folds them into a note, not a
+// row) and delivery drives the banner text instead of appearing here, so
+// both are excluded; combo-linked lines (comboId set) are skipped since the
+// combo's own line already represents them. Returned as an array (rather
+// than pre-joined HTML) so buildShippingLabelHtml_ can also read the line
+// count to size the item font — see shippingItemFontSize_ below.
+function shippingItemSummaryLines_(cart) {
   const EXCLUDE = { templates: true, "pocket-templates": true, delivery: true };
   const counts = {};
   const order = [];
@@ -486,10 +488,24 @@ function shippingItemSummaryHtml_(cart) {
     if (!(label in counts)) order.push(label);
     counts[label] = (counts[label] || 0) + 1;
   });
-  if (!order.length) return "—";
-  return order
-    .map((label) => escapeHtml_(counts[label] > 1 ? (label + " × " + counts[label]) : label))
-    .join("<br/>");
+  return order.map((label) => (counts[label] > 1 ? (label + " × " + counts[label]) : label));
+}
+
+// The item box has room for ~4 lines at the base 11px size before it starts
+// crowding the fixed rows above it (From / Payment Status / Amount). Beyond
+// that, shrink the font rather than let a printed label silently lose lines
+// it has no way to scroll to — a real bug in the previous version, where a
+// fixed-height box with overflow:auto just clipped anything past 3-4 lines
+// with zero visual indication. Floors out at 6.5px, which still comfortably
+// covers this store's realistic max order shape (roughly 8-9 distinct
+// product categories in one cart).
+function shippingItemFontSize_(lineCount) {
+  if (lineCount <= 4) return 11;
+  if (lineCount <= 5) return 9.5;
+  if (lineCount <= 6) return 8.5;
+  if (lineCount <= 7) return 7.5;
+  if (lineCount <= 8) return 7;
+  return 6.5;
 }
 
 // The reference label design shows a plain "999/-" style amount, not the
@@ -509,7 +525,13 @@ function buildShippingLabelHtml_(order) {
   const isExpress = !!delivery && /exp/i.test(String(delivery.id));
   const bannerText = isExpress ? "EXPRESS SHIPPING" : "NORMAL SHIPPING";
 
-  const itemHtml = shippingItemSummaryHtml_(cart);
+  const itemLines = shippingItemSummaryLines_(cart);
+  const itemHtml = itemLines.length ? itemLines.map((line) => escapeHtml_(line)).join("<br/>") : "—";
+  const itemFontSize = shippingItemFontSize_(itemLines.length);
+  // Tighter line-height at the smaller sizes packs lines closer instead of
+  // leaving the same generous 1.4x gap a 6.5px line doesn't need.
+  const itemLineHeight = itemFontSize <= 8 ? 1.15 : itemFontSize <= 9.5 ? 1.25 : 1.4;
+
   const addressHtml = escapeHtml_(customer.address || "").replace(/\n/g, "<br/>");
   const logoTag = getLogoImgTag_().replace(
     'style="height:64px;width:64px;object-fit:contain;margin-bottom:6px;"',
@@ -520,47 +542,62 @@ function buildShippingLabelHtml_(order) {
     "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>" +
     "@page { size: 6in 4in; margin: 0; }" +
     "* { box-sizing: border-box; }" +
-    "body { font-family: Arial, Helvetica, sans-serif; color: #111; margin: 0; padding: 0.18in; width: 6in; background: #fff; }" +
-    ".label { border: 3px solid #000; }" +
-    ".banner { background: #000; display: table; width: 100%; table-layout: fixed; }" +
-    ".banner-text { display: table-cell; vertical-align: middle; padding: 12px 14px; font-size: 26px; font-weight: 800; letter-spacing: 1px; color: #fff; }" +
-    ".banner-logo { display: table-cell; width: 66px; vertical-align: middle; text-align: center; padding: 6px; background: #fff; }" +
-    ".body-row { display: table; width: 100%; table-layout: fixed; border-bottom: 2px solid #000; min-height: 2.4in; }" +
-    ".col-left, .col-right { display: table-cell; vertical-align: top; padding: 12px 14px; }" +
-    ".col-left { width: 62%; }" +
-    ".col-right { width: 38%; border-left: 2px solid #000; padding: 0; }" +
-    ".field { margin-bottom: 10px; }" +
-    ".field:last-child { margin-bottom: 0; }" +
+    "html, body { margin: 0; padding: 0; }" +
+    "body { font-family: Arial, Helvetica, sans-serif; color: #111; background: #fff; }" +
+    // Fixed 6in x 4in page wrapper, flex column so the label fills it and
+    // never grows beyond it regardless of how much content is inside.
+    ".page { width: 6in; height: 4in; padding: 0.18in; display: flex; flex-direction: column; }" +
+    ".label { flex: 1; display: flex; flex-direction: column; border: 3px solid #000; overflow: hidden; }" +
+    ".banner { flex: 0 0 auto; display: flex; width: 100%; background: #000; }" +
+    ".banner-text { flex: 1; display: flex; align-items: center; padding: 12px 14px; font-size: 26px; font-weight: 800; letter-spacing: 1px; color: #fff; text-transform: uppercase; }" +
+    ".banner-logo { flex: 0 0 66px; display: flex; align-items: center; justify-content: center; padding: 6px; background: #fff; }" +
+    ".banner-logo img { height: 46px; width: 46px; object-fit: contain; }" +
+    // body-row takes all space left between banner and footer.
+    ".body-row { flex: 1; display: flex; width: 100%; border-bottom: 2px solid #000; min-height: 0; }" +
+    ".col-left { flex: 0 0 62%; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }" +
+    ".col-right { flex: 0 0 38%; border-left: 2px solid #000; display: flex; flex-direction: column; min-height: 0; }" +
     ".field-label { font-size: 9px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }" +
     ".field-value { font-size: 11px; margin-top: 2px; line-height: 1.4; }" +
-    ".right-row { padding: 9px 14px; border-bottom: 1px solid #000; }" +
+    // The three fixed-content rows (From / Payment Status / Amount) are
+    // kept tight on purpose — every pixel saved here is a pixel handed to
+    // the item row below, the one row whose content length actually varies.
+    ".right-row { flex: 0 0 auto; padding: 6px 14px; border-bottom: 1px solid #000; }" +
     ".right-row:last-child { border-bottom: none; }" +
-    ".footer-row { display: table; width: 100%; table-layout: fixed; padding: 10px 14px; }" +
-    ".footer-left, .footer-right { display: table-cell; vertical-align: middle; }" +
+    // Item row is the only one allowed to grow — it claims all space left
+    // over after the three fixed rows above. overflow:visible rather than
+    // hidden/auto: shippingItemFontSize_ is sized to fit realistic orders,
+    // but if an extreme cart ever still overruns it, printing past the row
+    // (visible, if messy) beats silently deleting item lines a packer never
+    // sees — the old bug this replaces.
+    ".right-row.item-row { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }" +
+    ".right-row.item-row .field-value { overflow: visible; }" +
+    ".footer-row { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; }" +
     ".footer-right { text-align: right; font-size: 10px; font-style: italic; line-height: 1.4; }" +
     ".order-label { font-size: 9px; font-weight: 800; text-transform: uppercase; }" +
     ".order-value { font-size: 18px; font-weight: 800; letter-spacing: 1px; }" +
     "</style></head><body>" +
+    "<div class=\"page\">" +
     "<div class=\"label\">" +
     "<div class=\"banner\"><div class=\"banner-text\">" + escapeHtml_(bannerText) + "</div>" +
     "<div class=\"banner-logo\">" + logoTag + "</div></div>" +
     "<div class=\"body-row\">" +
     "<div class=\"col-left\">" +
-    "<div class=\"field\"><div class=\"field-label\">Name:</div><div class=\"field-value\">" + escapeHtml_(customer.name || "") + "</div></div>" +
-    "<div class=\"field\"><div class=\"field-label\">Phone No.</div><div class=\"field-value\">" + escapeHtml_(customer.phone || "") + "</div></div>" +
-    "<div class=\"field\"><div class=\"field-label\">Email ID:</div><div class=\"field-value\">" + escapeHtml_(customer.email || "") + "</div></div>" +
-    "<div class=\"field\"><div class=\"field-label\">Ship To:</div><div class=\"field-value\">" + addressHtml + "</div></div>" +
+    "<div><div class=\"field-label\">Name:</div><div class=\"field-value\">" + escapeHtml_(customer.name || "") + "</div></div>" +
+    "<div><div class=\"field-label\">Phone No.</div><div class=\"field-value\">" + escapeHtml_(customer.phone || "") + "</div></div>" +
+    "<div><div class=\"field-label\">Email ID:</div><div class=\"field-value\">" + escapeHtml_(customer.email || "") + "</div></div>" +
+    "<div><div class=\"field-label\">Ship To:</div><div class=\"field-value\">" + addressHtml + "</div></div>" +
     "</div>" +
     "<div class=\"col-right\">" +
     "<div class=\"right-row\"><div class=\"field-label\">From :</div><div class=\"field-value\">The Layout</div></div>" +
     "<div class=\"right-row\"><div class=\"field-label\">Payment Status:</div><div class=\"field-value\">PRE-PAID</div></div>" +
     "<div class=\"right-row\"><div class=\"field-label\">Amount:</div><div class=\"field-value\">" + formatPlainINR_(order.total) + "</div></div>" +
-    "<div class=\"right-row\"><div class=\"field-label\">Item :</div><div class=\"field-value\">" + itemHtml + "</div></div>" +
+    "<div class=\"right-row item-row\"><div class=\"field-label\">Item :</div><div class=\"field-value\" style=\"font-size:" + itemFontSize + "px;line-height:" + itemLineHeight + ";\">" + itemHtml + "</div></div>" +
     "</div>" +
     "</div>" +
     "<div class=\"footer-row\">" +
-    "<div class=\"footer-left\"><span class=\"order-label\">Order Number : </span><span class=\"order-value\">" + escapeHtml_(order.orderId) + "</span></div>" +
+    "<div><span class=\"order-label\">Order Number : </span><span class=\"order-value\">" + escapeHtml_(order.orderId) + "</span></div>" +
     "<div class=\"footer-right\">Thank you for shopping<br/>from &quot;The Layout&quot; :)</div>" +
+    "</div>" +
     "</div>" +
     "</div>" +
     "</body></html>"
