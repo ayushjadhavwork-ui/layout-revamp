@@ -1005,10 +1005,9 @@ messages themselves are accurate and descriptive — this is just an index.
   Cloudflare-ready per §10.1) and now lives at
   `thelayout.layoutt.workers.dev`. The Vercel project/deployment is being
   deleted since it's no longer the live host.
-- Two now-unused artifacts from the Vercel debugging remain in the repo,
-  harmless but dead weight: a `packageManager: "bun@1.4.0"` entry in
-  `package.json`, and a `vercel.json` overriding the install command to
-  plain `bun install`. Fine to remove in a later cleanup pass.
+- Two now-unused artifacts from the Vercel debugging (`packageManager` pin
+  in `package.json`, `vercel.json`) were added then removed again in this
+  same cleanup pass, once Cloudflare was confirmed as the actual host.
 - `SITE.links.customerReviews` in `site-content.ts` updated from
   `https://thelayout.vercel.app/happy-customers` to
   `https://thelayout.layoutt.workers.dev/happy-customers` — grepped for any
