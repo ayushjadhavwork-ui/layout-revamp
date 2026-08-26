@@ -530,12 +530,28 @@ any existing `*-section.tsx` file as the template.
 `package-lock.json` (npm) and `bun.lock` (bun) are **both tracked** — this
 predates this session (both were added together in an earlier commit,
 `9044d7c`). `bunfig.toml` exists, suggesting bun is the "intended" package
-manager, but this session used `npm install`/`npm uninstall` (for
-`@google/model-viewer`) and that's reflected in `package-lock.json`. If you
-add a dependency, **update whichever lockfile you're not using too**, or run
-both `npm install` and `bun install` after editing `package.json` — nothing
-currently enforces they stay in sync, and CI/deploy tooling should specify
-which one it actually uses.
+manager, but the Friendship Card session used `npm install`/`npm uninstall`
+(for `@google/model-viewer`) and only `package-lock.json` picked that up.
+
+**This drift is exactly what broke the Cloudflare deploy** (a later
+session): Cloudflare's build detects bun (via `bunfig.toml`/`bun.lock`) and
+runs `bun install --frozen-lockfile`, which hard-fails — "lockfile had
+changes, but lockfile is frozen" — the moment `bun.lock` doesn't exactly
+match `package.json`. `bun.lock` turned out to be missing not just
+`@google/model-viewer` but `sharp` too (the `scripts/optimize-media.mjs`
+devDependency, §7) and was stale enough that a straight `bun install`
+(bun 1.4.0 locally vs Cloudflare's bun 1.2.15 — the text lockfile format has
+been stable since 1.2, so this didn't matter) also dropped a `tsx`/`esbuild`/
+`rollup` subtree that only `package-lock.json`'s npm resolver had pulled in
+as optional deps bun correctly skips — confirmed harmless by running a full
+`bun run build` against the regenerated lockfile, which succeeded and
+produced the same `.output/server` shape as the npm build.
+
+**Going forward: if you add/remove a dependency, run *both* `npm install`
+and `bun install` after editing `package.json`**, or `bun install
+--frozen-lockfile` will eventually break the Cloudflare build again — no
+tooling here enforces the two lockfiles stay in sync, so this is a
+by-hand discipline, not something you can trust to just work.
 
 ### 9.2 Pervasive CRLF line endings
 
