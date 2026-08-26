@@ -727,18 +727,20 @@ pass at some point, but out of scope for feature work unless asked.
 
 ## 10. Deploying to Cloudflare
 
-### 10.1 Current state: not yet deployed there
+### 10.1 Current state: live on Cloudflare Workers
 
-The site is **currently live on Vercel** — `SITE.links.customerReviews` in
-`site-content.ts` points at `https://thelayout.vercel.app/happy-customers`,
-and git history shows an active, in-progress "Cloudflare migration" effort
-(commit `05182a4`, "Optimize media for Cloudflare migration: webp
-conversion, video tag, caching headers", plus the SVG-compression work in
-`c499ef3`). The build tooling already **defaults to Cloudflare** though —
-Nitro's `cloudflare-module` preset is the wrapper's default target whenever
-Nitro runs (see §2.1) — so the app is built Cloudflare-ready even though
-production traffic isn't there yet. No `wrangler.toml` is committed; Nitro
-generates a fresh `wrangler.json` inside `.output/server/` on every build.
+The site is **now live on Cloudflare Workers** at `thelayout.layoutt.workers.dev`
+(migrated 2026-08-26; Vercel was the previous host and its deployment is
+being decommissioned). `SITE.links.customerReviews` in `site-content.ts`
+was updated accordingly, from `https://thelayout.vercel.app/happy-customers`
+to `https://thelayout.layoutt.workers.dev/happy-customers`. No custom
+domain is wired up yet — it's on the bare `*.workers.dev` subdomain (see
+§10.3's suggestion to add one later). The build tooling already **defaults
+to Cloudflare** — Nitro's `cloudflare-module` preset is the wrapper's
+default target whenever Nitro runs (see §2.1) — so the app was built
+Cloudflare-ready well before the actual cutover happened. No `wrangler.toml`
+is committed; Nitro generates a fresh `wrangler.json` inside
+`.output/server/` on every build.
 
 ### 10.2 What Nitro's `cloudflare-module` preset produces
 
@@ -854,14 +856,13 @@ account being available in this session).
    it's not a new exposure, just worth knowing it's unchanged.
 
 5. **Google Apps Script CORS behavior should carry over unchanged** — the
-   backend already works from the current Vercel origin without any
-   origin-allowlisting on the Apps Script side (Web Apps deployed with
-   "Anyone" access don't enforce CORS restrictively, and `gas.ts`'s
-   `text/plain` trick avoids preflight entirely — see §6.1). Moving the
-   frontend's origin to a `*.workers.dev` domain or a new custom domain
-   should not require any Apps Script-side change. Verify this once,
-   post-deploy, rather than assuming — it's a reasonable assumption, not a
-   guarantee.
+   backend worked from the old Vercel origin without any origin-allowlisting
+   on the Apps Script side (Web Apps deployed with "Anyone" access don't
+   enforce CORS restrictively, and `gas.ts`'s `text/plain` trick avoids
+   preflight entirely — see §6.1), and moving the frontend's origin to
+   `thelayout.layoutt.workers.dev` required no Apps Script-side change.
+   Still worth a real end-to-end order test on the new domain rather than
+   assuming — this hasn't been independently confirmed in this session.
 
 6. **`nodejs_compat` is already enabled** in the generated `wrangler.json`,
    and a grep across `src/` found no Node built-in imports (`node:fs`,
@@ -896,12 +897,15 @@ account being available in this session).
    applied correctly on the first real deploy (check response headers on a
    media file in production).
 
-### 10.5 Suggested first-deploy verification checklist
+### 10.5 Post-deploy verification checklist
 
-Once you have Cloudflare access, work through this in order:
-1. `npm run build`, confirm no errors.
-2. `cd .output/server && npx wrangler deploy` (accept the `*.workers.dev`
-   URL it gives you — don't wire a custom domain yet).
+Steps 1–2 are done — the site is deployed and live at
+`thelayout.layoutt.workers.dev`, and the Vercel deployment is being deleted
+since it's no longer needed. Steps 3–6 have **not** been confirmed in any
+session so far and are still worth working through:
+1. ~~`npm run build`, confirm no errors.~~ Done.
+2. ~~`cd .output/server && npx wrangler deploy` (accept the `*.workers.dev`
+   URL it gives you — don't wire a custom domain yet).~~ Done.
 3. Load the deployed URL — confirm the homepage renders (SSR working),
    confirm images/video/fonts load (static assets working), confirm the
    cart/checkout flow works end-to-end including a real Apps Script call
@@ -912,7 +916,9 @@ Once you have Cloudflare access, work through this in order:
 5. Complete one full test order (including the payment-screenshot upload
    and `completeOrder` call) and confirm a row lands in `Completed Orders`
    with a real `invoiceUrl` (not an `ERROR:` string).
-6. Only then wire up a custom domain and cut over DNS from Vercel.
+6. Optionally wire up a custom domain later (Workers & Pages → the worker →
+   Settings → Domains & Routes) — the site currently runs on the bare
+   `*.workers.dev` subdomain.
 
 ---
 
@@ -986,3 +992,29 @@ messages themselves are accurate and descriptive — this is just an index.
   any of this**. Whoever picks this up next should do a full browser pass
   before shipping, and this `code.gs` needs a fresh Apps Script deployment
   (§6.6) — it now carries three undeployed changes, not two.
+
+## 11b. Recent work log — Cloudflare cutover (2026-08-26)
+
+- **Migrated production hosting from Vercel to Cloudflare Workers.** The
+  Vercel Bun install was failing (`bun install --frozen-lockfile` rejected
+  `bun.lock` as changed — root cause was a bun-version skew between what
+  generated the lockfile locally and the older `bun@1.2.15` Vercel's build
+  image used, and pinning `packageManager` in `package.json` did not make
+  Vercel switch versions). Rather than keep chasing that, the site was
+  deployed to Cloudflare Workers instead (the build was already
+  Cloudflare-ready per §10.1) and now lives at
+  `thelayout.layoutt.workers.dev`. The Vercel project/deployment is being
+  deleted since it's no longer the live host.
+- Two now-unused artifacts from the Vercel debugging remain in the repo,
+  harmless but dead weight: a `packageManager: "bun@1.4.0"` entry in
+  `package.json`, and a `vercel.json` overriding the install command to
+  plain `bun install`. Fine to remove in a later cleanup pass.
+- `SITE.links.customerReviews` in `site-content.ts` updated from
+  `https://thelayout.vercel.app/happy-customers` to
+  `https://thelayout.layoutt.workers.dev/happy-customers` — grepped for any
+  other hardcoded reference to the old domain across `src/`, `public/`, and
+  root config files and found none.
+- §10 rewritten to reflect live status; see §10.5 for what's still
+  unverified post-cutover (real browser QA, cache headers, a full test
+  order end-to-end on the new domain — none of this was confirmed in this
+  session).
