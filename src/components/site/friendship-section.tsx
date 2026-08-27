@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { HeartHandshake, Check, Eye } from "lucide-react";
+import { HeartHandshake, Check, Eye, ChevronLeft, ChevronRight } from "lucide-react";
 import { toast } from "sonner";
 import { CATALOG, fmt, type Product } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
@@ -7,6 +7,24 @@ import { SITE } from "@/lib/site-content";
 import { ModalShell } from "./shop";
 import { useProductReviews } from "@/lib/use-product-reviews";
 import { ReviewsPanel, ReviewStars } from "./reviews-panel";
+import { templateHero } from "./template-picker";
+
+// A portrait card-shaped placeholder for design thumbnails — deliberately
+// not template-picker.tsx's TemplatePlaceholder, which draws a landscape
+// magazine "Left | Right" spread that would read as wrong inside this
+// section's portrait aspect-[3/4] card slots. Also doubles as the fallback
+// when a card_0N_front/back path is wired up in site-content.ts but the
+// file itself hasn't been dropped into public/media/friendship/ yet (see
+// the onError handlers below) — <img> has no built-in "file missing"
+// signal, so without this a bad path just shows a broken-image icon.
+function FriendshipDesignPlaceholder({ n }: { n: number }) {
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-gradient-to-br from-pink-mist/30 via-blush-rose/25 to-rose-wine/25 text-off-white">
+      <HeartHandshake className="h-6 w-6 opacity-80" />
+      <span className="font-display text-sm">Card {String(n).padStart(2, "0")}</span>
+    </div>
+  );
+}
 
 // What a customer can personalise — shown as static copy under the 3D
 // viewer and again in each variant's modal. Not a step-2 picker like
@@ -154,21 +172,47 @@ function FriendshipModelViewer({ className = "" }: { className?: string }) {
 /* ================================================================ */
 export function FriendshipCardSection() {
   const [openId, setOpenId] = useState<string | null>(null);
+  const [openDesignIdx, setOpenDesignIdx] = useState<number | null>(null);
+  // Tracks design ids whose thumbnail 404'd (path wired up in
+  // site-content.ts but no file dropped in yet) — see
+  // FriendshipDesignPlaceholder's comment above.
+  const [brokenDesignIds, setBrokenDesignIds] = useState<Set<string>>(new Set());
   const cart = useStore((s) => s.cart);
-  const addItem = useStore((s) => s.addItem);
+  const selectedFriendshipId = useStore((s) => s.selectedFriendshipId);
+  const selectedFriendshipDesignIds = useStore((s) => s.selectedFriendshipDesignIds);
+  const setFriendship = useStore((s) => s.setFriendship);
   const removeItem = useStore((s) => s.removeItem);
+  const toggleFriendshipDesign = useStore((s) => s.toggleFriendshipDesign);
+  const designLimit = useStore((s) => s.friendshipDesignLimit());
 
   const items = CATALOG.friendship;
+  const designs = CATALOG["friendship-designs"];
 
-  const handleToggle = (item: Product) => {
-    const cartItem = cart.find((c) => c.category === "friendship" && c.id === item.id);
-    if (cartItem) {
-      removeItem(cartItem.key);
+  const handleToggleTier = (item: Product) => {
+    const active = selectedFriendshipId === item.id;
+    if (active) {
+      const cartItem = cart.find((c) => c.category === "friendship" && c.id === item.id);
+      if (cartItem) removeItem(cartItem.key);
       toast.success(`${item.name} deselected`);
-    } else {
-      addItem("friendship", item);
-      toast.success(`${item.name} selected`);
+      return;
     }
+    const prevCount = selectedFriendshipDesignIds.length;
+    const newLimit = item.designLimit ?? 1;
+    setFriendship(item.id);
+    toast.success(
+      prevCount > newLimit
+        ? `${item.name} selected — kept your first design, removed the rest to fit ${newLimit}.`
+        : `${item.name} selected — pick ${newLimit} design${newLimit === 1 ? "" : "s"} below.`,
+    );
+  };
+
+  const handleToggleDesign = (id: string, label: string) => {
+    if (!selectedFriendshipId) return toast.error("Choose Single or Duo Card above first.");
+    const already = selectedFriendshipDesignIds.includes(id);
+    const ok = toggleFriendshipDesign(id);
+    if (!ok)
+      return toast.error(`You can only pick ${designLimit} design${designLimit === 1 ? "" : "s"} for this quantity.`);
+    toast.success(already ? `${label} removed` : `${label} selected`);
   };
 
   return (
@@ -193,13 +237,17 @@ export function FriendshipCardSection() {
           </p>
         </div>
 
-        <div className="mt-8 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5 max-w-2xl mx-auto">
+        {/* ── Step 1: quantity tier ────────────────────────────────── */}
+        <p className="mt-8 text-center text-xs font-semibold uppercase tracking-[0.25em] text-off-white">
+          1. Choose your quantity
+        </p>
+        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5 max-w-2xl mx-auto">
           {items.map((item) => {
-            const active = cart.some((c) => c.category === "friendship" && c.id === item.id);
+            const active = selectedFriendshipId === item.id;
             return (
               <div
                 key={item.id}
-                onClick={() => handleToggle(item)}
+                onClick={() => handleToggleTier(item)}
                 className={`relative rounded-xl p-4 md:p-5 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
                   active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
                 }`}
@@ -226,7 +274,7 @@ export function FriendshipCardSection() {
                 <div className="mt-4 flex gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
                   <button
                     type="button"
-                    onClick={() => handleToggle(item)}
+                    onClick={() => handleToggleTier(item)}
                     className={`flex-1 min-w-0 rounded-full px-3 py-1.5 text-[0.7rem] font-medium transition border truncate ${
                       active
                         ? "bg-off-white text-rose-wine border-off-white"
@@ -238,6 +286,83 @@ export function FriendshipCardSection() {
                   <button
                     type="button"
                     onClick={() => setOpenId(item.id)}
+                    aria-label={`View ${item.name}`}
+                    className="grid shrink-0 place-items-center rounded-full px-3 py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* ── Step 2: design pick(s) — always a 2-up grid ─────────────── */}
+        <p className="mt-8 text-center text-xs font-semibold uppercase tracking-[0.25em] text-off-white">
+          2. Pick your design{designLimit === 2 ? "s" : ""}
+        </p>
+        <p className="mt-1 text-center text-[0.65rem] uppercase tracking-[0.2em] text-pink-mist">
+          {selectedFriendshipId
+            ? `${selectedFriendshipDesignIds.length} of ${designLimit} selected`
+            : "Choose a quantity above to unlock designs"}
+        </p>
+        <div className="mt-4 grid grid-cols-2 gap-4 md:gap-5 max-w-2xl mx-auto">
+          {designs.map((item, idx) => {
+            const active = selectedFriendshipDesignIds.includes(item.id);
+            const disabled = !selectedFriendshipId || (selectedFriendshipDesignIds.length >= designLimit && !active);
+            const hero = templateHero(item.id);
+            return (
+              <div
+                key={item.id}
+                onClick={() => handleToggleDesign(item.id, item.name)}
+                className={`relative rounded-xl p-3 md:p-4 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
+                  active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
+                } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
+              >
+                {active && (
+                  <span className="absolute top-2 right-2 grid h-6 w-6 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10">
+                    <Check className="h-3.5 w-3.5" />
+                  </span>
+                )}
+
+                <div
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setOpenDesignIdx(idx);
+                  }}
+                  className="relative w-full aspect-[3/4] overflow-hidden rounded-md bg-white/5 cursor-zoom-in"
+                >
+                  {hero && !brokenDesignIds.has(item.id) ? (
+                    <img
+                      src={hero}
+                      alt={item.name}
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full object-cover"
+                      onError={() => setBrokenDesignIds((prev) => new Set(prev).add(item.id))}
+                    />
+                  ) : (
+                    <FriendshipDesignPlaceholder n={idx + 1} />
+                  )}
+                </div>
+
+                <p className="mt-3 font-display tracking-[0.2em] text-xs text-off-white">{item.name}</p>
+
+                <div className="mt-3 flex gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    disabled={disabled}
+                    onClick={() => handleToggleDesign(item.id, item.name)}
+                    className={`flex-1 min-w-0 rounded-full px-3 py-1.5 text-[0.7rem] font-medium transition border truncate ${
+                      active
+                        ? "bg-off-white text-rose-wine border-off-white"
+                        : "bg-transparent text-off-white border-pink-mist/50 hover:bg-off-white/10"
+                    } disabled:cursor-not-allowed`}
+                  >
+                    {active ? "Selected" : "Select"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOpenDesignIdx(idx)}
                     aria-label={`View ${item.name}`}
                     className="grid shrink-0 place-items-center rounded-full px-3 py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
                   >
@@ -273,12 +398,22 @@ export function FriendshipCardSection() {
         product={items.find((i) => i.id === openId) ?? null}
         onClose={() => setOpenId(null)}
       />
+
+      <FriendshipDesignDetailModal
+        open={openDesignIdx !== null}
+        item={openDesignIdx !== null ? designs[openDesignIdx] : null}
+        index={openDesignIdx ?? -1}
+        active={openDesignIdx !== null && selectedFriendshipDesignIds.includes(designs[openDesignIdx].id)}
+        limit={designLimit}
+        onToggle={toggleFriendshipDesign}
+        onClose={() => setOpenDesignIdx(null)}
+      />
     </>
   );
 }
 
 /* ================================================================ */
-/* MODAL                                                             */
+/* QUANTITY TIER MODAL                                               */
 /* ================================================================ */
 function FriendshipModal({
   open,
@@ -291,7 +426,9 @@ function FriendshipModal({
 }) {
   const [note, setNote] = useState("");
   const cart = useStore((s) => s.cart);
-  const addItem = useStore((s) => s.addItem);
+  const selectedFriendshipId = useStore((s) => s.selectedFriendshipId);
+  const selectedFriendshipDesignIds = useStore((s) => s.selectedFriendshipDesignIds);
+  const setFriendship = useStore((s) => s.setFriendship);
   const removeItem = useStore((s) => s.removeItem);
   const {
     reviews,
@@ -315,16 +452,22 @@ function FriendshipModal({
 
   if (!open || !product) return null;
 
-  const cartItem = cart.find((c) => c.category === "friendship" && c.id === product.id);
-  const active = !!cartItem;
+  const active = selectedFriendshipId === product.id;
+  const newLimit = product.designLimit ?? 1;
 
   const handleAdd = () => {
-    if (active && cartItem) {
-      removeItem(cartItem.key);
+    if (active) {
+      const cartItem = cart.find((c) => c.category === "friendship" && c.id === product.id);
+      if (cartItem) removeItem(cartItem.key);
       toast.success(`${product.name} removed`);
     } else {
-      addItem("friendship", product, note);
-      toast.success(`${product.name} added — we'll reach out for your customisation details.`);
+      const prevCount = selectedFriendshipDesignIds.length;
+      setFriendship(product.id, note);
+      toast.success(
+        prevCount > newLimit
+          ? `${product.name} selected — kept your first design, removed the rest to fit ${newLimit}.`
+          : `${product.name} added — pick ${newLimit} design${newLimit === 1 ? "" : "s"} below, we'll reach out for your customisation details.`,
+      );
     }
     onClose();
   };
@@ -404,6 +547,131 @@ function FriendshipModal({
         onSubmit={submitReview}
         onDelete={deleteReview}
       />
+    </ModalShell>
+  );
+}
+
+/* ================================================================ */
+/* DESIGN DETAIL MODAL — front/back swipe                            */
+/* ================================================================ */
+function FriendshipDesignDetailModal({
+  open,
+  item,
+  index,
+  active,
+  limit,
+  onToggle,
+  onClose,
+}: {
+  open: boolean;
+  item: Product | null;
+  index: number;
+  active: boolean;
+  limit: number;
+  onToggle: (id: string) => boolean;
+  onClose: () => void;
+}) {
+  const [slide, setSlide] = useState<0 | 1>(0);
+  // Per-slide 404 tracking — front and back are independent files, so one
+  // can be broken (or missing) while the other loads fine.
+  const [brokenSlides, setBrokenSlides] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    if (open) {
+      setSlide(0);
+      setBrokenSlides(new Set());
+    }
+  }, [open, item?.id]);
+
+  if (!open || !item) return null;
+
+  const photos = SITE.productImages?.[item.id] ?? [];
+  const front = photos[0];
+  const back = photos[1];
+  const slides = [front, back].filter((s): s is string => !!s);
+  const current = slides[slide] ?? slides[0];
+  const currentBroken = brokenSlides.has(slide);
+
+  const handleToggle = () => {
+    const already = active;
+    const ok = onToggle(item.id);
+    if (!ok) return toast.error(`You can only pick ${limit} design${limit === 1 ? "" : "s"}.`);
+    toast.success(already ? `${item.name} removed` : `${item.name} selected`);
+  };
+
+  return (
+    <ModalShell onClose={onClose} maxW="max-w-3xl">
+      <div className="grid gap-6 md:grid-cols-12 items-start">
+        <div className="md:col-span-6 flex flex-col items-center">
+          <div className="relative w-full max-w-[380px] rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10">
+            {current && !currentBroken ? (
+              <img
+                src={current}
+                alt={`${item.name} — ${slide === 0 ? "front" : "back"}`}
+                className="w-full h-auto object-contain"
+                onError={() => setBrokenSlides((prev) => new Set(prev).add(slide))}
+              />
+            ) : (
+              <div className="aspect-[3/4] relative">
+                <FriendshipDesignPlaceholder n={index + 1} />
+              </div>
+            )}
+
+            {slides.length > 1 && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setSlide((s) => (s === 0 ? 1 : 0))}
+                  className="absolute left-2 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/80 text-rose-wine hover:bg-white"
+                  aria-label="Previous image"
+                >
+                  <ChevronLeft className="h-5 w-5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSlide((s) => (s === 0 ? 1 : 0))}
+                  className="absolute right-2 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/80 text-rose-wine hover:bg-white"
+                  aria-label="Next image"
+                >
+                  <ChevronRight className="h-5 w-5" />
+                </button>
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5">
+                  {slides.map((_, i) => (
+                    <span
+                      key={i}
+                      className={`h-1.5 w-1.5 rounded-full ${i === slide ? "bg-rose-wine" : "bg-rose-wine/30"}`}
+                    />
+                  ))}
+                </div>
+              </>
+            )}
+          </div>
+          <p className="mt-2 text-center text-[0.65rem] uppercase tracking-[0.2em] text-dusty-rose">
+            {slides.length > 1 ? (slide === 0 ? "Front · swipe for back" : "Back · swipe for front") : "Front"}
+          </p>
+        </div>
+
+        <div className="md:col-span-6 flex flex-col">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">
+            Friendship Card Design
+          </p>
+          <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">
+            {item.name}
+          </h3>
+          <p className="mt-4 text-3xl font-semibold text-blush-rose">Included</p>
+          <div className="mt-4 h-px bg-rose-wine/10" />
+          <p className="mt-4 text-sm leading-relaxed text-neutral-700">{item.desc}</p>
+
+          <button
+            onClick={handleToggle}
+            className={`pill-btn pill-btn-hover mt-6 w-full !py-3 !text-base ${
+              active ? "!bg-rose-wine !text-white !border-rose-wine" : "pill-primary"
+            }`}
+          >
+            {active ? "Remove from selection" : "Add to selection"}
+          </button>
+        </div>
+      </div>
     </ModalShell>
   );
 }

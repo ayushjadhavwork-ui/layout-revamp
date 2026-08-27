@@ -292,7 +292,15 @@ function buildInvoiceHtml_(order) {
     const uk = t.unit || "";
     (pocketTemplateLabelsByUnit[uk] = pocketTemplateLabelsByUnit[uk] || []).push(label);
   });
-  const invoiceCart = cart.filter((c) => c.category !== "templates" && c.category !== "pocket-templates");
+  // Friendship Card design picks are the same "zero-cost sub-selection
+  // folded into the parent row" shape as templates above, but flat — only
+  // ever one "friendship" line per order (see friendship-designs) — so no
+  // per-unit grouping is needed. Design product names already read
+  // "Card 01" etc. (see catalog.ts), so no id-number extraction needed
+  // either — just use the name as-is.
+  const friendshipDesignItems = cart.filter((c) => c.category === "friendship-designs");
+  const friendshipDesignLabels = friendshipDesignItems.map((t) => escapeHtml_(t.name));
+  const invoiceCart = cart.filter((c) => c.category !== "templates" && c.category !== "pocket-templates" && c.category !== "friendship-designs");
 
   const rows = invoiceCart.map((item) => {
     const isSize = item.category === "sizes";
@@ -324,6 +332,7 @@ function buildInvoiceHtml_(order) {
       const pocketLabels = pocketTemplateLabelsByUnit[item.unit || ""] || [];
       if (pocketLabels.length) notes.push("Templates:- " + pocketLabels.join(", "));
     }
+    if (isFriendship && friendshipDesignLabels.length) notes.push("Design:- " + friendshipDesignLabels.join(", "));
     const noteHtml = notes.length ? ('<div class="item-note">' + notes.join(" · ") + "</div>") : "";
     return (
       "<tr>" +
@@ -478,7 +487,11 @@ function shippingItemLabel_(item) {
 // than pre-joined HTML) so buildShippingLabelHtml_ can also read the line
 // count to size the item font — see shippingItemFontSize_ below.
 function shippingItemSummaryLines_(cart) {
-  const EXCLUDE = { templates: true, "pocket-templates": true, delivery: true };
+  // Friendship Card design picks ("friendship-designs") are excluded the
+  // same way templates/pocket-templates are — they're zero-cost
+  // sub-selections of the "friendship" row, not their own product; without
+  // this they'd otherwise leak through as bogus "Card 01" etc. lines here.
+  const EXCLUDE = { templates: true, "pocket-templates": true, "friendship-designs": true, delivery: true };
   const counts = {};
   const order = [];
   cart.forEach((item) => {

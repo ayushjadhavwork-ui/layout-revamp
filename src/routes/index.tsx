@@ -122,6 +122,9 @@ function Home() {
   const templateLimit = useStore((s) => s.templateLimit());
   const pocketUnits = useStore((s) => s.pocketUnits);
   const pocketTemplateLimit = useStore((s) => s.pocketTemplateLimit());
+  const selectedFriendshipId = useStore((s) => s.selectedFriendshipId);
+  const selectedFriendshipDesignIds = useStore((s) => s.selectedFriendshipDesignIds);
+  const friendshipDesignLimit = useStore((s) => s.friendshipDesignLimit());
 
   const openProduct = (cat: Category) => (p: Product) => {
     setModalCat(cat);
@@ -145,18 +148,25 @@ function Home() {
       document.getElementById(`pocket-unit-${incompletePocketUnit.uid}`)?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
+    if (selectedFriendshipId && selectedFriendshipDesignIds.length < friendshipDesignLimit) {
+      toast.error(`Pick your ${friendshipDesignLimit} design${friendshipDesignLimit === 1 ? "" : "s"} for the Friendship Card before ordering — ${selectedFriendshipDesignIds.length}/${friendshipDesignLimit} selected.`);
+      document.getElementById("friendship-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
     if (total < SITE.commerce.minOrderValue) {
       toast.error(`Minimum order value is ${CONFIG.CURRENCY}${SITE.commerce.minOrderValue}. Add ${CONFIG.CURRENCY}${SITE.commerce.minOrderValue - total} more.`);
       return;
     }
-    if (!cart.some((c) => c.category === "delivery")) {
-      toast.error("Choose a delivery option before ordering.");
-      document.getElementById("extras")?.scrollIntoView({ behavior: "smooth", block: "start" });
-      return;
-    }
     setCartOpen(false);
-    if (!customer || !customer.name || !customer.phone || !customer.email || !customer.address) {
-      toast.message("Please fill your details to continue.");
+    // Delivery is no longer a hard gate here — it's chosen either on-page
+    // (Step 6) or inside the checkout popup itself (CustomerInfoModal),
+    // which won't let the customer continue to payment without it. Route
+    // to that popup whenever either piece is still missing; only skip
+    // straight to payment once both are already in place.
+    const customerComplete = !!customer && !!customer.name && !!customer.phone && !!customer.email && !!customer.address;
+    const hasDelivery = cart.some((c) => c.category === "delivery");
+    if (!customerComplete || !hasDelivery) {
+      if (!customerComplete) toast.message("Please fill your details to continue.");
       setInfoOpen(true);
     } else {
       setPayOpen(true);

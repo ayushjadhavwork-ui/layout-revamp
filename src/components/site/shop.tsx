@@ -532,18 +532,34 @@ export function CartDrawer({
   const templateLimit = useStore((s) => s.templateLimit());
   const pocketUnits = useStore((s) => s.pocketUnits);
   const pocketTemplateLimit = useStore((s) => s.pocketTemplateLimit());
+  const selectedFriendshipId = useStore((s) => s.selectedFriendshipId);
+  const selectedFriendshipDesignIds = useStore((s) => s.selectedFriendshipDesignIds);
+  const friendshipDesignLimit = useStore((s) => s.friendshipDesignLimit());
   const minOrder = SITE.commerce.minOrderValue;
   const belowMin = cart.length > 0 && total < minOrder;
   const templatesIncomplete = !!selectedSizeId && selectedTemplateIds.length < templateLimit;
   const pocketTemplatesIncomplete = pocketUnits.some((u) => u.templateIds.length < pocketTemplateLimit);
-  const deliveryMissing = cart.length > 0 && !cart.some((c) => c.category === "delivery");
+  const friendshipDesignsIncomplete =
+    !!selectedFriendshipId && selectedFriendshipDesignIds.length < friendshipDesignLimit;
+  // Delivery is no longer gated here — it's chosen either on-page (Step 6)
+  // or inside the checkout popup (CustomerInfoModal), which blocks moving
+  // on to payment until it's picked. Gating it a second time here would
+  // just disable this button with no way to fix it from this drawer.
+  const friendshipDesignNames = cart
+    .filter((c) => c.category === "friendship-designs")
+    .map((c) => c.name)
+    .join(", ");
 
   const activeCombo = cart.find((c) => c.category === "combos");
   const comboOriginal = activeCombo ? comboRealTotal(activeCombo.id) : 0;
   const comboSavings = activeCombo ? Math.max(0, comboOriginal - activeCombo.price) : 0;
 
   const promoItems = cart.filter((c) => c.category === "promotions");
-  const mainItems = cart.filter((c) => c.category !== "promotions");
+  // Friendship Card design picks are zero-cost sub-selections of the
+  // "friendship" row (same relationship templates have to a magazine's
+  // "sizes" row) — fold them into a note under that row (below) instead of
+  // letting them leak through as their own bare ₹0.00-ish rows.
+  const mainItems = cart.filter((c) => c.category !== "promotions" && c.category !== "friendship-designs");
 
   if (!open) return null;
 
@@ -575,6 +591,9 @@ export function CartDrawer({
                   <p className="text-xs uppercase tracking-wider text-dusty-rose">
                     {item.category}{item.comboId ? " · in combo" : ""}
                   </p>
+                  {item.category === "friendship" && friendshipDesignNames && (
+                    <p className="mt-1 text-xs text-neutral-600">Design: {friendshipDesignNames}</p>
+                  )}
                   {item.note && <p className="mt-1 text-xs text-neutral-600 italic">"{item.note}"</p>}
                 </div>
                 <div className="text-right">
@@ -651,16 +670,16 @@ export function CartDrawer({
                 Finish picking templates for every Pocket Magazine in your cart before checking out.
               </p>
             )}
-            {deliveryMissing && (
+            {friendshipDesignsIncomplete && (
               <p className="text-center text-xs text-rose-wine">
-                Choose a delivery option before checking out.
+                Select {friendshipDesignLimit - selectedFriendshipDesignIds.length} more Friendship Card design{friendshipDesignLimit - selectedFriendshipDesignIds.length === 1 ? "" : "s"} ({selectedFriendshipDesignIds.length}/{friendshipDesignLimit} picked) before checking out.
               </p>
             )}
           </div>
 
           <button
             onClick={onCheckout}
-            disabled={cart.length === 0 || belowMin || templatesIncomplete || pocketTemplatesIncomplete || deliveryMissing}
+            disabled={cart.length === 0 || belowMin || templatesIncomplete || pocketTemplatesIncomplete || friendshipDesignsIncomplete}
             className="pill-btn pill-btn-hover pill-primary mt-5 w-full disabled:opacity-50"
           >
             Checkout <ArrowUpRight className="h-4 w-4" />
@@ -686,14 +705,19 @@ export function CustomerInfoModal({
 }) {
   const setCustomer = useStore((s) => s.setCustomer);
   const setCartId = useStore((s) => s.setCartId);
+  const customer = useStore((s) => s.customer);
   const cart = useStore((s) => s.cart);
+  const addItem = useStore((s) => s.addItem);
   const subtotal = useStore((s) => s.subtotal());
   const discount = useStore((s) => s.discount());
   const total = useStore((s) => s.total());
   const [submitting, setSubmitting] = useState(false);
 
+  const deliveryItem = cart.find((c) => c.category === "delivery");
+
   const handle = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!deliveryItem) return toast.error("Choose a delivery option first.");
     const fd = new FormData(e.currentTarget);
     const info = {
       name: String(fd.get("name") || "").trim(),
@@ -734,14 +758,43 @@ export function CustomerInfoModal({
         </div>
       </div>
 
-      <form onSubmit={handle} className="mt-5 space-y-3">
-        <Field label="Full name" name="name" required maxLength={100} />
-        <div className="grid grid-cols-2 gap-3">
-          <Field label="Phone" name="phone" type="tel" required maxLength={20} />
-          <Field label="Email" name="email" type="email" required maxLength={200} />
+      <div className="mt-4">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-wine mb-2">Choose delivery</p>
+        <div className="grid grid-cols-2 gap-2">
+          {CATALOG.delivery.map((d) => {
+            const active = deliveryItem?.id === d.id;
+            return (
+              <button
+                key={d.id}
+                type="button"
+                onClick={() => addItem("delivery", d)}
+                className={`rounded-xl border p-3 text-left transition ${
+                  active
+                    ? "border-rose-wine bg-rose-wine/10"
+                    : "border-rose-wine/20 bg-white/60 hover:border-rose-wine/40"
+                }`}
+              >
+                <p className="flex items-center gap-1.5 text-sm font-medium text-rose-wine">
+                  {active && <Check className="h-3.5 w-3.5 shrink-0" />} {d.name}
+                </p>
+                <p className="text-xs text-dusty-rose">{d.price ? fmt(d.price) : "Free"}</p>
+              </button>
+            );
+          })}
         </div>
-        <Field label="Shipping address" name="address" as="textarea" rows={3} required maxLength={400} />
-        <button disabled={submitting} className="pill-btn pill-btn-hover pill-primary w-full mt-2" type="submit">
+        {!deliveryItem && (
+          <p className="mt-2 text-xs text-rose-wine">Select a delivery option to continue.</p>
+        )}
+      </div>
+
+      <form onSubmit={handle} className="mt-5 space-y-3">
+        <Field label="Full name" name="name" required maxLength={100} defaultValue={customer?.name} />
+        <div className="grid grid-cols-2 gap-3">
+          <Field label="Phone" name="phone" type="tel" required maxLength={20} defaultValue={customer?.phone} />
+          <Field label="Email" name="email" type="email" required maxLength={200} defaultValue={customer?.email} />
+        </div>
+        <Field label="Shipping address" name="address" as="textarea" rows={3} required maxLength={400} defaultValue={customer?.address} />
+        <button disabled={submitting || !deliveryItem} className="pill-btn pill-btn-hover pill-primary w-full mt-2 disabled:opacity-50" type="submit">
           {submitting ? "Saving…" : "Continue to payment"}
         </button>
       </form>
@@ -955,18 +1008,18 @@ export function ModalShell({ children, onClose, maxW = "max-w-2xl" }: { children
 }
 
 function Field({
-  label, name, type = "text", as = "input", rows, required, maxLength,
+  label, name, type = "text", as = "input", rows, required, maxLength, defaultValue,
 }: {
-  label: string; name: string; type?: string; as?: "input" | "textarea"; rows?: number; required?: boolean; maxLength?: number;
+  label: string; name: string; type?: string; as?: "input" | "textarea"; rows?: number; required?: boolean; maxLength?: number; defaultValue?: string;
 }) {
   const cls = "mt-1 w-full rounded-xl border border-rose-wine/20 bg-white/60 px-4 py-2.5 text-sm outline-none focus:border-rose-wine transition-colors";
   return (
     <div>
       <label className="text-sm font-medium text-rose-wine">{label}</label>
       {as === "textarea" ? (
-        <textarea name={name} rows={rows} required={required} maxLength={maxLength} className={cls} />
+        <textarea name={name} rows={rows} required={required} maxLength={maxLength} defaultValue={defaultValue} className={cls} />
       ) : (
-        <input name={name} type={type} required={required} maxLength={maxLength} className={cls} />
+        <input name={name} type={type} required={required} maxLength={maxLength} defaultValue={defaultValue} className={cls} />
       )}
     </div>
   );

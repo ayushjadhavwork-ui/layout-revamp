@@ -156,7 +156,7 @@ underused relative to their apparent generality.
 | `template-picker.tsx` | — | Shared, store-agnostic `TemplateGrid` + `TemplateDetailModal` — the caller (normal-magazine `templates-section.tsx`, or once per Pocket Magazine unit in `pocket-section.tsx`) passes in selection/limit/toggle callbacks. Not a "section" itself. |
 | `scroll-hint.tsx` | — | `<ScrollHint text targetId>` — a small bouncing-chevron pill shown after picking a size or a Pocket Magazine, prompting a scroll down to that product's template picker. Not category-specific. |
 | `newspaper-section.tsx` | `newspaper` | Standalone product; two **fixed, non-pickable** preview spreads (`NEWSPAPER_TEMPLATES` in `catalog.ts`) — not user-selectable templates. |
-| `friendship-section.tsx` | `friendship` | Standalone product with an **interactive 3D model viewer** instead of a photo — see §9.4. Two SKUs (Single / Duo), single-choice. |
+| `friendship-section.tsx` | `friendship`, `friendship-designs` | Standalone product with an **interactive 3D model viewer** instead of a photo — see §9.4. Two-step selection, same shape as Sizes → Templates: Step 1 picks a quantity tier (Single/Duo, single-choice, MRP-strikethrough pricing) via `setFriendship()`; Step 2 picks 1 (Single) or up to 2 (Duo) of 4 fixed designs via `toggleFriendshipDesign()`, rendered as a fixed 2-per-row grid with a front/back swipeable detail modal (`FriendshipDesignDetailModal`) — see §5.3a. |
 | `combos-section.tsx` | `combos` | One-click bundles; auto-populates size/add-ons/polaroids/strips per `COMBO_RECIPES` in `catalog.ts`. Shows "original total" (computed live via `comboRealTotal()`, never hand-typed) struck through. |
 | `addons-section.tsx` | `addons` | Gift Wrap / Handwritten Letter / Combo(both) — generic single-choice with a note field in the modal. |
 | `strips-section.tsx` | `strips` | Multi-select up to 5, **bundle-priced by count** (`STRIP_TIERS`), not per-item. |
@@ -208,7 +208,7 @@ Three category lists in `store.ts` govern cross-category interactions —
   the cart at once — selecting a new one silently replaces the old one.
 - `COMBO_INDEPENDENT`: categories a combo never touches. Adding/removing
   these must **not** drop an active combo. (`delivery`, `newspaper`,
-  `pocket`, `pocket-templates`, `friendship`, `promotions`.)
+  `pocket`, `pocket-templates`, `friendship`, `friendship-designs`, `promotions`.)
 - `COMBO_MANAGED`: categories a combo recipe *can* auto-populate. Selecting a
   combo wipes anything manually picked in these first, so the real price
   never sits in the cart alongside the combo's flat price. (`sizes`,
@@ -262,14 +262,52 @@ just check one flat array. If you add a third such product, grep for
 and mirror every hit for the new product, or a customer can check out with
 an incomplete order.
 
+### 5.3a A third parent+sub-selection pair: the Friendship Card
+
+The Friendship Card (§9.4) is exactly the "third such product" the warning
+above anticipated — `selectedFriendshipId` (parent, mirrors
+`selectedSizeId`) drives `selectedFriendshipDesignIds` (sub-selection,
+mirrors `selectedTemplateIds`), capped by `friendshipDesignLimit()` (reads
+`designLimit` off the chosen `friendship` tier — 1 for Single, 2 for Duo —
+mirroring `templateLimit()`). It's flat rather than multi-unit like Pocket
+(only ever one Friendship Card line per order), so it's closer in shape to
+Sizes→Templates than to Pocket. Its own category is `friendship-designs`,
+selected via `toggleFriendshipDesign()`.
+
+One behavior it deliberately does **not** copy from `setSize`: switching
+the parent (`setFriendship()`, e.g. Duo → Single while 2 designs are
+picked) **truncates** `selectedFriendshipDesignIds` to the new limit
+(keeping the first-picked design(s)) instead of clearing it to `[]` the way
+`setSize` clears `selectedTemplateIds` on every size change. A full clear
+only happens via `removeItem()` on the `friendship` line itself (or
+re-clicking the active tier, which routes to the same removal), which also
+clears `selectedFriendshipId` and drops any `friendship-designs` cart lines
+— same shape as `removeItem()` clearing `selectedSizeId`/templates when a
+`sizes` line is removed.
+
+Both the on-site cart drawer and `code.gs`'s invoice/shipping-label logic
+fold `friendship-designs` picks into a note under the parent `friendship`
+row (`Design:- Card 02`, or `Design:- Card 01, Card 03` for Duo) rather than
+letting them leak through as their own bare rows — same pattern §6.4 uses
+for `templates`/`pocket-templates`. The checkout gate lives in three places,
+same as templates/pocket: `CartDrawer` (`friendshipDesignsIncomplete` in
+`shop.tsx`), `startCheckout()` in `index.tsx` (scrolls to
+`#friendship-card`), and `code.gs`'s `shippingItemSummaryLines_` EXCLUDE map
+(so a design pick never appears as its own "Card 01" line on a shipping
+label).
+
 **Persisted-store migration:** `pocketUnits` replaced the old flat
 `selectedPocketTemplateIds` array, which is a shape change to a persisted
 key (see §5.4's "Adding new persisted keys is safe... Removing or renaming
-... would need a real migration"). `store.ts` bumps `version: 2` and its
-`migrate()` strips any pre-v2 `pocket`/`pocket-templates` cart lines rather
+... would need a real migration"). `store.ts` bumped `version: 2` and its
+`migrate()` stripped any pre-v2 `pocket`/`pocket-templates` cart lines rather
 than leaving a `pocket` line in an old visitor's `localStorage` cart with no
 matching unit to render a picker for (which would have let that one item
-through checkout incomplete).
+through checkout incomplete). The Friendship Card redesign is the same risk
+again — an old blob's `friendship` cart line has no matching
+`selectedFriendshipId`, so the design-limit gate would treat it as
+already-complete (limit 0) — so `store.ts` bumped `version: 3` and extended
+`migrate()` to also strip any pre-v3 `friendship`/`friendship-designs` lines.
 
 ### 5.4 Persistence
 
@@ -287,12 +325,15 @@ first.**
 re-asking for shipping/contact info after a refresh is an acceptable cost
 next to silently resurrecting stale PII from `localStorage` indefinitely.
 
-`version: 1` — no migration function exists. **Adding new persisted keys is
-safe without a version bump** (Zustand's default merge keeps the new key's
-initial value for old `localStorage` blobs that don't have it) — this is
-how `selectedPocketTemplateIds` was added without a migration. Removing or
-renaming a persisted key, or changing its shape, would need a real
-migration or accept that returning customers' local carts silently reset.
+`version: 3` (see §5.3a for what each bump stripped and why). **Adding new
+persisted keys is safe without a version bump** (Zustand's default merge
+keeps the new key's initial value for old `localStorage` blobs that don't
+have it) — this is how `selectedFriendshipId`/`selectedFriendshipDesignIds`
+themselves were added with no bump needed for *their* existence; the bump to
+3 was only needed to actively strip stale pre-redesign `friendship` cart
+lines, not to add the keys. Removing or renaming a persisted key, or
+changing its shape, would need a real migration or accept that returning
+customers' local carts silently reset.
 
 ---
 
@@ -374,7 +415,7 @@ single note line under their magazine's row, e.g.
 |---|---|---|
 | `sizes` | `Custom Magazine (8 Pages, Normal Magazine, A4)` — spells out Mini vs Standard since both share the same `item.name` ("8 Pages") and only the id suffix (`-mini`) distinguishes them | `Templates:- <normal template numbers>` |
 | `pocket` | `Pocket Magazine (6 Pages, Pocket Size)` | `Templates:- <pocket template numbers>` |
-| `friendship` | `Friendship Card (Single Card)` / `Friendship Card (Duo Card — BESTIE SET)` — **parenthesized, not dash-prefixed**, because the Duo product's own name already contains an em-dash (`Duo Card — BESTIE SET`); a second leading dash there reads as a typo | — (no templates; customization is via `item.note`, which prints generically for every category) |
+| `friendship` | `Friendship Card (Single Card)` / `Friendship Card (Duo Card — BESTIE SET)` — **parenthesized, not dash-prefixed**, because the Duo product's own name already contains an em-dash (`Duo Card — BESTIE SET`); a second leading dash there reads as a typo | `Design:- <picked design names>`, e.g. `Design:- Card 02` (Single) or `Design:- Card 01, Card 03` (Duo) — folded from the `friendship-designs` category the same way template picks are folded above (see §5.3a); free-text customisation still prints separately via `item.note` |
 | anything else | `item.name` as-is | — |
 
 If you add another product category with its own "sub-selection" concept
@@ -417,9 +458,9 @@ uses coarser, category-level labels than the invoice (`shippingItemLabel_`
 — e.g. "A4 Magazine", "Pocket Magazine", never page counts or notes) and
 collapses repeats to a count (`shippingItemSummaryHtml_` — "Pocket Magazine
 × 3", not three lines) so a packer sees what to grab, not the customer's
-exact spec. `templates`/`pocket-templates`/`delivery` categories and
-combo-linked (`comboId` set) lines are excluded from that cell the same way
-the invoice excludes templates from its rows.
+exact spec. `templates`/`pocket-templates`/`friendship-designs`/`delivery`
+categories and combo-linked (`comboId` set) lines are excluded from that
+cell the same way the invoice excludes templates from its rows.
 
 ### 6.5 ⚠️ `Website_GUIDE/BACKEND_SETUP.md` is stale
 
@@ -437,9 +478,13 @@ again, or just point future readers here.)
 to go live** — editing the script source alone does nothing to the running
 Web App. `Deploy → Manage deployments → pencil icon → Version: New version
 → Deploy`. The URL stays the same, so no frontend change is needed. As of
-this file's writing, **two code.gs changes are sitting undeployed**:
+this file's writing, **code.gs changes are sitting undeployed**:
 - The Pocket Magazine invoice row + template note (§6.4).
 - The Friendship Card invoice row + note.
+- The Friendship Card **design** note (`Design:- Card 02`, etc.) and the
+  `friendship-designs` exclusion in `shippingItemSummaryLines_`'s EXCLUDE
+  map (§5.3a, §6.4) — from the Friendship Card's two-step quantity→design
+  redesign.
 
 - The new `shippingLabel` column + `generateShippingLabelPdf_` (§6.3a,
   §11a) — also undeployed as of this writing.
@@ -480,6 +525,22 @@ engineering work:
   `catalog.ts`'s `TEMPLATES` array, generated via `Array.from({ length:
   SITE.templateCount }, ...)`. Bump the number first, art can follow later
   (missing `tpl-<n>` images just show a placeholder).
+- **Friendship Card designs** (`card-1`..`card-4` in `productImages`) expect
+  front/back pairs at `public/media/friendship/card_01_front.webp` /
+  `card_01_back.webp` through `card_04_front`/`card_04_back` — front is the
+  grid thumbnail, back is what the customer swipes to in the design detail
+  modal. Unlike `tpl-<n>` (whose files already exist on disk, so a missing
+  *entry* is the only "missing" case there), these entries were added
+  pre-emptively with **no files behind them yet**. Because an `<img>` has no
+  built-in "file missing" signal (unlike an absent `productImages` entry,
+  which every other card component degrades from cleanly per the bullet
+  above), `friendship-section.tsx` is the one place in the codebase that
+  wires an explicit `onError` handler per thumbnail/slide to swap in a
+  small card-shaped `FriendshipDesignPlaceholder` (not the landscape
+  `TemplatePlaceholder` templates use — a magazine-spread "Left | Right"
+  placeholder reads as wrong inside a portrait card slot) — so it degrades
+  the same way as everywhere else in the interim. Drop in the 8 files at
+  those exact names to show real art; no code change needed.
 - `public/_headers` sets `Cache-Control: public, max-age=31536000, immutable`
   for `/media/*`, `*.webp`, `*.mp4`, `*.svg`, `*.woff2`, and (as of this
   session) `/vendor/*`. This is a static-host header file — Cloudflare
@@ -1017,3 +1078,77 @@ messages themselves are accurate and descriptive — this is just an index.
   unverified post-cutover (real browser QA, cache headers, a full test
   order end-to-end on the new domain — none of this was confirmed in this
   session).
+
+## 11c. Recent work log — Friendship Card redesign + delivery-in-checkout (2026-08-27, uncommitted as of this writing)
+
+- **Friendship Card became a two-step quantity→design product** instead of
+  two directly-add-to-cart SKUs — see §5.3a for the full store-level shape.
+  Pricing changed to **₹399 (1 card) / ₹499 (2 cards — saves ₹299 vs two
+  Singles)** in `prices.ts` (was ₹300/₹499; MRP fields left untouched).
+  4 fixed designs (`card-1`..`card-4`, "Card 01".."Card 04") live in a new
+  `catalog.ts` array (`FRIENDSHIP_DESIGNS`) under a new category,
+  `friendship-designs`; each quantity tier's `designLimit` (1 or 2, a new
+  `Product` field) caps how many of those 4 a customer can pick.
+  `friendship-section.tsx` was rewritten: Step 1 is the same
+  MRP-strikethrough tier cards as before but now wired to
+  `setFriendship()`; Step 2 is a new, always-2-per-row design grid (click to
+  select, eye icon → `FriendshipDesignDetailModal`, a front/back
+  chevron-swipe detail view — no "Randomise" button, no reviews panel,
+  deliberately simpler than `template-picker.tsx`'s `TemplateGrid` since
+  there are only 4 designs and no per-page-count limit logic). Reuses
+  `templateHero()` from `template-picker.tsx` for the image lookup, but
+  uses its own `FriendshipDesignPlaceholder` (not that file's
+  `TemplatePlaceholder`, a landscape magazine-spread graphic that reads as
+  wrong inside a portrait card slot) — see the updated §7 media bullet for
+  why every thumbnail/slide also carries an explicit `onError` handler.
+- **Downgrade truncates, doesn't reset** — switching Duo → Single with 2
+  designs picked keeps the first-picked design and drops the second,
+  rather than clearing both the way `setSize` clears templates on every
+  size change. See §5.3a for the full reasoning and where this diverges
+  from the Sizes/Pocket precedent.
+- **Cart line folding**: the on-site `CartDrawer` now folds
+  `friendship-designs` cart lines into a `Design: Card 01, Card 03`-style
+  line under the parent `friendship` row (`shop.tsx`) instead of letting
+  them render as their own bare rows — mirrors §6.4's invoice-folding
+  pattern, applied to the frontend cart view for the first time (templates
+  themselves are *not* folded in the cart drawer today, only in the
+  invoice — this was a deliberate, scoped exception for Friendship Card
+  designs per the request, not a broader refactor of template rendering).
+- **`code.gs`**: `buildInvoiceHtml_` now prints `Design:- Card 02` (or
+  `Design:- Card 01, Card 03` for Duo) under the Friendship Card invoice
+  row, folded the same way pocket/normal-magazine templates already are.
+  `shippingItemSummaryLines_`'s EXCLUDE map gained `"friendship-designs":
+  true` — without it, each design pick would leak onto the shipping label
+  as its own bogus "Card 01" line; verified with the same
+  copy-into-a-standalone-`.mjs`-and-run-against-synthetic-carts method this
+  repo already uses for `code.gs` logic (single-card/1-design,
+  duo-card/2-design, and no-friendship-line cases). **Another undeployed
+  code.gs change** — see updated §6.6 list.
+- **Persisted store**: `version` bumped 2 → 3; `migrate()` now also strips
+  any pre-v3 `friendship`/`friendship-designs` cart lines (same
+  incomplete-checkout risk §5.3's v2 migration was written to avoid, just
+  for the new parent/sub-selection pair instead of `pocketUnits`). See
+  §5.3a and §5.4.
+- **Delivery selection moved into the checkout popup.** `CustomerInfoModal`
+  (`shop.tsx`) gained its own Standard/Express picker (using the existing
+  `addItem("delivery", ...)` path) and now blocks its "Continue to payment"
+  button until a delivery line exists in the cart — `handle()` also
+  double-checks this server-side-style before submitting. `CartDrawer`'s
+  checkout button **no longer hard-gates on delivery being pre-selected**
+  (the `deliveryMissing` check and its disabled-button wiring were removed)
+  since the popup is now itself a valid place to pick it; the on-page Step
+  6 delivery grid still works unchanged as the other valid path. `Field`
+  gained an optional `defaultValue` prop, and `CustomerInfoModal` now
+  pre-fills name/phone/email/address from any already-set `customer` state
+  — needed because `startCheckout()` in `index.tsx` now re-opens this
+  modal (rather than skipping straight to payment) whenever delivery is
+  still missing, even if customer info was already captured earlier in the
+  session, and the form fields are otherwise uncontrolled/blank on every
+  mount.
+- **All of the above verified via `tsc --noEmit`, targeted `eslint`, and a
+  clean `npm run build`** — same local-dev-server constraint as every prior
+  session (§9.5): **no real browser QA has been done for any of this.**
+  Whoever picks this up next should do a full browser pass — the Friendship
+  Card's two-step flow and the new in-popup delivery picker are the two
+  highest-value things to click through by hand — and get `code.gs`
+  redeployed (§6.6).

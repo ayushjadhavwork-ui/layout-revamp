@@ -26,6 +26,7 @@ export type Category =
   | "pocket"
   | "pocket-templates"
   | "friendship"
+  | "friendship-designs"
   | "promotions";
 
 
@@ -41,6 +42,11 @@ export type Product = {
   format?: SizeFormat;
   // Struck-through "was" price — only Friendship Card entries carry this.
   mrp?: number;
+  // How many Friendship Card designs this quantity tier allows (1 for
+  // Single, 2 for Duo) — only "friendship" entries carry this. Mirrors
+  // how a "sizes" entry's templateLimit drives that product's own
+  // sub-selection cap (see friendshipDesignLimit() in store.ts).
+  designLimit?: number;
 };
 
 // Page count → how many templates that package includes. Shared by both
@@ -70,6 +76,19 @@ const TEMPLATES: Product[] = Array.from({ length: SITE.templateCount }, (_, i) =
   name: `Template ${i + 1}`,
   price: 0,
   desc: "Curated aesthetic layout — included with your chosen package.",
+}));
+
+// The 4 Friendship Card design templates — front image is the thumbnail,
+// back image is shown when the customer swipes past it in the detail modal
+// (see FRIENDSHIP_DESIGN_IMAGE_COUNT convention in site-content.ts's
+// productImages: ["<front>", "<back>"]). A customer picks 1 (Single) or up
+// to 2 (Duo) of these, tracked separately from the quantity tier itself —
+// see selectedFriendshipDesignIds / toggleFriendshipDesign in store.ts.
+const FRIENDSHIP_DESIGNS: Product[] = Array.from({ length: 4 }, (_, i) => ({
+  id: `card-${i + 1}`,
+  name: `Card ${String(i + 1).padStart(2, "0")}`,
+  price: 0,
+  desc: "A curated Friendship Card design — front & back preview available.",
 }));
 
 export const CATALOG: Record<Exclude<Category, "templates" | "pocket-templates">, Product[]> & {
@@ -173,24 +192,34 @@ export const CATALOG: Record<Exclude<Category, "templates" | "pocket-templates">
 
   // A standalone product, same spirit as the Newspaper/Pocket Magazine —
   // not part of the magazine builder. Fully custom-printed friendship card,
-  // sold as either a single card or a duo ("bestie") set. The 3D viewer and
-  // customisation copy live in friendship-section.tsx.
+  // sold as a quantity tier (Single/Duo) — picking one unlocks a design
+  // pick step below (see "friendship-designs"), same two-step shape as
+  // sizes → templates. The 3D viewer and customisation copy live in
+  // friendship-section.tsx.
   friendship: [
     {
       id: "friend-single",
       name: "Single Card",
       price: priceOf("friendship", "friend-single"),
       mrp: mrpOf("friendshipMrp", "friend-single"),
-      desc: "One fully personalised friendship card — names, photo, a shared date and place, inside jokes, and your own special rights, printed on premium cardstock.",
+      designLimit: 1,
+      desc: "One fully personalised friendship card — names, photo, a shared date and place, inside jokes, and your own special rights, printed on premium cardstock. Pick 1 design.",
     },
     {
       id: "friend-duo",
       name: "Duo Card — BESTIE SET",
       price: priceOf("friendship", "friend-duo"),
       mrp: mrpOf("friendshipMrp", "friend-duo"),
-      desc: "A matching pair of friendship cards for you and your bestie — same customisation as the Single Card, designed as a set.",
+      designLimit: 2,
+      desc: "A matching pair of friendship cards for you and your bestie — same customisation as the Single Card, designed as a set. Pick up to 2 designs.",
     },
   ],
+
+  // Design picks for the Friendship Card — a flat "which of the 4 designs"
+  // selection, limited by the chosen quantity tier's designLimit (see
+  // friendshipDesignLimit() in store.ts). Same relationship to "friendship"
+  // as "templates" has to "sizes".
+  "friendship-designs": FRIENDSHIP_DESIGNS,
 
   // Free items granted by redeeming a Spin-the-Wheel coupon code — never sold
   // directly, only ever added by applyCouponFreebie() in store.ts.

@@ -37,6 +37,12 @@ type State = {
   // own independent template picks, so buying 2-3 Pocket Magazines together
   // means picking templates for each individually.
   pocketUnits: PocketUnit[];
+  // Friendship Card quantity tier (Single/Duo) and its design picks — same
+  // "parent selection drives a sub-selection limit" shape as
+  // selectedSizeId/selectedTemplateIds above, but flat (only ever one
+  // Friendship Card line at a time) rather than multi-unit like Pocket.
+  selectedFriendshipId: string | null;
+  selectedFriendshipDesignIds: string[];
   stripSelections: string[];
   coupon: { code: string; percent: number } | null;
   cartId: string | null;
@@ -52,6 +58,12 @@ type State = {
   removePocketUnit: (uid: string) => void;
   togglePocketTemplate: (uid: string, id: string) => boolean; // returns success
   randomizePocketTemplates: (uid: string) => number; // returns count picked
+  // Selects/switches the Friendship Card quantity tier. If the previously
+  // selected tier had more design picks than the new tier allows, keeps
+  // only the first-picked design(s) and drops the rest (truncate, not a
+  // full reset) — see catalog.ts's designLimit field.
+  setFriendship: (friendId: string, note?: string) => void;
+  toggleFriendshipDesign: (id: string) => boolean; // returns success
   toggleStrip: (id: string) => boolean; // returns success; false if cap reached
   setCoupon: (c: State["coupon"]) => void;
   applyCouponFreebie: (code: string) => void;
@@ -66,6 +78,7 @@ type State = {
   total: () => number;
   templateLimit: () => number;
   pocketTemplateLimit: () => number;
+  friendshipDesignLimit: () => number;
 };
 
 
@@ -84,7 +97,7 @@ const dropCombo = (cart: CartItem[]) => cart.filter((c) => c.category !== "combo
 // Categories no combo recipe ever touches — picking these alongside an active
 // combo (delivery, the unrelated Newspaper/Pocket Magazine products, or a
 // coupon freebie) must not blow away the combo.
-const COMBO_INDEPENDENT: Category[] = ["delivery", "newspaper", "pocket", "pocket-templates", "friendship", "promotions"];
+const COMBO_INDEPENDENT: Category[] = ["delivery", "newspaper", "pocket", "pocket-templates", "friendship", "friendship-designs", "promotions"];
 
 // Categories a combo recipe can auto-populate — selecting a combo must clear
 // any of these picked manually beforehand, or their real price would sit in
@@ -100,6 +113,8 @@ export const useStore = create<State>()(
   selectedSizeId: null,
   selectedTemplateIds: [],
   pocketUnits: [],
+  selectedFriendshipId: null,
+  selectedFriendshipDesignIds: [],
   stripSelections: [],
   coupon: null,
   cartId: null,
@@ -174,6 +189,15 @@ export const useStore = create<State>()(
         patch.pocketUnits = s.pocketUnits.map((u) =>
           u.uid === uid ? { ...u, templateIds: u.templateIds.filter((id) => id !== item.id) } : u,
         );
+      }
+      if (item?.category === "friendship") {
+        cart = cart.filter((c) => c.category !== "friendship-designs");
+        patch.cart = cart;
+        patch.selectedFriendshipId = null;
+        patch.selectedFriendshipDesignIds = [];
+      }
+      if (item?.category === "friendship-designs") {
+        patch.selectedFriendshipDesignIds = s.selectedFriendshipDesignIds.filter((id) => id !== item.id);
       }
       if (item?.category === "strips") {
         patch.stripSelections = [];
@@ -327,6 +351,60 @@ export const useStore = create<State>()(
   },
 
 
+  // Selects a Friendship Card quantity tier for the first time, or switches
+  // between Single/Duo. Unlike setSize (which fully resets templates),
+  // switching tiers TRUNCATES the design picks to the new limit — keeping
+  // the first-picked design(s) — rather than clearing them, per the
+  // Friendship Card's own "downgrade keeps what still fits" spec. note is
+  // optional: pass it to set/overwrite the customisation note (e.g. from
+  // the detail modal's textarea); omit it to keep whatever note the
+  // existing friendship cart line already had (e.g. a quick re-select from
+  // the grid shouldn't blow away a note typed earlier in the modal).
+  setFriendship: (friendId, note) => {
+    const product = CATALOG.friendship.find((f) => f.id === friendId);
+    if (!product) return;
+    set((s) => {
+      const prevLine = s.cart.find((c) => c.category === "friendship");
+      const nextNote = note !== undefined ? note : prevLine?.note;
+      const newLimit = product.designLimit ?? 1;
+      const keptIds = s.selectedFriendshipDesignIds.slice(0, newLimit);
+      const droppedIds = s.selectedFriendshipDesignIds.slice(newLimit);
+      const cart = [
+        ...s.cart.filter(
+          (c) => c.category !== "friendship" && !(c.category === "friendship-designs" && droppedIds.includes(c.id)),
+        ),
+        {
+          key: key("friendship", product.id),
+          category: "friendship" as Category,
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          note: nextNote,
+        },
+      ];
+      return { selectedFriendshipId: friendId, selectedFriendshipDesignIds: keptIds, cart };
+    });
+  },
+
+  toggleFriendshipDesign: (id) => {
+    const s = get();
+    if (!s.selectedFriendshipId) return false;
+    const limit = get().friendshipDesignLimit();
+    const already = s.selectedFriendshipDesignIds.includes(id);
+    if (!already && s.selectedFriendshipDesignIds.length >= limit) return false;
+    const nextIds = already
+      ? s.selectedFriendshipDesignIds.filter((t) => t !== id)
+      : [...s.selectedFriendshipDesignIds, id];
+    const design = CATALOG["friendship-designs"].find((d) => d.id === id)!;
+    set({
+      selectedFriendshipDesignIds: nextIds,
+      cart: already
+        ? s.cart.filter((c) => c.key !== key("friendship-designs", id))
+        : [...s.cart, { key: key("friendship-designs", id), category: "friendship-designs", id, name: design.name, price: 0 }],
+    });
+    return true;
+  },
+
   toggleStrip: (id) => {
     const s = get();
     // A manual strip change breaks an active combo cleanly rather than
@@ -460,7 +538,17 @@ export const useStore = create<State>()(
     stripSelections: [],
   })),
 
-  clear: () => set({ cart: [], selectedSizeId: null, selectedTemplateIds: [], pocketUnits: [], stripSelections: [], coupon: null, cartId: null }),
+  clear: () => set({
+    cart: [],
+    selectedSizeId: null,
+    selectedTemplateIds: [],
+    pocketUnits: [],
+    selectedFriendshipId: null,
+    selectedFriendshipDesignIds: [],
+    stripSelections: [],
+    coupon: null,
+    cartId: null,
+  }),
 
 
   subtotal: () => get().cart.reduce((s, c) => s + c.price, 0),
@@ -477,6 +565,11 @@ export const useStore = create<State>()(
     return CATALOG.sizes.find((sz) => sz.id === s.selectedSizeId)?.templateLimit ?? 0;
   },
   pocketTemplateLimit: () => POCKET_TEMPLATE_LIMIT,
+  friendshipDesignLimit: () => {
+    const s = get();
+    if (!s.selectedFriendshipId) return 0;
+    return CATALOG.friendship.find((f) => f.id === s.selectedFriendshipId)?.designLimit ?? 0;
+  },
     }),
     {
       name: "the-layout-cart",
@@ -489,16 +582,31 @@ export const useStore = create<State>()(
       // wouldn't catch it, letting an incomplete order through. migrate()
       // strips any pre-v2 pocket/pocket-templates lines instead so old carts
       // just lose that one item rather than shipping incomplete.
-      version: 2,
+      //
+      // v3: the Friendship Card became a two-step quantity→design picker
+      // (selectedFriendshipId/selectedFriendshipDesignIds, new
+      // "friendship-designs" category) instead of a single addItem'd SKU
+      // line. Same risk as v2: an old blob's "friendship" cart line has no
+      // matching selectedFriendshipId, so the new design-limit gate would
+      // treat it as already-complete (limit 0) and let it through checkout
+      // with zero designs picked. migrate() strips any pre-v3
+      // friendship/friendship-designs lines for the same reason v2 strips
+      // pre-v2 pocket lines.
+      version: 3,
       migrate: (persisted, version) => {
         const s = persisted as Record<string, unknown>;
-        if (!s || typeof s !== "object" || version >= 2) return s;
-        const cart = Array.isArray(s.cart) ? (s.cart as CartItem[]) : [];
-        return {
-          ...s,
-          cart: cart.filter((c) => c.category !== "pocket" && c.category !== "pocket-templates"),
-          pocketUnits: [],
-        };
+        if (!s || typeof s !== "object" || version >= 3) return s;
+        let cart = Array.isArray(s.cart) ? (s.cart as CartItem[]) : [];
+        const patch: Record<string, unknown> = { ...s };
+        if (version < 2) {
+          cart = cart.filter((c) => c.category !== "pocket" && c.category !== "pocket-templates");
+          patch.pocketUnits = [];
+        }
+        cart = cart.filter((c) => c.category !== "friendship" && c.category !== "friendship-designs");
+        patch.selectedFriendshipId = null;
+        patch.selectedFriendshipDesignIds = [];
+        patch.cart = cart;
+        return patch;
       },
       // Hydration is triggered manually (see __root.tsx) after mount, not
       // automatically at store-creation time — the store module re-evaluates
@@ -515,6 +623,8 @@ export const useStore = create<State>()(
         selectedSizeId: s.selectedSizeId,
         selectedTemplateIds: s.selectedTemplateIds,
         pocketUnits: s.pocketUnits,
+        selectedFriendshipId: s.selectedFriendshipId,
+        selectedFriendshipDesignIds: s.selectedFriendshipDesignIds,
         stripSelections: s.stripSelections,
         coupon: s.coupon,
         cartId: s.cartId,

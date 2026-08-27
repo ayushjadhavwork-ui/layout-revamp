@@ -370,6 +370,18 @@ export const SITE = {
       // Pocket Magazine — first entry is the product-card thumbnail, any
       // further entries become extra gallery images in its modal.
       "pocket-mag":  ["/media/pocket/pocket-hero.webp"],
+
+      // Friendship Card designs — first entry is the front (used as the
+      // card's thumbnail everywhere), second is the back (shown when the
+      // customer swipes past the front in the design detail modal). Files
+      // live in /public/media/friendship/ as card_01_front.webp /
+      // card_01_back.webp through card_04_front / card_04_back — drop in
+      // real art at those exact names (swap the extension here too if it
+      // isn't .webp); Card 0N just shows a placeholder until you do.
+      "card-1": ["/media/friendship/card_01_front.webp", "/media/friendship/card_01_back.webp"],
+      "card-2": ["/media/friendship/card_02_front.webp", "/media/friendship/card_02_back.webp"],
+      "card-3": ["/media/friendship/card_03_front.webp", "/media/friendship/card_03_back.webp"],
+      "card-4": ["/media/friendship/card_04_front.webp", "/media/friendship/card_04_back.webp"],
   } as Record<string, string[]>,
 
   // ────────────────────────────────────────────────────────────────

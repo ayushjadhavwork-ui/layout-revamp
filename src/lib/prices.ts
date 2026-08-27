@@ -116,10 +116,11 @@ export const PRICES = {
 
   // -------------------------------------------------------
   // FRIENDSHIP CARD (standalone) — selling price actually charged.
+  // Duo is priced so it saves ₹299 vs buying 2 Singles (2 × 399 − 499).
   // -------------------------------------------------------
   friendship: {
-    "friend-single": 300, // Single Card
-    "friend-duo": 499, // Duo Card — BESTIE SET
+    "friend-single": 399, // 1 Card
+    "friend-duo": 499, // 2 Cards — BESTIE SET
   },
 
   // -------------------------------------------------------
