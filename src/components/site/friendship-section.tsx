@@ -299,7 +299,14 @@ export function FriendshipCardSection() {
           })}
         </div>
 
-        {/* ── Step 2: design pick(s) — always a 2-up grid ─────────────── */}
+        {/* ── Step 2: design pick(s) — 1-up on phones, 2-up from sm: up.
+            A licence-card design is dense (photo, name, licence no., mood,
+            signature, expiry) — squeezed into half a narrow phone's width
+            (~124px after grid gap + card padding) it reads as illegible and
+            "shrunk" even though the image itself renders at its correct
+            aspect ratio. Going 1-up on mobile roughly doubles the linear
+            thumbnail size; the section already has scroll nudges to offset
+            the longer scroll. ─────────────────────────────────────────── */}
         <p className="mt-8 text-center text-xs font-semibold uppercase tracking-[0.25em] text-off-white">
           2. Pick your design{designLimit === 2 ? "s" : ""}
         </p>
@@ -308,7 +315,7 @@ export function FriendshipCardSection() {
             ? `${selectedFriendshipDesignIds.length} of ${designLimit} selected`
             : "Choose a quantity above to unlock designs"}
         </p>
-        <div className="mt-4 grid grid-cols-2 gap-4 md:gap-5 max-w-2xl mx-auto">
+        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5 max-w-2xl mx-auto">
           {designs.map((item, idx) => {
             const active = selectedFriendshipDesignIds.includes(item.id);
             const disabled = !selectedFriendshipId || (selectedFriendshipDesignIds.length >= designLimit && !active);
@@ -332,28 +339,24 @@ export function FriendshipCardSection() {
                     e.stopPropagation();
                     setOpenDesignIdx(idx);
                   }}
-                  className="relative w-full overflow-hidden rounded-xl bg-white cursor-zoom-in"
+                  className="relative w-full aspect-[1082/708] overflow-hidden rounded-xl bg-white cursor-zoom-in"
                 >
                   {hero && !brokenDesignIds.has(item.id) ? (
-                    // Frame fits the image (not the other way around) — same
-                    // shape as the detail modal below: no fixed-aspect crop
-                    // box, just w-full h-auto so the box's own height always
-                    // matches the image's real proportions exactly, with
-                    // nothing trimmed and no letterbox bars either. All 4
-                    // designs share one physical card shape, so once real
-                    // art is in, every thumbnail in the grid ends up the
-                    // same height anyway.
+                    // The wrapper reserves the card's real 1082x708 shape up
+                    // front (all 4 design files share that ratio) so the box
+                    // doesn't collapse to ~0 height while the lazy-loaded
+                    // image is still fetching, then pop back in — that read
+                    // as the card "shrinking" mid-scroll on slow mobile
+                    // connections.
                     <img
                       src={hero}
                       alt={item.name}
                       loading="lazy"
-                      className="block w-full h-auto object-contain"
+                      className="absolute inset-0 h-full w-full object-cover"
                       onError={() => setBrokenDesignIds((prev) => new Set(prev).add(item.id))}
                     />
                   ) : (
-                    <div className="aspect-[1082/708] relative">
-                      <FriendshipDesignPlaceholder n={idx + 1} />
-                    </div>
+                    <FriendshipDesignPlaceholder n={idx + 1} />
                   )}
                 </div>
 
