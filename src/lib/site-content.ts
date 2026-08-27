@@ -378,10 +378,10 @@ export const SITE = {
       // card_01_back.webp through card_04_front / card_04_back — drop in
       // real art at those exact names (swap the extension here too if it
       // isn't .webp); Card 0N just shows a placeholder until you do.
-      "card-1": ["/media/friendship/card_01_front.webp", "/media/friendship/card_01_back.webp"],
-      "card-2": ["/media/friendship/card_02_front.webp", "/media/friendship/card_02_back.webp"],
-      "card-3": ["/media/friendship/card_03_front.webp", "/media/friendship/card_03_back.webp"],
-      "card-4": ["/media/friendship/card_04_front.webp", "/media/friendship/card_04_back.webp"],
+      "card-1": ["/media/friendship/CARD_01_FRONT.webp", "/media/friendship/CARD_01_BACK.webp"],
+      "card-2": ["/media/friendship/CARD_02_FRONT.webp", "/media/friendship/CARD_02_BACK.webp"],
+      "card-3": ["/media/friendship/CARD_03_FRONT.webp", "/media/friendship/CARD_03_BACK.webp"],
+      "card-4": ["/media/friendship/CARD_04_FRONT.webp", "/media/friendship/CARD_04_BACK.webp"],
   } as Record<string, string[]>,
 
   // ────────────────────────────────────────────────────────────────
