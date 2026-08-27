@@ -548,7 +548,7 @@ function buildShippingLabelHtml_(order) {
   const addressHtml = escapeHtml_(customer.address || "").replace(/\n/g, "<br/>");
   const logoTag = getLogoImgTag_().replace(
     'style="height:64px;width:64px;object-fit:contain;margin-bottom:6px;"',
-    'style="height:46px;width:46px;object-fit:contain;"',
+    'style="height:60px;width:60px;object-fit:contain;"',
   );
 
   return (
@@ -561,10 +561,10 @@ function buildShippingLabelHtml_(order) {
     // never grows beyond it regardless of how much content is inside.
     ".page { width: 6in; height: 4in; padding: 0.18in; display: flex; flex-direction: column; }" +
     ".label { flex: 1; display: flex; flex-direction: column; border: 3px solid #000; overflow: hidden; }" +
-    ".banner { flex: 0 0 auto; display: flex; width: 100%; background: #000; }" +
+    ".banner { flex: 0 0 auto; display: flex; width: 100%; background: #000; border-bottom: 3px solid #000; }" +
     ".banner-text { flex: 1; display: flex; align-items: center; padding: 12px 14px; font-size: 26px; font-weight: 800; letter-spacing: 1px; color: #fff; text-transform: uppercase; }" +
-    ".banner-logo { flex: 0 0 66px; display: flex; align-items: center; justify-content: center; padding: 6px; background: #fff; }" +
-    ".banner-logo img { height: 46px; width: 46px; object-fit: contain; }" +
+    ".banner-logo { flex: 0 0 78px; display: flex; align-items: center; justify-content: center; padding: 6px; background: #fff; }" +
+    ".banner-logo img { height: 60px; width: 60px; object-fit: contain; }" +
     // body-row takes all space left between banner and footer.
     ".body-row { flex: 1; display: flex; width: 100%; border-bottom: 2px solid #000; min-height: 0; }" +
     ".col-left { flex: 0 0 62%; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }" +

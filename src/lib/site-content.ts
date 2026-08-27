@@ -333,7 +333,7 @@ export const SITE = {
     // ... sz-8-mini, sz-12-mini, sz-14-mini, sz-16-mini, sz-18-mini, sz-20-mini
 
 
-
+//this is for easier push to github
 
       // Polaroid strips
       "strip-1": ["/media/strips/1.webp"] as string[],
