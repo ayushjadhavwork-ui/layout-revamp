@@ -332,7 +332,7 @@ export function FriendshipCardSection() {
                     e.stopPropagation();
                     setOpenDesignIdx(idx);
                   }}
-                  className="relative w-full overflow-hidden rounded-md bg-white cursor-zoom-in"
+                  className="relative w-full overflow-hidden rounded-xl bg-white cursor-zoom-in"
                 >
                   {hero && !brokenDesignIds.has(item.id) ? (
                     // Frame fits the image (not the other way around) — same
