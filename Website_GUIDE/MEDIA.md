@@ -48,7 +48,7 @@ public/media/
 ├── delivery/       ← delivery-option cover shots (see § 2d)
 ├── newspaper/      ← newspaper spread previews (see § 2d)
 ├── pocket/         ← Pocket Magazine card thumbnail (see § 2d)
-├── friendship/     ← Friendship Card 3D model (see § 2e)
+├── friendship/     ← Friendship Card 3D model (§ 2e) + design images (§ 2f)
 └── bg/             ← background tiles (see § 3)
 ```
 
@@ -129,6 +129,7 @@ just uncomment and point them at your files:
 | Delivery   | `del-std`, `del-exp`                      |
 | Newspaper  | `news-tpl-1`, `news-tpl-2` (the two fixed spread previews — the newspaper product itself has no separate cover slot) |
 | Pocket Magazine | `pocket-mag` (first entry = card thumbnail; its Step 2 template picks reuse the same `tpl-<n>` art as the normal magazine) |
+| Friendship Card designs | `card-1`..`card-4` — each takes a front/back pair, see § 2f |
 
 ### 2e. Friendship Card — 3D model
 
@@ -148,6 +149,39 @@ The current file is a plain placeholder card shape (no real artwork) —
 replace it with a real scan or model whenever one's ready. No other code
 changes needed; the viewer (drag to rotate, pinch/scroll to zoom, slow
 auto-rotate) works with any valid .glb dropped in that same spot.
+
+### 2f. Friendship Card — design template images
+
+Below the 3D model, the customer picks 1 or 2 of **4 fixed designs**
+(Card 01–Card 04), each a "Friendship Licence" card. Each design needs
+**two images** — a front and a back (the customer swipes between them in
+the pop-up detail view) — live in `public/media/friendship/` as:
+
+```
+CARD_01_FRONT.webp   CARD_01_BACK.webp
+CARD_02_FRONT.webp   CARD_02_BACK.webp
+CARD_03_FRONT.webp   CARD_03_BACK.webp
+CARD_04_FRONT.webp   CARD_04_BACK.webp
+```
+
+(Uppercase — the live site is on a case-sensitive host, so `Card_01_front`
+or `card_01_front` would **not** match. Match the case above exactly if
+you're replacing a file.)
+
+The front image is what shows as the thumbnail in the picker grid; the back
+is only seen in the pop-up. These paths are wired up in `productImages` in
+`site-content.ts` — to swap the art, drop a replacement file in at the same
+name (no code edit needed). If a file is ever missing (or fails to load),
+that design shows a small placeholder card icon instead of a broken image.
+
+**Any image size/shape works — nothing gets cropped or stretched.** Both
+the thumbnail grid and the pop-up size the frame to match your image's own
+proportions, so the whole design is always fully visible. You don't need to
+pre-crop your artwork to a specific ratio before dropping it in.
+
+If you ever need a different file extension than `.webp` (e.g. `.jpg`),
+update the matching path under `productImages["card-1"]` (etc.) in
+`site-content.ts` to match.
 
 ---
 

@@ -127,7 +127,22 @@ Optional — falls back to an initial-letter avatar if left blank.
 
 ---
 
-## 11. Reels / social embeds
+## 11. Friendship Card designs (Card 01–04)
+
+| Context | Recommended px | Ratio | Notes |
+|---|---|---|---|
+| Grid card (front only) | 1082×708 (current art's actual size) | ~3:2, landscape ("Friendship Licence" card shape) | Each design needs a **front and a back** image — 8 files total (see MEDIA.md § 2f) |
+| Modal / detail view (front + back) | same images as above | ~3:2 | Customer swipes between front/back in the pop-up |
+
+Unlike every other row on this page, **the exact ratio doesn't actually
+matter** — the frame sizes itself to whatever image you give it (no
+cropping, no letterboxing), so 1082×708/~3:2 is just what the current art
+happens to be, not a hard requirement for a future replacement. Falls back
+to a small placeholder icon per design if a file is missing.
+
+---
+
+## 12. Reels / social embeds
 
 No image upload needed — these pull live from Instagram via the reel URL
 pasted into `SITE.reels` / `SITE.milestoneReel.url`. Just make sure the
@@ -142,5 +157,6 @@ Instagram post itself has a good cover frame.
 - **Portrait 7:10**: mandatory pages
 - **Portrait 3:8 (tall)**: polaroid strips
 - **Landscape 4:3**: templates, combo cards
+- **Landscape ~3:2 (any ratio actually works)**: Friendship Card designs
 - **Landscape 16:9**: banners, showreel video
 - **Seamless tiling**: hero / how-to-order / founders backgrounds

@@ -9,14 +9,13 @@ import { useProductReviews } from "@/lib/use-product-reviews";
 import { ReviewsPanel, ReviewStars } from "./reviews-panel";
 import { templateHero } from "./template-picker";
 
-// A portrait card-shaped placeholder for design thumbnails — deliberately
-// not template-picker.tsx's TemplatePlaceholder, which draws a landscape
-// magazine "Left | Right" spread that would read as wrong inside this
-// section's portrait aspect-[3/4] card slots. Also doubles as the fallback
-// when a card_0N_front/back path is wired up in site-content.ts but the
-// file itself hasn't been dropped into public/media/friendship/ yet (see
-// the onError handlers below) — <img> has no built-in "file missing"
-// signal, so without this a bad path just shows a broken-image icon.
+// A card-shaped placeholder for design thumbnails — deliberately not
+// template-picker.tsx's TemplatePlaceholder, which draws a "Left | Right"
+// two-page magazine spread rather than a single "Friendship Licence" card.
+// Doubles as the fallback when a card_0N_front/back path is wired up in
+// site-content.ts but the file itself is missing or fails to load (see the
+// onError handlers below) — <img> has no built-in "file missing" signal,
+// so without this a bad path just shows a broken-image icon.
 function FriendshipDesignPlaceholder({ n }: { n: number }) {
   return (
     <div className="absolute inset-0 flex flex-col items-center justify-center gap-1.5 bg-gradient-to-br from-pink-mist/30 via-blush-rose/25 to-rose-wine/25 text-off-white">
@@ -237,45 +236,48 @@ export function FriendshipCardSection() {
           </p>
         </div>
 
-        {/* ── Step 1: quantity tier ────────────────────────────────── */}
+        {/* ── Step 1: quantity tier — always a single row of 2, kept
+            compact (small text/padding) since it's a secondary choice next
+            to the design grid below, and needs to fit two cards side by
+            side even on narrow phones. ─────────────────────────────────── */}
         <p className="mt-8 text-center text-xs font-semibold uppercase tracking-[0.25em] text-off-white">
           1. Choose your quantity
         </p>
-        <div className="mt-3 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5 max-w-2xl mx-auto">
+        <div className="mt-3 grid grid-cols-2 gap-2.5 sm:gap-3 max-w-xs sm:max-w-sm mx-auto">
           {items.map((item) => {
             const active = selectedFriendshipId === item.id;
             return (
               <div
                 key={item.id}
                 onClick={() => handleToggleTier(item)}
-                className={`relative rounded-xl p-4 md:p-5 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
+                className={`relative rounded-lg p-2.5 sm:p-3 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
                   active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
                 }`}
               >
                 {active && (
-                  <span className="absolute top-3 right-3 grid h-6 w-6 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10">
-                    <Check className="h-3.5 w-3.5" />
+                  <span className="absolute top-1.5 right-1.5 grid h-5 w-5 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10">
+                    <Check className="h-3 w-3" />
                   </span>
                 )}
 
-                <h4 className="font-display uppercase tracking-[0.15em] text-sm text-off-white">
+                <h4 className="font-display uppercase tracking-[0.1em] text-[0.7rem] sm:text-xs text-off-white">
                   {item.name}
                 </h4>
 
-                <div className="mt-3 flex items-baseline gap-2">
+                <div className="mt-1.5 flex items-baseline gap-1.5">
                   {item.mrp && (
-                    <span className="text-xs text-pink-mist/70 line-through">{fmt(item.mrp)}</span>
+                    <span className="text-[0.6rem] text-pink-mist/70 line-through">{fmt(item.mrp)}</span>
                   )}
-                  <span className="rounded-md px-3 py-1 font-display text-lg text-rose-wine bg-off-white">
+                  <span className="rounded-md px-2 py-0.5 font-display text-sm sm:text-base text-rose-wine bg-off-white">
                     {fmt(item.price)}
                   </span>
                 </div>
 
-                <div className="mt-4 flex gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
+                <div className="mt-2 flex gap-1 w-full" onClick={(e) => e.stopPropagation()}>
                   <button
                     type="button"
                     onClick={() => handleToggleTier(item)}
-                    className={`flex-1 min-w-0 rounded-full px-3 py-1.5 text-[0.7rem] font-medium transition border truncate ${
+                    className={`flex-1 min-w-0 rounded-full px-2 py-1 text-[0.6rem] font-medium transition border truncate ${
                       active
                         ? "bg-off-white text-rose-wine border-off-white"
                         : "bg-transparent text-off-white border-pink-mist/50 hover:bg-off-white/10"
@@ -287,9 +289,9 @@ export function FriendshipCardSection() {
                     type="button"
                     onClick={() => setOpenId(item.id)}
                     aria-label={`View ${item.name}`}
-                    className="grid shrink-0 place-items-center rounded-full px-3 py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
+                    className="grid shrink-0 place-items-center rounded-full px-2 py-1 text-[0.6rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
                   >
-                    <Eye className="h-3.5 w-3.5" />
+                    <Eye className="h-3 w-3" />
                   </button>
                 </div>
               </div>
@@ -330,18 +332,28 @@ export function FriendshipCardSection() {
                     e.stopPropagation();
                     setOpenDesignIdx(idx);
                   }}
-                  className="relative w-full aspect-[3/4] overflow-hidden rounded-md bg-white/5 cursor-zoom-in"
+                  className="relative w-full overflow-hidden rounded-md bg-white cursor-zoom-in"
                 >
                   {hero && !brokenDesignIds.has(item.id) ? (
+                    // Frame fits the image (not the other way around) — same
+                    // shape as the detail modal below: no fixed-aspect crop
+                    // box, just w-full h-auto so the box's own height always
+                    // matches the image's real proportions exactly, with
+                    // nothing trimmed and no letterbox bars either. All 4
+                    // designs share one physical card shape, so once real
+                    // art is in, every thumbnail in the grid ends up the
+                    // same height anyway.
                     <img
                       src={hero}
                       alt={item.name}
                       loading="lazy"
-                      className="absolute inset-0 h-full w-full object-cover"
+                      className="block w-full h-auto object-contain"
                       onError={() => setBrokenDesignIds((prev) => new Set(prev).add(item.id))}
                     />
                   ) : (
-                    <FriendshipDesignPlaceholder n={idx + 1} />
+                    <div className="aspect-[1082/708] relative">
+                      <FriendshipDesignPlaceholder n={idx + 1} />
+                    </div>
                   )}
                 </div>
 
@@ -612,7 +624,7 @@ function FriendshipDesignDetailModal({
                 onError={() => setBrokenSlides((prev) => new Set(prev).add(slide))}
               />
             ) : (
-              <div className="aspect-[3/4] relative">
+              <div className="aspect-[1082/708] relative">
                 <FriendshipDesignPlaceholder n={index + 1} />
               </div>
             )}

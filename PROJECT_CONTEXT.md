@@ -339,9 +339,8 @@ customers' local carts silently reset.
 
 ## 6. Backend: Google Apps Script + Google Sheets (`code.gs`)
 
-Full setup instructions live in `Website_GUIDE/BACKEND_SETUP.md` — **read
-§6.5 below first, because that guide is stale on one major point (invoice
-generation).**
+Full setup instructions live in `Website_GUIDE/BACKEND_SETUP.md` (see §6.5
+for a note on that guide's accuracy).
 
 ### 6.1 Architecture
 
@@ -462,15 +461,20 @@ exact spec. `templates`/`pocket-templates`/`friendship-designs`/`delivery`
 categories and combo-linked (`comboId` set) lines are excluded from that
 cell the same way the invoice excludes templates from its rows.
 
-### 6.5 ⚠️ `Website_GUIDE/BACKEND_SETUP.md` is stale
+### 6.5 `Website_GUIDE/BACKEND_SETUP.md` §8 — now accurate
 
-That guide's §8 states **"no automatic invoice or PDF generation, and no
-online payment gateway."** The "no payment gateway" half is still true. The
-**"no invoice"** half is **false as of the current `code.gs`** — invoice PDF
-generation (§6.3 above) has been added since that guide was last updated.
-Don't trust that section; trust `code.gs` itself. (This file you're reading
-now supersedes it — update `BACKEND_SETUP.md` §8 if you touch this area
-again, or just point future readers here.)
+An earlier version of this file warned that `BACKEND_SETUP.md`'s §8 claimed
+**"no automatic invoice or PDF generation"**, which was false once invoice
+PDF generation (§6.3) was added — that's since been corrected in
+`BACKEND_SETUP.md` itself, and its §8 now correctly describes invoice +
+shipping-label PDF generation (payment stays out-of-band, confirmed
+manually — that half was always accurate). §8 is a high-level order-flow
+summary, not itemized per feature, so it doesn't need a line for every
+product addition (Pocket Magazine, Friendship Card, etc.) — just keep it
+accurate on the overall shape of what `completeOrder` does. If you make a
+structural change to that shape (e.g. adding a payment gateway, or emailing
+documents automatically), update `BACKEND_SETUP.md` §8 there too, not just
+here.
 
 ### 6.6 Redeploy discipline
 
@@ -525,22 +529,30 @@ engineering work:
   `catalog.ts`'s `TEMPLATES` array, generated via `Array.from({ length:
   SITE.templateCount }, ...)`. Bump the number first, art can follow later
   (missing `tpl-<n>` images just show a placeholder).
-- **Friendship Card designs** (`card-1`..`card-4` in `productImages`) expect
-  front/back pairs at `public/media/friendship/card_01_front.webp` /
-  `card_01_back.webp` through `card_04_front`/`card_04_back` — front is the
-  grid thumbnail, back is what the customer swipes to in the design detail
-  modal. Unlike `tpl-<n>` (whose files already exist on disk, so a missing
-  *entry* is the only "missing" case there), these entries were added
-  pre-emptively with **no files behind them yet**. Because an `<img>` has no
-  built-in "file missing" signal (unlike an absent `productImages` entry,
-  which every other card component degrades from cleanly per the bullet
-  above), `friendship-section.tsx` is the one place in the codebase that
-  wires an explicit `onError` handler per thumbnail/slide to swap in a
-  small card-shaped `FriendshipDesignPlaceholder` (not the landscape
-  `TemplatePlaceholder` templates use — a magazine-spread "Left | Right"
-  placeholder reads as wrong inside a portrait card slot) — so it degrades
-  the same way as everywhere else in the interim. Drop in the 8 files at
-  those exact names to show real art; no code change needed.
+- **Friendship Card designs** (`card-1`..`card-4` in `productImages`) are
+  front/back pairs at `public/media/friendship/CARD_01_FRONT.webp` /
+  `CARD_01_BACK.webp` through `CARD_04_FRONT`/`CARD_04_BACK` (**uppercase**
+  — added by a teammate after the initial build-out, which had guessed
+  lowercase `card_01_front.webp`-style names; `productImages` was updated
+  to match) — front is the grid thumbnail, back is what the customer swipes
+  to in the design detail modal. The real art is a **landscape "Friendship
+  Licence" card, ~1082×708px (≈3:2)**, not the portrait shape originally
+  guessed before any art existed. Because an `<img>` has no built-in "file
+  missing" signal (unlike an absent `productImages` entry, which every
+  other card component degrades from cleanly per the bullet above),
+  `friendship-section.tsx` wires an explicit `onError` handler per
+  thumbnail/slide to swap in a small `FriendshipDesignPlaceholder` (not the
+  landscape magazine-spread `TemplatePlaceholder` templates use) if a file
+  is ever missing or fails to load. Both the grid thumbnail and the detail
+  modal size their frame to the image (`w-full h-auto object-contain`, no
+  fixed-aspect crop box on the `<img>` itself — only the *placeholder*
+  branch carries a fixed aspect, `aspect-[1082/708]`, matching the real
+  art's own ratio, purely so it has some shape to render when there's no
+  image) rather than forcing the image into a fixed box — so nothing is
+  ever cropped, and there's no letterbox either, since the box's own height
+  always matches the image's real proportions exactly. All 4 designs share
+  one physical card shape, so every thumbnail in the grid ends up the same
+  height (see §11d, §11e).
 - `public/_headers` sets `Cache-Control: public, max-age=31536000, immutable`
   for `/media/*`, `*.webp`, `*.mp4`, `*.svg`, `*.woff2`, and (as of this
   session) `/vendor/*`. This is a static-host header file — Cloudflare
@@ -1079,7 +1091,7 @@ messages themselves are accurate and descriptive — this is just an index.
   order end-to-end on the new domain — none of this was confirmed in this
   session).
 
-## 11c. Recent work log — Friendship Card redesign + delivery-in-checkout (2026-08-27, uncommitted as of this writing)
+## 11c. Recent work log — Friendship Card redesign + delivery-in-checkout (2026-08-27, commit `95e32b8`)
 
 - **Friendship Card became a two-step quantity→design product** instead of
   two directly-add-to-cart SKUs — see §5.3a for the full store-level shape.
@@ -1098,9 +1110,9 @@ messages themselves are accurate and descriptive — this is just an index.
   there are only 4 designs and no per-page-count limit logic). Reuses
   `templateHero()` from `template-picker.tsx` for the image lookup, but
   uses its own `FriendshipDesignPlaceholder` (not that file's
-  `TemplatePlaceholder`, a landscape magazine-spread graphic that reads as
-  wrong inside a portrait card slot) — see the updated §7 media bullet for
-  why every thumbnail/slide also carries an explicit `onError` handler.
+  `TemplatePlaceholder`, a two-page "Left | Right" magazine-spread graphic
+  that reads as wrong for a single card) — see the updated §7 media bullet
+  for why every thumbnail/slide also carries an explicit `onError` handler.
 - **Downgrade truncates, doesn't reset** — switching Duo → Single with 2
   designs picked keeps the first-picked design and drops the second,
   rather than clearing both the way `setSize` clears templates on every
@@ -1152,3 +1164,94 @@ messages themselves are accurate and descriptive — this is just an index.
   Card's two-step flow and the new in-popup delivery picker are the two
   highest-value things to click through by hand — and get `code.gs`
   redeployed (§6.6).
+
+## 11d. Recent work log — Friendship Card layout follow-up (2026-08-27, uncommitted as of this writing)
+
+Two client-requested tweaks to the §11c redesign, made before any real
+`card_0N_front/back` art existed on disk (see §7's Friendship Card designs
+bullet — still true after this pass):
+
+- **Design thumbnails now frame-fit the image instead of cropping to a
+  fixed box.** The Step 2 design grid's image box previously forced every
+  thumbnail into a fixed `aspect-[3/4]` box with `object-cover`, cropping
+  whatever image was dropped in unless it happened to match 3:4
+  pixel-for-pixel. Since the real designs' actual proportions aren't known
+  yet, the `<img>` now renders at `w-full h-auto object-contain` with no
+  fixed-aspect wrapper — same shape as the detail modal already used — so
+  the box's own height always matches the image's real proportions exactly
+  (no cropping, and no letterbox bars either, unlike a first pass at this
+  that kept the fixed box and just swapped in `object-contain`, which would
+  have letterboxed instead of frame-fit — caught because the user's own
+  wording held the modal's frame-fits-image behavior up as the standard to
+  match). A fixed-aspect box only remains on the *placeholder* branch (no
+  image yet / 404'd), purely so it has some shape to render before either
+  the file exists or fails to load — see §11e for that box's ratio being
+  corrected once real art landed. Background changed from
+  `bg-white/5` to solid `bg-white` to read cleanly as a card mat rather
+  than a near-invisible tint. The design detail modal
+  (`FriendshipDesignDetailModal`) needed no change — it already worked this
+  way.
+- **Step 1 (quantity tier) made compact and single-row on every screen
+  size.** Previously `grid-cols-1 sm:grid-cols-2` (stacked on mobile,
+  side-by-side from `sm:` up) with the same padding/text sizing as a normal
+  product card. Now always `grid-cols-2` (mobile included) inside a
+  narrower `max-w-xs sm:max-w-sm` wrapper, with smaller padding, text, and
+  button sizing throughout — it's a secondary "pick 1 or 2" choice sitting
+  above the more visually important design grid, so it no longer competes
+  with it for space or attention.
+- Also noted, not changed: at the narrowest supported width
+  (`max-w-xs` ≈ 320px), "DUO CARD — BESTIE SET" is long enough that it may
+  wrap to two lines while "SINGLE CARD" stays on one — CSS grid stretch
+  keeps both cards the same height regardless, so it won't look broken, but
+  it's worth an eyeball on a real phone.
+- Verified via `tsc --noEmit` and `npm run build` (both clean) — same
+  no-local-dev-server constraint as every session so far (§9.5); the actual
+  visual result (do the now-frame-fit thumbnails look right once real art
+  lands, does the compact quantity row look right at real phone widths)
+  still needs a real browser pass, same outstanding item as §11c.
+
+## 11e. Real Friendship Card design art landed (2026-08-27)
+
+While §11d was in progress, a teammate pushed the actual 8 design images
+(`git pull` picked up commits `9f44faf`/`0ecb9aa` mid-session) — the
+Friendship Card designs are **no longer speculative**, and two guesses made
+before any real art existed turned out wrong:
+
+- **Filenames are uppercase**, not the lowercase `card_01_front.webp`-style
+  names originally guessed: `public/media/friendship/CARD_01_FRONT.webp` /
+  `CARD_01_BACK.webp` through `CARD_04_FRONT`/`CARD_04_BACK`.
+  `productImages` in `site-content.ts` was updated to match by that same
+  teammate — nothing to do here, just don't reintroduce lowercase paths.
+- **The card is landscape, not portrait** — a "Friendship Licence" card
+  (name badge, photo, "lovers since", "valid for", signature, etc. — matches
+  the `CUSTOMISABLE` copy list in `friendship-section.tsx` closely), real
+  size **1082×708px, ≈3:2**. All 8 files share this exact size. The
+  placeholder-only `aspect-[3/4]` (portrait) box from §11d was corrected to
+  `aspect-[1082/708]` in both the grid card and the detail modal's
+  placeholder branches, and `FriendshipDesignPlaceholder`'s comment (which
+  had called it "portrait card-shaped") was corrected — this box is cosmetic
+  now (only shown on a missing/broken file) but should still match the real
+  shape rather than contradict it.
+- The `w-full h-auto object-contain` frame-fit approach from §11d needed
+  **no change** — it was already orientation-agnostic by design, which is
+  exactly why it correctly renders the real landscape art with no cropping
+  now that it exists, without having had to guess the ratio right the first
+  time.
+- Docs corrected for the same reason: `Website_GUIDE/size.md`'s Friendship
+  Card row and "by shape" quick-reference (was guessing 1050×1480 portrait
+  5:7, now states the real 1082×708 ≈3:2 landscape), and
+  `Website_GUIDE/MEDIA.md` §2f (was guessing lowercase filenames, now states
+  the real uppercase ones and calls out the case-sensitivity risk
+  explicitly, since this is exactly the class of mistake §7's "filenames
+  are case-sensitive in production" warning exists for).
+- Also fixed in this pass: §6.5 previously carried a stale warning claiming
+  `Website_GUIDE/BACKEND_SETUP.md` §8 still said "no automatic invoice or
+  PDF generation" — that had already been corrected in `BACKEND_SETUP.md`
+  itself in an earlier session, just never reflected here. Re-verified §8's
+  current text against `code.gs` and updated §6.5 to stop flagging an
+  already-fixed problem.
+- Verified via `tsc --noEmit` and `npm run build` (clean); the actual
+  images were visually inspected (via the Read tool, not a browser) to
+  confirm they're real "Friendship Licence" card art and not corrupt/blank
+  files. Still no real browser pass on any of this — same outstanding item
+  as §11c/§11d.
