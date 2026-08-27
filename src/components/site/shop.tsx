@@ -545,10 +545,15 @@ export function CartDrawer({
   // or inside the checkout popup (CustomerInfoModal), which blocks moving
   // on to payment until it's picked. Gating it a second time here would
   // just disable this button with no way to fix it from this drawer.
-  const friendshipDesignNames = cart
+  // Numbered the same way templates are ("[1, 2, 3]" in CartSummaryPanel) —
+  // extract the design's number from its id (card-1 -> "01") rather than
+  // joining full names, so this subtext line matches the templates format.
+  const friendshipDesignNumbers = cart
     .filter((c) => c.category === "friendship-designs")
-    .map((c) => c.name)
-    .join(", ");
+    .map((c) => {
+      const m = c.id.match(/card-(\d+)/);
+      return m ? m[1].padStart(2, "0") : c.id;
+    });
 
   const activeCombo = cart.find((c) => c.category === "combos");
   const comboOriginal = activeCombo ? comboRealTotal(activeCombo.id) : 0;
@@ -591,8 +596,10 @@ export function CartDrawer({
                   <p className="text-xs uppercase tracking-wider text-dusty-rose">
                     {item.category}{item.comboId ? " · in combo" : ""}
                   </p>
-                  {item.category === "friendship" && friendshipDesignNames && (
-                    <p className="mt-1 text-xs text-neutral-600">Design: {friendshipDesignNames}</p>
+                  {item.category === "friendship" && friendshipDesignNumbers.length > 0 && (
+                    <p className="mt-1 text-xs text-neutral-600">
+                      Design: [{friendshipDesignNumbers.join(", ")}]
+                    </p>
                   )}
                   {item.note && <p className="mt-1 text-xs text-neutral-600 italic">"{item.note}"</p>}
                 </div>

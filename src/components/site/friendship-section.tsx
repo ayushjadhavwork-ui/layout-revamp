@@ -436,7 +436,6 @@ function FriendshipModal({
   product: Product | null;
   onClose: () => void;
 }) {
-  const [note, setNote] = useState("");
   const cart = useStore((s) => s.cart);
   const selectedFriendshipId = useStore((s) => s.selectedFriendshipId);
   const selectedFriendshipDesignIds = useStore((s) => s.selectedFriendshipDesignIds);
@@ -458,10 +457,6 @@ function FriendshipModal({
     deleteReview,
   } = useProductReviews(product?.id ?? null);
 
-  useEffect(() => {
-    if (open) setNote("");
-  }, [open, product?.id]);
-
   if (!open || !product) return null;
 
   const active = selectedFriendshipId === product.id;
@@ -474,7 +469,7 @@ function FriendshipModal({
       toast.success(`${product.name} removed`);
     } else {
       const prevCount = selectedFriendshipDesignIds.length;
-      setFriendship(product.id, note);
+      setFriendship(product.id);
       toast.success(
         prevCount > newLimit
           ? `${product.name} selected — kept your first design, removed the rest to fit ${newLimit}.`
@@ -521,18 +516,6 @@ function FriendshipModal({
               <li key={line}>• {line}</li>
             ))}
           </ul>
-
-          <label className="mt-5 block text-sm font-medium text-rose-wine">
-            Customisation details (optional — you can also share these with us later)
-          </label>
-          <textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            rows={3}
-            className="mt-1 w-full rounded-xl border border-rose-wine/20 bg-white/60 p-3 text-sm outline-none focus:border-rose-wine"
-            maxLength={400}
-            placeholder="Names, photo, date, place, inside jokes…"
-          />
 
           <button
             onClick={handleAdd}

@@ -295,11 +295,15 @@ function buildInvoiceHtml_(order) {
   // Friendship Card design picks are the same "zero-cost sub-selection
   // folded into the parent row" shape as templates above, but flat — only
   // ever one "friendship" line per order (see friendship-designs) — so no
-  // per-unit grouping is needed. Design product names already read
-  // "Card 01" etc. (see catalog.ts), so no id-number extraction needed
-  // either — just use the name as-is.
+  // per-unit grouping is needed. Extract the design number from its id
+  // (card-1 -> "01") the same way templateLabels pulls tpl-N's number, so
+  // the "Design:-" note reads in the same style as "Templates:-" rather
+  // than spelling out full names like "Card 01, Card 02".
   const friendshipDesignItems = cart.filter((c) => c.category === "friendship-designs");
-  const friendshipDesignLabels = friendshipDesignItems.map((t) => escapeHtml_(t.name));
+  const friendshipDesignLabels = friendshipDesignItems.map((t) => {
+    const m = String(t.id).match(/card-(\d+)/);
+    return m ? m[1].padStart(2, "0") : escapeHtml_(t.name);
+  });
   const invoiceCart = cart.filter((c) => c.category !== "templates" && c.category !== "pocket-templates" && c.category !== "friendship-designs");
 
   const rows = invoiceCart.map((item) => {

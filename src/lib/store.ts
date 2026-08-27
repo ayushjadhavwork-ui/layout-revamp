@@ -62,7 +62,7 @@ type State = {
   // selected tier had more design picks than the new tier allows, keeps
   // only the first-picked design(s) and drops the rest (truncate, not a
   // full reset) — see catalog.ts's designLimit field.
-  setFriendship: (friendId: string, note?: string) => void;
+  setFriendship: (friendId: string) => void;
   toggleFriendshipDesign: (id: string) => boolean; // returns success
   toggleStrip: (id: string) => boolean; // returns success; false if cap reached
   setCoupon: (c: State["coupon"]) => void;
@@ -355,17 +355,11 @@ export const useStore = create<State>()(
   // between Single/Duo. Unlike setSize (which fully resets templates),
   // switching tiers TRUNCATES the design picks to the new limit — keeping
   // the first-picked design(s) — rather than clearing them, per the
-  // Friendship Card's own "downgrade keeps what still fits" spec. note is
-  // optional: pass it to set/overwrite the customisation note (e.g. from
-  // the detail modal's textarea); omit it to keep whatever note the
-  // existing friendship cart line already had (e.g. a quick re-select from
-  // the grid shouldn't blow away a note typed earlier in the modal).
-  setFriendship: (friendId, note) => {
+  // Friendship Card's own "downgrade keeps what still fits" spec.
+  setFriendship: (friendId) => {
     const product = CATALOG.friendship.find((f) => f.id === friendId);
     if (!product) return;
     set((s) => {
-      const prevLine = s.cart.find((c) => c.category === "friendship");
-      const nextNote = note !== undefined ? note : prevLine?.note;
       const newLimit = product.designLimit ?? 1;
       const keptIds = s.selectedFriendshipDesignIds.slice(0, newLimit);
       const droppedIds = s.selectedFriendshipDesignIds.slice(newLimit);
@@ -379,7 +373,6 @@ export const useStore = create<State>()(
           id: product.id,
           name: product.name,
           price: product.price,
-          note: nextNote,
         },
       ];
       return { selectedFriendshipId: friendId, selectedFriendshipDesignIds: keptIds, cart };
