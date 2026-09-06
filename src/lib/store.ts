@@ -46,7 +46,7 @@ type State = {
   stripSelections: string[];
   coupon: { code: string; percent: number } | null;
   cartId: string | null;
-  customer: null | { name: string; phone: string; email: string; address: string };
+  customer: null | { name: string; phone: string; email: string; address: string; pincode?: string };
 
   addItem: (category: Category, product: Product, note?: string) => void;
   removeItem: (key: string) => void;
