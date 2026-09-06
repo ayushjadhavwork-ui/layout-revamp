@@ -1021,9 +1021,9 @@ export function ModalShell({ children, onClose, maxW = "max-w-2xl" }: { children
 }
 
 function Field({
-  label, name, type = "text", as = "input", rows, required, maxLength, defaultValue,
+  label, name, type = "text", as = "input", rows, required, maxLength, defaultValue, inputMode,
 }: {
-  label: string; name: string; type?: string; as?: "input" | "textarea"; rows?: number; required?: boolean; maxLength?: number; defaultValue?: string;
+  label: string; name: string; type?: string; as?: "input" | "textarea"; rows?: number; required?: boolean; maxLength?: number; defaultValue?: string; inputMode?: "text" | "numeric" | "tel" | "email";
 }) {
   const cls = "mt-1 w-full rounded-xl border border-rose-wine/20 bg-white/60 px-4 py-2.5 text-sm outline-none focus:border-rose-wine transition-colors";
   return (
@@ -1032,8 +1032,9 @@ function Field({
       {as === "textarea" ? (
         <textarea name={name} rows={rows} required={required} maxLength={maxLength} defaultValue={defaultValue} className={cls} />
       ) : (
-        <input name={name} type={type} required={required} maxLength={maxLength} defaultValue={defaultValue} className={cls} />
+        <input name={name} type={type} inputMode={inputMode} required={required} maxLength={maxLength} defaultValue={defaultValue} className={cls} />
       )}
+
     </div>
   );
 }
