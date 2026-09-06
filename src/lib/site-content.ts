@@ -15,6 +15,16 @@ export type Tiles = {
   tileHeight?: number; // px, only used to reserve padding — default 1080
 };
 
+// Text shown inside a template's detail pop-up (see SITE.templateInfo below).
+export type TemplateInfo = {
+  description: string;
+  includedLabel: string;
+  included: string[];
+  requirementsLabel: string;
+  requirements: string[];
+  note: string;
+};
+
 export const SITE = {
   // ────────────────────────────────────────────────────────────────
   // BRAND
