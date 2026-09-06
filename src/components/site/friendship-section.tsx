@@ -315,11 +315,8 @@ export function FriendshipCardSection() {
             ? `${selectedFriendshipDesignIds.length} of ${designLimit} selected`
             : "Choose a quantity above to unlock designs"}
         </p>
-<<<<<<< HEAD
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5 max-w-2xl mx-auto">
-=======
-        <div className="mt-4 grid grid-cols-2 gap-2.5 sm:gap-4 md:gap-5 max-w-2xl mx-auto">
->>>>>>> 1b1349a32e73c659dfaa2e9b4abdcd6e114800b1
+
           {designs.map((item, idx) => {
             const active = selectedFriendshipDesignIds.includes(item.id);
             const disabled = !selectedFriendshipId || (selectedFriendshipDesignIds.length >= designLimit && !active);
