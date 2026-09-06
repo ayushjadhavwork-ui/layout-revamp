@@ -209,6 +209,9 @@ export function TemplateDetailModal({
 
   const label = `Template ${String(templateIndex + 1).padStart(2, "0")}`;
   const hero = templateHero(item.id);
+  // Copy comes from SITE.templateInfo — defaults, optionally overridden per id.
+  const info = { ...SITE.templateInfo.defaults, ...(SITE.templateInfo.overrides?.[item.id] ?? {}) };
+
 
   const handleToggle = () => {
     const already = active;
