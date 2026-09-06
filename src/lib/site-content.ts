@@ -15,6 +15,16 @@ export type Tiles = {
   tileHeight?: number; // px, only used to reserve padding — default 1080
 };
 
+// Text shown inside a template's detail pop-up (see SITE.templateInfo below).
+export type TemplateInfo = {
+  description: string;
+  includedLabel: string;
+  included: string[];
+  requirementsLabel: string;
+  requirements: string[];
+  note: string;
+};
+
 export const SITE = {
   // ────────────────────────────────────────────────────────────────
   // BRAND
@@ -167,6 +177,48 @@ export const SITE = {
       a: "Because every magazine is custom-made and designed specifically for you, orders cannot be cancelled, returned, or refunded once payment has been completed.",
     },
   ] as { q: string; a: string }[],
+
+  // ────────────────────────────────────────────────────────────────
+  // TEMPLATE INFORMATION (shown inside a template's "View" pop-up)
+  // ------------------------------------------------------------------
+  //  • "defaults" applies to EVERY template.
+  //  • "overrides" lets you write different text for one template only —
+  //    the key is "tpl-<number>" (Template 01 = "tpl-1", and so on).
+  //    Anything you leave out of an override falls back to the defaults.
+  // ────────────────────────────────────────────────────────────────
+  templateInfo: {
+    defaults: {
+      // Short paragraph under the title. Leave "" to use the built-in one.
+      description: "",
+      includedLabel: "What's included",
+      included: [
+        "Symmetric right–left spread",
+        "Editorial typography & grid",
+        "Fully customised with your photos",
+      ],
+      requirementsLabel: "What we need from you",
+      requirements: [
+        "4–6 clear photos (portrait works best)",
+        "A short caption or note for the page",
+      ],
+      // Optional extra note in italics at the bottom. Leave "" to hide.
+      note: "",
+    },
+    overrides: {
+      // "tpl-1": {
+      //   description: "A bold opening spread for your first chapter.",
+      //   included: ["Full-bleed hero photo", "Handwritten-style caption"],
+      //   requirements: ["1 wide landscape photo", "2 portrait photos"],
+      //   note: "Best with high-resolution photos.",
+      // },
+    } as Record<string, Partial<TemplateInfo>>,
+  },
+
+  // ────────────────────────────────────────────────────────────────
+  // MANDATORY PAGES — note shown at the bottom of that section
+  // ────────────────────────────────────────────────────────────────
+  mandatoryNote:
+    "After you place your order with us, we will send you a Google Drive link to upload images.",
 
   // ────────────────────────────────────────────────────────────────
   // JOURNEY / STATS  ← edit numbers or labels freely

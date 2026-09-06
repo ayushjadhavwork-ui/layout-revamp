@@ -116,7 +116,7 @@ function validateCoupon(code) {
 function logCart(body) {
   const sheet = ss().getSheetByName("Cart Logs");
   if (!sheet) return { ok: false, error: "Cart Logs sheet not found" };
-  ensureHeaders(sheet, ["cartId", "name", "phone", "email", "address", "cart", "total", "timestamp"]);
+  ensureHeaders(sheet, ["cartId", "name", "phone", "email", "address", "pincode", "cart", "total", "timestamp"]);
 
   sheet.appendRow([
     body.cartId,
@@ -124,6 +124,7 @@ function logCart(body) {
     body.customer.phone,
     body.customer.email,
     body.customer.address,
+    body.customer.pincode || "",
     JSON.stringify(body.cart),
     body.total,
     body.ts,
@@ -139,7 +140,7 @@ function completeOrder(body) {
   const sheet = ss().getSheetByName("Completed Orders");
   if (!sheet) return { ok: false, error: "Completed Orders sheet not found" };
   ensureHeaders(sheet, [
-    "orderId", "cartId", "name", "phone", "email", "address",
+    "orderId", "cartId", "name", "phone", "email", "address", "pincode",
     "cart", "total", "coupon", "screenshotUrl", "timestamp", "invoiceUrl",
     "paymentVerified", "shippingLabel",
   ]);
@@ -206,6 +207,7 @@ function completeOrder(body) {
     body.customer.phone,
     body.customer.email,
     body.customer.address,
+    body.customer.pincode || "",
     JSON.stringify(body.cart),
     body.total,
     body.coupon || "",
@@ -355,7 +357,8 @@ function buildInvoiceHtml_(order) {
     )
     : "";
 
-  const addressHtml = escapeHtml_(customer.address || "").replace(/\n/g, "<br/>");
+  const addressHtml = escapeHtml_(customer.address || "").replace(/\n/g, "<br/>") +
+    (customer.pincode ? "<br/>PIN: " + escapeHtml_(customer.pincode) : "");
   const logoTag = getLogoImgTag_();
 
   return (
@@ -549,7 +552,8 @@ function buildShippingLabelHtml_(order) {
   // leaving the same generous 1.4x gap a 6.5px line doesn't need.
   const itemLineHeight = itemFontSize <= 8 ? 1.15 : itemFontSize <= 9.5 ? 1.25 : 1.4;
 
-  const addressHtml = escapeHtml_(customer.address || "").replace(/\n/g, "<br/>");
+  const addressHtml = escapeHtml_(customer.address || "").replace(/\n/g, "<br/>") +
+    (customer.pincode ? "<br/>PIN: " + escapeHtml_(customer.pincode) : "");
   const logoTag = getLogoImgTag_().replace(
     'style="height:64px;width:64px;object-fit:contain;margin-bottom:6px;"',
     'style="height:60px;width:60px;object-fit:contain;"',

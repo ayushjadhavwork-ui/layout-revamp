@@ -731,8 +731,12 @@ export function CustomerInfoModal({
       phone: String(fd.get("phone") || "").trim(),
       email: String(fd.get("email") || "").trim(),
       address: String(fd.get("address") || "").trim(),
+      pincode: String(fd.get("pincode") || "").trim(),
     };
-    if (!info.name || !info.phone || !info.email || !info.address) return toast.error("Fill all fields");
+    if (!info.name || !info.phone || !info.email || !info.address || !info.pincode)
+      return toast.error("Fill all fields");
+    if (!/^\d{6}$/.test(info.pincode)) return toast.error("Enter a valid 6-digit pincode");
+
     setSubmitting(true);
     setCustomer(info);
     try {
@@ -801,6 +805,8 @@ export function CustomerInfoModal({
           <Field label="Email" name="email" type="email" required maxLength={200} defaultValue={customer?.email} />
         </div>
         <Field label="Shipping address" name="address" as="textarea" rows={3} required maxLength={400} defaultValue={customer?.address} />
+        <Field label="Pincode" name="pincode" inputMode="numeric" required maxLength={6} defaultValue={customer?.pincode} />
+
         <button disabled={submitting || !deliveryItem} className="pill-btn pill-btn-hover pill-primary w-full mt-2 disabled:opacity-50" type="submit">
           {submitting ? "Saving…" : "Continue to payment"}
         </button>
@@ -1015,9 +1021,9 @@ export function ModalShell({ children, onClose, maxW = "max-w-2xl" }: { children
 }
 
 function Field({
-  label, name, type = "text", as = "input", rows, required, maxLength, defaultValue,
+  label, name, type = "text", as = "input", rows, required, maxLength, defaultValue, inputMode,
 }: {
-  label: string; name: string; type?: string; as?: "input" | "textarea"; rows?: number; required?: boolean; maxLength?: number; defaultValue?: string;
+  label: string; name: string; type?: string; as?: "input" | "textarea"; rows?: number; required?: boolean; maxLength?: number; defaultValue?: string; inputMode?: "text" | "numeric" | "tel" | "email";
 }) {
   const cls = "mt-1 w-full rounded-xl border border-rose-wine/20 bg-white/60 px-4 py-2.5 text-sm outline-none focus:border-rose-wine transition-colors";
   return (
@@ -1026,8 +1032,9 @@ function Field({
       {as === "textarea" ? (
         <textarea name={name} rows={rows} required={required} maxLength={maxLength} defaultValue={defaultValue} className={cls} />
       ) : (
-        <input name={name} type={type} required={required} maxLength={maxLength} defaultValue={defaultValue} className={cls} />
+        <input name={name} type={type} inputMode={inputMode} required={required} maxLength={maxLength} defaultValue={defaultValue} className={cls} />
       )}
+
     </div>
   );
 }

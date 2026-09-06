@@ -713,7 +713,11 @@ function Mandatory() {
             );
           })}
         </div>
+        {SITE.mandatoryNote && (
+          <p className="mt-6 text-center text-sm text-neutral-600">{SITE.mandatoryNote}</p>
+        )}
       </div>
+
 
       {active && (
         <ModalShell onClose={() => setOpenIdx(null)} maxW="max-w-3xl">

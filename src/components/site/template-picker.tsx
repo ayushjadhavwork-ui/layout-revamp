@@ -209,6 +209,9 @@ export function TemplateDetailModal({
 
   const label = `Template ${String(templateIndex + 1).padStart(2, "0")}`;
   const hero = templateHero(item.id);
+  // Copy comes from SITE.templateInfo — defaults, optionally overridden per id.
+  const info = { ...SITE.templateInfo.defaults, ...(SITE.templateInfo.overrides?.[item.id] ?? {}) };
+
 
   const handleToggle = () => {
     const already = active;
@@ -242,12 +245,37 @@ export function TemplateDetailModal({
           <ReviewStars avg={avg} count={reviews.length} />
           <p className="mt-4 text-3xl font-semibold text-blush-rose">Included</p>
           <div className="mt-4 h-px bg-rose-wine/10" />
-          <p className="mt-4 text-sm leading-relaxed text-neutral-700">{item.desc}</p>
-          <ul className="mt-3 space-y-1.5 text-sm text-neutral-700">
-            <li>• Symmetric right–left spread</li>
-            <li>• Editorial typography &amp; grid</li>
-            <li>• Fully customised with your photos</li>
-          </ul>
+          <p className="mt-4 text-sm leading-relaxed text-neutral-700">{info.description || item.desc}</p>
+          {info.included.length > 0 && (
+            <>
+              {info.includedLabel && (
+                <p className="mt-4 text-xs font-semibold uppercase tracking-[0.25em] text-rose-wine">
+                  {info.includedLabel}
+                </p>
+              )}
+              <ul className="mt-2 space-y-1.5 text-sm text-neutral-700">
+                {info.included.map((b) => (
+                  <li key={b}>• {b}</li>
+                ))}
+              </ul>
+            </>
+          )}
+          {info.requirements.length > 0 && (
+            <>
+              {info.requirementsLabel && (
+                <p className="mt-4 text-xs font-semibold uppercase tracking-[0.25em] text-rose-wine">
+                  {info.requirementsLabel}
+                </p>
+              )}
+              <ul className="mt-2 space-y-1.5 text-sm text-neutral-700">
+                {info.requirements.map((b) => (
+                  <li key={b}>• {b}</li>
+                ))}
+              </ul>
+            </>
+          )}
+          {info.note && <p className="mt-4 text-xs italic text-dusty-rose">{info.note}</p>}
+
 
           <button
             onClick={handleToggle}
