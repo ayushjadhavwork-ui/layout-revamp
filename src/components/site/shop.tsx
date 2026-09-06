@@ -731,8 +731,12 @@ export function CustomerInfoModal({
       phone: String(fd.get("phone") || "").trim(),
       email: String(fd.get("email") || "").trim(),
       address: String(fd.get("address") || "").trim(),
+      pincode: String(fd.get("pincode") || "").trim(),
     };
-    if (!info.name || !info.phone || !info.email || !info.address) return toast.error("Fill all fields");
+    if (!info.name || !info.phone || !info.email || !info.address || !info.pincode)
+      return toast.error("Fill all fields");
+    if (!/^\d{6}$/.test(info.pincode)) return toast.error("Enter a valid 6-digit pincode");
+
     setSubmitting(true);
     setCustomer(info);
     try {
