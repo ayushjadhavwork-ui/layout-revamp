@@ -805,6 +805,8 @@ export function CustomerInfoModal({
           <Field label="Email" name="email" type="email" required maxLength={200} defaultValue={customer?.email} />
         </div>
         <Field label="Shipping address" name="address" as="textarea" rows={3} required maxLength={400} defaultValue={customer?.address} />
+        <Field label="Pincode" name="pincode" inputMode="numeric" required maxLength={6} defaultValue={customer?.pincode} />
+
         <button disabled={submitting || !deliveryItem} className="pill-btn pill-btn-hover pill-primary w-full mt-2 disabled:opacity-50" type="submit">
           {submitting ? "Saving…" : "Continue to payment"}
         </button>
