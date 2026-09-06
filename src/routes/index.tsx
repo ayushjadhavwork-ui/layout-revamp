@@ -571,19 +571,16 @@ function Showreel() {
     // 1. Removed side/bottom padding (px-4 pb-16) so it touches the absolute edges
     // 2. Added 'w-full' to ensure it spans the entire screen
     <section id="showreel" className="relative z-10 w-full">
-      {/* Removed the 'max-w-[1400px]' limit, the 'rounded-[2.5rem]', 
-        the border, and the shadow. 
+      {/* Removed the 'max-w-[1400px]' limit, the 'rounded-[2.5rem]',
+        the border, and the shadow.
       */}
       <div className="relative w-full" style={{ aspectRatio: "16 / 9" }}>
-        {/* preload="auto": the tag is autoPlay, so the browser fetches the
-            whole file regardless — "metadata" would only delay first paint
-            without saving any bandwidth. */}
-        <video
-          autoPlay muted loop playsInline preload="auto"
+        <img
+          src={SITE.showreelVideo}
+          alt="Showreel"
           className="absolute inset-0 h-full w-full object-cover"
-        >
-          <source src={SITE.showreelVideo} type="video/mp4" />
-        </video>
+          loading="lazy"
+        />
       </div>
     </section>
   );
