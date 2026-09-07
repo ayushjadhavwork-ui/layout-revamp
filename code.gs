@@ -147,8 +147,9 @@ function completeOrder(body) {
   ensureHeaders(sheet, [
     "orderId", "cartId", "name", "phone", "email", "address", "pincode",
     "cart", "total", "coupon", "screenshotUrl", "timestamp", "invoiceUrl",
-    "paymentVerified", "shippingLabel",
+    "paymentVerified", "shippingLabel", "whatsapp",
   ]);
+
 
   let screenshotUrl = "";
   if (body.screenshot && body.screenshotName) {
