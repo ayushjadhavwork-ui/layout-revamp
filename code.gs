@@ -222,7 +222,11 @@ function completeOrder(body) {
     invoiceUrl,
     "Pending...",
     shippingLabelUrl,
+    // WhatsApp number for the Drive upload link only — never printed on the
+    // invoice or the shipping label.
+    body.customer.whatsapp || "",
   ]);
+
 
   return { ok: true, orderId: body.orderId };
 }
