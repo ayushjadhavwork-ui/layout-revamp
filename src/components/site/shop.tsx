@@ -732,10 +732,13 @@ export function CustomerInfoModal({
       email: String(fd.get("email") || "").trim(),
       address: String(fd.get("address") || "").trim(),
       pincode: String(fd.get("pincode") || "").trim(),
+      whatsapp: String(fd.get("whatsapp") || "").trim(),
     };
-    if (!info.name || !info.phone || !info.email || !info.address || !info.pincode)
+    if (!info.name || !info.phone || !info.email || !info.address || !info.pincode || !info.whatsapp)
       return toast.error("Fill all fields");
     if (!/^\d{6}$/.test(info.pincode)) return toast.error("Enter a valid 6-digit pincode");
+    if (info.whatsapp.replace(/\D/g, "").length < 10) return toast.error("Enter a valid WhatsApp number");
+
 
     setSubmitting(true);
     setCustomer(info);
@@ -801,11 +804,20 @@ export function CustomerInfoModal({
       <form onSubmit={handle} className="mt-5 space-y-3">
         <Field label="Full name" name="name" required maxLength={100} defaultValue={customer?.name} />
         <div className="grid grid-cols-2 gap-3">
-          <Field label="Phone" name="phone" type="tel" required maxLength={20} defaultValue={customer?.phone} />
+          <Field label="Shipping phone" name="phone" type="tel" required maxLength={20} defaultValue={customer?.phone} />
           <Field label="Email" name="email" type="email" required maxLength={200} defaultValue={customer?.email} />
         </div>
+        <p className="-mt-1 text-xs text-dusty-rose">
+          This shipping phone number is used only for delivery-related contact, and appears on the invoice and shipping label.
+        </p>
         <Field label="Shipping address" name="address" as="textarea" rows={3} required maxLength={400} defaultValue={customer?.address} />
         <Field label="Pincode" name="pincode" inputMode="numeric" required maxLength={6} defaultValue={customer?.pincode} />
+        <Field label="WhatsApp number (for photo upload link)" name="whatsapp" type="tel" required maxLength={20} defaultValue={customer?.whatsapp} />
+        <p className="-mt-1 text-xs text-dusty-rose">
+          We'll message this number the Google Drive link where you upload the photos for your magazine. It never appears on the
+          invoice or shipping label — so if this is a gift, the surprise stays safe.
+        </p>
+
 
         <button disabled={submitting || !deliveryItem} className="pill-btn pill-btn-hover pill-primary w-full mt-2 disabled:opacity-50" type="submit">
           {submitting ? "Saving…" : "Continue to payment"}

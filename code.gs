@@ -116,7 +116,10 @@ function validateCoupon(code) {
 function logCart(body) {
   const sheet = ss().getSheetByName("Cart Logs");
   if (!sheet) return { ok: false, error: "Cart Logs sheet not found" };
-  ensureHeaders(sheet, ["cartId", "name", "phone", "email", "address", "pincode", "cart", "total", "timestamp"]);
+  // NOTE: "whatsapp" is the contact number used only for sending the Drive
+  // upload link. It is deliberately kept out of the invoice and the shipping
+  // label (gift orders) — only "phone" (shipping) appears on those.
+  ensureHeaders(sheet, ["cartId", "name", "phone", "email", "address", "pincode", "cart", "total", "timestamp", "whatsapp"]);
 
   sheet.appendRow([
     body.cartId,
@@ -128,7 +131,9 @@ function logCart(body) {
     JSON.stringify(body.cart),
     body.total,
     body.ts,
+    body.customer.whatsapp || "",
   ]);
+
 
   return { ok: true, cartId: body.cartId };
 }
@@ -142,8 +147,9 @@ function completeOrder(body) {
   ensureHeaders(sheet, [
     "orderId", "cartId", "name", "phone", "email", "address", "pincode",
     "cart", "total", "coupon", "screenshotUrl", "timestamp", "invoiceUrl",
-    "paymentVerified", "shippingLabel",
+    "paymentVerified", "shippingLabel", "whatsapp",
   ]);
+
 
   let screenshotUrl = "";
   if (body.screenshot && body.screenshotName) {
@@ -216,7 +222,11 @@ function completeOrder(body) {
     invoiceUrl,
     "Pending...",
     shippingLabelUrl,
+    // WhatsApp number for the Drive upload link only — never printed on the
+    // invoice or the shipping label.
+    body.customer.whatsapp || "",
   ]);
+
 
   return { ok: true, orderId: body.orderId };
 }
