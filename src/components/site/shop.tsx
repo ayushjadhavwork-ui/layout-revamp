@@ -732,10 +732,13 @@ export function CustomerInfoModal({
       email: String(fd.get("email") || "").trim(),
       address: String(fd.get("address") || "").trim(),
       pincode: String(fd.get("pincode") || "").trim(),
+      whatsapp: String(fd.get("whatsapp") || "").trim(),
     };
-    if (!info.name || !info.phone || !info.email || !info.address || !info.pincode)
+    if (!info.name || !info.phone || !info.email || !info.address || !info.pincode || !info.whatsapp)
       return toast.error("Fill all fields");
     if (!/^\d{6}$/.test(info.pincode)) return toast.error("Enter a valid 6-digit pincode");
+    if (info.whatsapp.replace(/\D/g, "").length < 10) return toast.error("Enter a valid WhatsApp number");
+
 
     setSubmitting(true);
     setCustomer(info);
