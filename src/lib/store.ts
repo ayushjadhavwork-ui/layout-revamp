@@ -46,7 +46,11 @@ type State = {
   stripSelections: string[];
   coupon: { code: string; percent: number } | null;
   cartId: string | null;
-  customer: null | { name: string; phone: string; email: string; address: string; pincode?: string };
+  // `phone` = shipping/contact number (printed on invoice + shipping label).
+  // `whatsapp` = number used only to share the photo-upload Drive link, so a
+  // gift order's recipient never sees it. Never printed on any document.
+  customer: null | { name: string; phone: string; email: string; address: string; pincode?: string; whatsapp?: string };
+
 
   addItem: (category: Category, product: Product, note?: string) => void;
   removeItem: (key: string) => void;
