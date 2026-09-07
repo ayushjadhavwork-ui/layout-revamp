@@ -42,7 +42,7 @@ export const SITE = {
     quote: "Editorial storytelling, printed with quiet obsession.",
   },
 
-  // Showreel video — drop your file at /public/media/showreel.webp
+  // Showreel video — drop your file at /public/media/showreel.mp4
   showreelVideo: "/showreel.webp",
 
   // Friendship Card — interactive 3D preview (.glb). Swap the file at the
