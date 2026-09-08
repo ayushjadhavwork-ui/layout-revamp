@@ -591,12 +591,24 @@ function buildShippingLabelHtml_(order) {
   // leaving the same generous 1.4x gap a 6.5px line doesn't need.
   const itemLineHeight = itemFontSize <= 8 ? 1.15 : itemFontSize <= 9.5 ? 1.25 : 1.4;
 
+  const addressText = String(customer.address || "") + (customer.pincode ? "\nPIN: " + customer.pincode : "");
   const addressHtml = escapeHtml_(customer.address || "").replace(/\n/g, "<br/>") +
     (customer.pincode ? "<br/>PIN: " + escapeHtml_(customer.pincode) : "");
+
+  // Auto-fit sizes for the four variable-length left-column fields. Base 11px
+  // with ~46 characters per line in the 62%-wide column; each field gets the
+  // number of lines it can occupy before the column starts overflowing.
+  const nameFontSize = shippingFitFontSize_(customer.name, 11, 40, 1, 7.5);
+  const phoneFontSize = shippingFitFontSize_(customer.phone, 11, 40, 1, 8);
+  const emailFontSize = shippingFitFontSize_(customer.email, 11, 40, 1, 7);
+  const addressFontSize = shippingFitFontSize_(addressText, 11, 46, 4, 6.5);
+  const addressLineHeight = addressFontSize <= 8 ? 1.15 : addressFontSize <= 9.5 ? 1.25 : 1.4;
+
   const logoTag = getLogoImgTag_().replace(
     'style="height:64px;width:64px;object-fit:contain;margin-bottom:6px;"',
     'style="height:60px;width:60px;object-fit:contain;"',
   );
+
 
   return (
     "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>" +
