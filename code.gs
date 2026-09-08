@@ -543,6 +543,30 @@ function shippingItemFontSize_(lineCount) {
   return 6.5;
 }
 
+// Same idea as shippingItemFontSize_, but for the left column's free-text
+// fields (name / phone / email / address). A long address or a long email
+// used to push the label's fixed 6in x 4in box out of shape or spill past
+// the border. Instead of clipping, the font shrinks just enough to fit:
+// charsPerLine is roughly how many characters fit on one line of the left
+// column at the base size, so estimated line count = length / charsPerLine
+// (explicit newlines counted too), and the size steps down as that grows.
+function shippingFitFontSize_(text, baseSize, charsPerLine, maxLines, minSize) {
+  const str = String(text || "");
+  if (!str) return baseSize;
+  const explicit = str.split(/\n/);
+  let lines = 0;
+  explicit.forEach((l) => {
+    lines += Math.max(1, Math.ceil(l.length / charsPerLine));
+  });
+  if (lines <= maxLines) return baseSize;
+  // Shrinking the font fits proportionally more characters per line, so the
+  // needed scale goes with the square root of the overflow ratio.
+  const scaled = baseSize * Math.sqrt(maxLines / lines);
+  return Math.max(minSize, Math.round(scaled * 10) / 10);
+}
+
+
+
 // The reference label design shows a plain "999/-" style amount, not the
 // invoice's "₹999.00" — kept as its own formatter rather than reusing
 // formatINR_ so the two documents can diverge without one editing the other.
