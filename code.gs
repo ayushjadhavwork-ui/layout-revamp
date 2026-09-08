@@ -120,19 +120,21 @@ function logCart(body) {
   // upload link. It is deliberately kept out of the invoice and the shipping
   // label (gift orders) — only "phone" (shipping) appears on those.
   ensureHeaders(sheet, ["cartId", "name", "phone", "email", "address", "pincode", "cart", "total", "timestamp", "whatsapp"]);
+  forceTextColumns_(sheet, null, ["phone", "whatsapp", "pincode"]);
 
   sheet.appendRow([
     body.cartId,
     body.customer.name,
-    body.customer.phone,
+    sanitizeTextCell_(body.customer.phone),
     body.customer.email,
     body.customer.address,
-    body.customer.pincode || "",
+    sanitizeTextCell_(body.customer.pincode),
     JSON.stringify(body.cart),
     body.total,
     body.ts,
-    body.customer.whatsapp || "",
+    sanitizeTextCell_(body.customer.whatsapp),
   ]);
+
 
 
   return { ok: true, cartId: body.cartId };
@@ -149,6 +151,8 @@ function completeOrder(body) {
     "cart", "total", "coupon", "screenshotUrl", "timestamp", "invoiceUrl",
     "paymentVerified", "shippingLabel", "whatsapp",
   ]);
+  forceTextColumns_(sheet, null, ["phone", "whatsapp", "pincode"]);
+
 
 
   let screenshotUrl = "";
@@ -210,10 +214,10 @@ function completeOrder(body) {
     body.orderId,
     body.cartId,
     body.customer.name,
-    body.customer.phone,
+    sanitizeTextCell_(body.customer.phone),
     body.customer.email,
     body.customer.address,
-    body.customer.pincode || "",
+    sanitizeTextCell_(body.customer.pincode),
     JSON.stringify(body.cart),
     body.total,
     body.coupon || "",
@@ -224,8 +228,9 @@ function completeOrder(body) {
     shippingLabelUrl,
     // WhatsApp number for the Drive upload link only — never printed on the
     // invoice or the shipping label.
-    body.customer.whatsapp || "",
+    sanitizeTextCell_(body.customer.whatsapp),
   ]);
+
 
 
   return { ok: true, orderId: body.orderId };
@@ -538,6 +543,30 @@ function shippingItemFontSize_(lineCount) {
   return 6.5;
 }
 
+// Same idea as shippingItemFontSize_, but for the left column's free-text
+// fields (name / phone / email / address). A long address or a long email
+// used to push the label's fixed 6in x 4in box out of shape or spill past
+// the border. Instead of clipping, the font shrinks just enough to fit:
+// charsPerLine is roughly how many characters fit on one line of the left
+// column at the base size, so estimated line count = length / charsPerLine
+// (explicit newlines counted too), and the size steps down as that grows.
+function shippingFitFontSize_(text, baseSize, charsPerLine, maxLines, minSize) {
+  const str = String(text || "");
+  if (!str) return baseSize;
+  const explicit = str.split(/\n/);
+  let lines = 0;
+  explicit.forEach((l) => {
+    lines += Math.max(1, Math.ceil(l.length / charsPerLine));
+  });
+  if (lines <= maxLines) return baseSize;
+  // Shrinking the font fits proportionally more characters per line, so the
+  // needed scale goes with the square root of the overflow ratio.
+  const scaled = baseSize * Math.sqrt(maxLines / lines);
+  return Math.max(minSize, Math.round(scaled * 10) / 10);
+}
+
+
+
 // The reference label design shows a plain "999/-" style amount, not the
 // invoice's "₹999.00" — kept as its own formatter rather than reusing
 // formatINR_ so the two documents can diverge without one editing the other.
@@ -562,12 +591,24 @@ function buildShippingLabelHtml_(order) {
   // leaving the same generous 1.4x gap a 6.5px line doesn't need.
   const itemLineHeight = itemFontSize <= 8 ? 1.15 : itemFontSize <= 9.5 ? 1.25 : 1.4;
 
+  const addressText = String(customer.address || "") + (customer.pincode ? "\nPIN: " + customer.pincode : "");
   const addressHtml = escapeHtml_(customer.address || "").replace(/\n/g, "<br/>") +
     (customer.pincode ? "<br/>PIN: " + escapeHtml_(customer.pincode) : "");
+
+  // Auto-fit sizes for the four variable-length left-column fields. Base 11px
+  // with ~46 characters per line in the 62%-wide column; each field gets the
+  // number of lines it can occupy before the column starts overflowing.
+  const nameFontSize = shippingFitFontSize_(customer.name, 11, 40, 1, 7.5);
+  const phoneFontSize = shippingFitFontSize_(customer.phone, 11, 40, 1, 8);
+  const emailFontSize = shippingFitFontSize_(customer.email, 11, 40, 1, 7);
+  const addressFontSize = shippingFitFontSize_(addressText, 11, 46, 4, 6.5);
+  const addressLineHeight = addressFontSize <= 8 ? 1.15 : addressFontSize <= 9.5 ? 1.25 : 1.4;
+
   const logoTag = getLogoImgTag_().replace(
     'style="height:64px;width:64px;object-fit:contain;margin-bottom:6px;"',
     'style="height:60px;width:60px;object-fit:contain;"',
   );
+
 
   return (
     "<!DOCTYPE html><html><head><meta charset=\"utf-8\"><style>" +
@@ -585,10 +626,15 @@ function buildShippingLabelHtml_(order) {
     ".banner-logo img { height: 60px; width: 60px; object-fit: contain; }" +
     // body-row takes all space left between banner and footer.
     ".body-row { flex: 1; display: flex; width: 100%; border-bottom: 2px solid #000; min-height: 0; }" +
-    ".col-left { flex: 0 0 62%; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }" +
+    ".col-left { flex: 0 0 62%; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; overflow: hidden; }" +
     ".col-right { flex: 0 0 38%; border-left: 2px solid #000; display: flex; flex-direction: column; min-height: 0; }" +
     ".field-label { font-size: 9px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }" +
-    ".field-value { font-size: 11px; margin-top: 2px; line-height: 1.4; }" +
+    // word-break/overflow-wrap keep an unbroken run of characters (a long
+    // email, a street name with no spaces) from pushing past the border
+    // instead of wrapping; the per-field font sizes are computed in JS by
+    // shippingFitFontSize_ so long values shrink rather than overflow.
+    ".field-value { font-size: 11px; margin-top: 2px; line-height: 1.4; overflow-wrap: break-word; word-break: break-word; }" +
+
     // The three fixed-content rows (From / Payment Status / Amount) are
     // kept tight on purpose — every pixel saved here is a pixel handed to
     // the item row below, the one row whose content length actually varies.
@@ -613,10 +659,11 @@ function buildShippingLabelHtml_(order) {
     "<div class=\"banner-logo\">" + logoTag + "</div></div>" +
     "<div class=\"body-row\">" +
     "<div class=\"col-left\">" +
-    "<div><div class=\"field-label\">Name:</div><div class=\"field-value\">" + escapeHtml_(customer.name || "") + "</div></div>" +
-    "<div><div class=\"field-label\">Phone No.</div><div class=\"field-value\">" + escapeHtml_(customer.phone || "") + "</div></div>" +
-    "<div><div class=\"field-label\">Email ID:</div><div class=\"field-value\">" + escapeHtml_(customer.email || "") + "</div></div>" +
-    "<div><div class=\"field-label\">Ship To:</div><div class=\"field-value\">" + addressHtml + "</div></div>" +
+    "<div><div class=\"field-label\">Name:</div><div class=\"field-value\" style=\"font-size:" + nameFontSize + "px;\">" + escapeHtml_(customer.name || "") + "</div></div>" +
+    "<div><div class=\"field-label\">Phone No.</div><div class=\"field-value\" style=\"font-size:" + phoneFontSize + "px;\">" + escapeHtml_(customer.phone || "") + "</div></div>" +
+    "<div><div class=\"field-label\">Email ID:</div><div class=\"field-value\" style=\"font-size:" + emailFontSize + "px;\">" + escapeHtml_(customer.email || "") + "</div></div>" +
+    "<div><div class=\"field-label\">Ship To:</div><div class=\"field-value\" style=\"font-size:" + addressFontSize + "px;line-height:" + addressLineHeight + ";\">" + addressHtml + "</div></div>" +
+
     "</div>" +
     "<div class=\"col-right\">" +
     "<div class=\"right-row\"><div class=\"field-label\">From :</div><div class=\"field-value\">The Layout</div></div>" +
@@ -836,6 +883,44 @@ function ensureHeaders(sheet, headers) {
     sheet.getRange(1, existing.length + 1, 1, missing.length).setValues([missing]);
   }
 }
+
+/* ============================================================ */
+/* Plain-text columns (phone numbers, pincodes)                  */
+/* ============================================================ */
+// Google Sheets parses a leading "+" as the start of a formula, so a phone
+// number typed as "+919876543210" lands in the sheet as an #ERROR! cell.
+// Same class of problem for values with leading zeros (pincodes) getting
+// silently turned into numbers. Fix in two layers:
+//   1. forceTextColumns_ sets the whole column's number format to plain text
+//      ("@") so Sheets stops interpreting anything written there.
+//   2. sanitizeTextCell_ prefixes a leading-apostrophe escape for values that
+//      would otherwise be read as a formula ("+", "=", "-", "@"). The
+//      apostrophe is a Sheets text marker — it is NOT part of the stored
+//      value, so the cell still reads "+919876543210" everywhere, including
+//      when the invoice/shipping label reads it back.
+function forceTextColumns_(sheet, headers, textHeaderNames) {
+  try {
+    const existing = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    textHeaderNames.forEach((name) => {
+      const idx = existing.indexOf(name);
+      if (idx === -1) return;
+      const maxRows = sheet.getMaxRows();
+      if (maxRows < 2) return;
+      sheet.getRange(2, idx + 1, maxRows - 1, 1).setNumberFormat("@");
+    });
+  } catch (err) {
+    // Formatting is a convenience, never a reason to lose an order row.
+  }
+}
+
+function sanitizeTextCell_(value) {
+  if (value === null || value === undefined) return "";
+  const str = String(value).trim();
+  if (!str) return "";
+  return /^[=+\-@]/.test(str) ? "'" + str : str;
+}
+
+
 
 function getOrCreateFolder(name) {
   const folders = DriveApp.getFoldersByName(name);
