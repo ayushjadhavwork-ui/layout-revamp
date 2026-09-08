@@ -837,6 +837,44 @@ function ensureHeaders(sheet, headers) {
   }
 }
 
+/* ============================================================ */
+/* Plain-text columns (phone numbers, pincodes)                  */
+/* ============================================================ */
+// Google Sheets parses a leading "+" as the start of a formula, so a phone
+// number typed as "+919876543210" lands in the sheet as an #ERROR! cell.
+// Same class of problem for values with leading zeros (pincodes) getting
+// silently turned into numbers. Fix in two layers:
+//   1. forceTextColumns_ sets the whole column's number format to plain text
+//      ("@") so Sheets stops interpreting anything written there.
+//   2. sanitizeTextCell_ prefixes a leading-apostrophe escape for values that
+//      would otherwise be read as a formula ("+", "=", "-", "@"). The
+//      apostrophe is a Sheets text marker — it is NOT part of the stored
+//      value, so the cell still reads "+919876543210" everywhere, including
+//      when the invoice/shipping label reads it back.
+function forceTextColumns_(sheet, headers, textHeaderNames) {
+  try {
+    const existing = sheet.getRange(1, 1, 1, sheet.getLastColumn()).getValues()[0];
+    textHeaderNames.forEach((name) => {
+      const idx = existing.indexOf(name);
+      if (idx === -1) return;
+      const maxRows = sheet.getMaxRows();
+      if (maxRows < 2) return;
+      sheet.getRange(2, idx + 1, maxRows - 1, 1).setNumberFormat("@");
+    });
+  } catch (err) {
+    // Formatting is a convenience, never a reason to lose an order row.
+  }
+}
+
+function sanitizeTextCell_(value) {
+  if (value === null || value === undefined) return "";
+  const str = String(value).trim();
+  if (!str) return "";
+  return /^[=+\-@]/.test(str) ? "'" + str : str;
+}
+
+
+
 function getOrCreateFolder(name) {
   const folders = DriveApp.getFoldersByName(name);
   return folders.hasNext() ? folders.next() : DriveApp.createFolder(name);
