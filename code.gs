@@ -214,10 +214,10 @@ function completeOrder(body) {
     body.orderId,
     body.cartId,
     body.customer.name,
-    body.customer.phone,
+    sanitizeTextCell_(body.customer.phone),
     body.customer.email,
     body.customer.address,
-    body.customer.pincode || "",
+    sanitizeTextCell_(body.customer.pincode),
     JSON.stringify(body.cart),
     body.total,
     body.coupon || "",
@@ -228,8 +228,9 @@ function completeOrder(body) {
     shippingLabelUrl,
     // WhatsApp number for the Drive upload link only — never printed on the
     // invoice or the shipping label.
-    body.customer.whatsapp || "",
+    sanitizeTextCell_(body.customer.whatsapp),
   ]);
+
 
 
   return { ok: true, orderId: body.orderId };
