@@ -151,6 +151,8 @@ function completeOrder(body) {
     "cart", "total", "coupon", "screenshotUrl", "timestamp", "invoiceUrl",
     "paymentVerified", "shippingLabel", "whatsapp",
   ]);
+  forceTextColumns_(sheet, null, ["phone", "whatsapp", "pincode"]);
+
 
 
   let screenshotUrl = "";
