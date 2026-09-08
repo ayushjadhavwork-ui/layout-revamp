@@ -659,10 +659,11 @@ function buildShippingLabelHtml_(order) {
     "<div class=\"banner-logo\">" + logoTag + "</div></div>" +
     "<div class=\"body-row\">" +
     "<div class=\"col-left\">" +
-    "<div><div class=\"field-label\">Name:</div><div class=\"field-value\">" + escapeHtml_(customer.name || "") + "</div></div>" +
-    "<div><div class=\"field-label\">Phone No.</div><div class=\"field-value\">" + escapeHtml_(customer.phone || "") + "</div></div>" +
-    "<div><div class=\"field-label\">Email ID:</div><div class=\"field-value\">" + escapeHtml_(customer.email || "") + "</div></div>" +
-    "<div><div class=\"field-label\">Ship To:</div><div class=\"field-value\">" + addressHtml + "</div></div>" +
+    "<div><div class=\"field-label\">Name:</div><div class=\"field-value\" style=\"font-size:" + nameFontSize + "px;\">" + escapeHtml_(customer.name || "") + "</div></div>" +
+    "<div><div class=\"field-label\">Phone No.</div><div class=\"field-value\" style=\"font-size:" + phoneFontSize + "px;\">" + escapeHtml_(customer.phone || "") + "</div></div>" +
+    "<div><div class=\"field-label\">Email ID:</div><div class=\"field-value\" style=\"font-size:" + emailFontSize + "px;\">" + escapeHtml_(customer.email || "") + "</div></div>" +
+    "<div><div class=\"field-label\">Ship To:</div><div class=\"field-value\" style=\"font-size:" + addressFontSize + "px;line-height:" + addressLineHeight + ";\">" + addressHtml + "</div></div>" +
+
     "</div>" +
     "<div class=\"col-right\">" +
     "<div class=\"right-row\"><div class=\"field-label\">From :</div><div class=\"field-value\">The Layout</div></div>" +
