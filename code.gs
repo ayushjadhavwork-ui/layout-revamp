@@ -120,19 +120,21 @@ function logCart(body) {
   // upload link. It is deliberately kept out of the invoice and the shipping
   // label (gift orders) — only "phone" (shipping) appears on those.
   ensureHeaders(sheet, ["cartId", "name", "phone", "email", "address", "pincode", "cart", "total", "timestamp", "whatsapp"]);
+  forceTextColumns_(sheet, null, ["phone", "whatsapp", "pincode"]);
 
   sheet.appendRow([
     body.cartId,
     body.customer.name,
-    body.customer.phone,
+    sanitizeTextCell_(body.customer.phone),
     body.customer.email,
     body.customer.address,
-    body.customer.pincode || "",
+    sanitizeTextCell_(body.customer.pincode),
     JSON.stringify(body.cart),
     body.total,
     body.ts,
-    body.customer.whatsapp || "",
+    sanitizeTextCell_(body.customer.whatsapp),
   ]);
+
 
 
   return { ok: true, cartId: body.cartId };
