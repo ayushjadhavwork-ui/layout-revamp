@@ -626,10 +626,15 @@ function buildShippingLabelHtml_(order) {
     ".banner-logo img { height: 60px; width: 60px; object-fit: contain; }" +
     // body-row takes all space left between banner and footer.
     ".body-row { flex: 1; display: flex; width: 100%; border-bottom: 2px solid #000; min-height: 0; }" +
-    ".col-left { flex: 0 0 62%; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; }" +
+    ".col-left { flex: 0 0 62%; padding: 10px 14px; display: flex; flex-direction: column; gap: 8px; min-width: 0; overflow: hidden; }" +
     ".col-right { flex: 0 0 38%; border-left: 2px solid #000; display: flex; flex-direction: column; min-height: 0; }" +
     ".field-label { font-size: 9px; font-weight: 800; letter-spacing: 0.5px; text-transform: uppercase; }" +
-    ".field-value { font-size: 11px; margin-top: 2px; line-height: 1.4; }" +
+    // word-break/overflow-wrap keep an unbroken run of characters (a long
+    // email, a street name with no spaces) from pushing past the border
+    // instead of wrapping; the per-field font sizes are computed in JS by
+    // shippingFitFontSize_ so long values shrink rather than overflow.
+    ".field-value { font-size: 11px; margin-top: 2px; line-height: 1.4; overflow-wrap: break-word; word-break: break-word; }" +
+
     // The three fixed-content rows (From / Payment Status / Amount) are
     // kept tight on purpose — every pixel saved here is a pixel handed to
     // the item row below, the one row whose content length actually varies.
