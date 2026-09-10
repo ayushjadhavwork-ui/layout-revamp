@@ -83,9 +83,9 @@ export const SITE = {
   // ────────────────────────────────────────────────────────────────
   reels: [
     "https://www.instagram.com/reel/DcO6l7VxGg6/",
-    "https://www.instagram.com/reel/DaalBsgoITb/",
-    "https://www.instagram.com/reel/DaWLtOkzxqR/",
-    "https://www.instagram.com/reel/DaQZQ2TKI8L/",
+    "https://www.instagram.com/reel/Dc_f5aDzuSp/",
+    "https://www.instagram.com/reel/DcWrTbqxv0q/",
+    "https://www.instagram.com/reel/DU5klZECCtZ/",
   ],
 
   // ────────────────────────────────────────────────────────────────
