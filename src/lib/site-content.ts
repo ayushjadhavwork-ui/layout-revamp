@@ -56,7 +56,7 @@ export const SITE = {
   // ────────────────────────────────────────────────────────────────
   commerce: {
     // Minimum cart total (in ₹) required before checkout is allowed.
-    minOrderValue: 249,
+    minOrderValue: 300,
   },
 
   // ────────────────────────────────────────────────────────────────
