@@ -82,7 +82,7 @@ export const SITE = {
   // REELS CAROUSEL — paste any number of Instagram reel URLs
   // ────────────────────────────────────────────────────────────────
   reels: [
-    "https://www.instagram.com/reel/DadWWA1I45L/",
+    "https://www.instagram.com/reel/DcO6l7VxGg6/",
     "https://www.instagram.com/reel/DaalBsgoITb/",
     "https://www.instagram.com/reel/DaWLtOkzxqR/",
     "https://www.instagram.com/reel/DaQZQ2TKI8L/",
