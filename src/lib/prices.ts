@@ -111,7 +111,7 @@ export const PRICES = {
   // POCKET MAGAZINE (standalone, strictly 6 pages, pocket-sized)
   // -------------------------------------------------------
   pocket: {
-    "pocket-mag": 250,
+    "pocket-mag": 300,
   },
 
   // -------------------------------------------------------
