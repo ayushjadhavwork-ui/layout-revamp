@@ -383,21 +383,31 @@ export const useStore = create<State>()(
     });
   },
 
+  // Design picks are a MULTISET: the same design can be picked twice (e.g.
+  // a Duo of two identical cards). Clicking a design adds one copy; when the
+  // pick list is full, clicking an already-picked design removes one copy of
+  // it. Cart lines are rebuilt grouped per design ("Card 01 ×2").
   toggleFriendshipDesign: (id) => {
     const s = get();
     if (!s.selectedFriendshipId) return false;
     const limit = get().friendshipDesignLimit();
-    const already = s.selectedFriendshipDesignIds.includes(id);
-    if (!already && s.selectedFriendshipDesignIds.length >= limit) return false;
-    const nextIds = already
-      ? s.selectedFriendshipDesignIds.filter((t) => t !== id)
-      : [...s.selectedFriendshipDesignIds, id];
-    const design = CATALOG["friendship-designs"].find((d) => d.id === id)!;
+    const total = s.selectedFriendshipDesignIds.length;
+    const count = s.selectedFriendshipDesignIds.filter((x) => x === id).length;
+    let nextIds: string[];
+    if (total >= limit) {
+      if (count === 0) return false; // full and this design isn't picked
+      // Remove ONE copy of this design.
+      const idx = s.selectedFriendshipDesignIds.lastIndexOf(id);
+      nextIds = s.selectedFriendshipDesignIds.filter((_, i) => i !== idx);
+    } else {
+      nextIds = [...s.selectedFriendshipDesignIds, id];
+    }
     set({
       selectedFriendshipDesignIds: nextIds,
-      cart: already
-        ? s.cart.filter((c) => c.key !== key("friendship-designs", id))
-        : [...s.cart, { key: key("friendship-designs", id), category: "friendship-designs", id, name: design.name, price: 0 }],
+      cart: [
+        ...s.cart.filter((c) => c.category !== "friendship-designs"),
+        ...friendshipDesignCartLines(nextIds),
+      ],
     });
     return true;
   },

@@ -143,6 +143,8 @@ export const SITE = {
     instagram:       "https://www.instagram.com/the_layoutt",
     youtube:         "https://www.youtube.com/@Layoutt",
     blog:            "https://thelayouttco.myportfolio.com/behind-the-scenes-1",
+    // "Check your delivery date" button (top ribbon + banner button).
+    deliveryCheck:   "https://cataloglayout.my.canva.site/delivery-date-calculator-infographic",
     whatsapp:        "https://wa.me/919137353151",
     customerReviews: "https://thelayout.layoutt.workers.dev/happy-customers",
   },
