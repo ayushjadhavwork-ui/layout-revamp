@@ -275,3 +275,21 @@ automatically:
 The `Completed Orders` sheet is therefore the order/receipt record. If a
 numbered invoice emailed to the customer or a payment gateway is wanted,
 that's a separate build.
+
+---
+
+## 9. Phone numbers as text + auto-fitting shipping labels
+
+Two fixes that need a **new deployment version** to take effect:
+
+1. **Phone / WhatsApp / pincode columns are written as text.** Sheets used to
+   read `+919876543210` as the start of a formula and show `#ERROR!`.
+   `forceTextColumns_` sets those columns' number format to plain text (`@`)
+   and `sanitizeTextCell_` escapes any value starting with `+`, `=`, `-`, or
+   `@`. The escape character is not part of the stored value — the cell still
+   reads `+919876543210`, and invoices/labels are unaffected.
+   Existing `#ERROR!` cells stay broken until re-typed; new rows are fine.
+2. **Shipping label text auto-fits.** Name, phone, email, and address font
+   sizes are now computed per order (`shippingFitFontSize_`), and long
+   unbroken strings wrap instead of spilling past the border, so the label
+   always keeps the same 6in × 4in layout.
