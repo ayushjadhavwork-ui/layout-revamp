@@ -533,8 +533,8 @@ function Nav({ onCart }: { onCart: () => void }) {
             </a>
           </li>
           <li className="shrink-0">
-            <a href={SITE.links.blog} target="_blank" rel="noreferrer" className="hover:text-rose-wine transition-colors">
-              Blog
+            <a href={SITE.links.deliveryCheck} target="_blank" rel="noreferrer" className="hover:text-rose-wine transition-colors">
+              Check Delivery
             </a>
           </li>
         </ul>
@@ -910,12 +910,12 @@ function CustomImageSection() {
           text, roughly 3/4 of the way down the image. */}
       <div className="absolute inset-x-0 z-20 flex justify-center" style={{ top: "75%" }}>
         <a
-          href={SITE.links.blog}
+          href={SITE.links.deliveryCheck}
           target="_blank"
           rel="noreferrer"
           className="pill-btn pill-btn-hover pill-primary"
         >
-          View our blog posts <ArrowUpRight className="h-4 w-4" />
+          Check your delivery date <ArrowUpRight className="h-4 w-4" />
         </a>
       </div>
     </section>
