@@ -89,6 +89,23 @@ type State = {
 
 const key = (cat: Category, id: string) => `${cat}:${id}`;
 
+// Builds the friendship-designs cart lines from the (multi)set of picked
+// design ids — one line per distinct design, "×N" suffix when duplicated.
+const friendshipDesignCartLines = (ids: string[]) => {
+  const counts = new Map<string, number>();
+  for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
+  return [...counts].map(([id, n]) => {
+    const d = CATALOG["friendship-designs"].find((x) => x.id === id)!;
+    return {
+      key: key("friendship-designs" as Category, id),
+      category: "friendship-designs" as Category,
+      id,
+      name: n > 1 ? `${d.name} ×${n}` : d.name,
+      price: 0,
+    };
+  });
+};
+
 // Identifies one Pocket Magazine among several in the same cart — never
 // persisted/parsed as meaningful data, just needs to be unique per unit.
 const genUid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -366,11 +383,8 @@ export const useStore = create<State>()(
     set((s) => {
       const newLimit = product.designLimit ?? 1;
       const keptIds = s.selectedFriendshipDesignIds.slice(0, newLimit);
-      const droppedIds = s.selectedFriendshipDesignIds.slice(newLimit);
       const cart = [
-        ...s.cart.filter(
-          (c) => c.category !== "friendship" && !(c.category === "friendship-designs" && droppedIds.includes(c.id)),
-        ),
+        ...s.cart.filter((c) => c.category !== "friendship" && c.category !== "friendship-designs"),
         {
           key: key("friendship", product.id),
           category: "friendship" as Category,
@@ -378,6 +392,7 @@ export const useStore = create<State>()(
           name: product.name,
           price: product.price,
         },
+        ...friendshipDesignCartLines(keptIds),
       ];
       return { selectedFriendshipId: friendId, selectedFriendshipDesignIds: keptIds, cart };
     });
