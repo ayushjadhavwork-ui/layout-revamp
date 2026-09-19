@@ -207,11 +207,18 @@ export function FriendshipCardSection() {
 
   const handleToggleDesign = (id: string, label: string) => {
     if (!selectedFriendshipId) return toast.error("Choose Single or Duo Card above first.");
-    const already = selectedFriendshipDesignIds.includes(id);
+    const count = selectedFriendshipDesignIds.filter((x) => x === id).length;
+    const full = selectedFriendshipDesignIds.length >= designLimit;
     const ok = toggleFriendshipDesign(id);
     if (!ok)
-      return toast.error(`You can only pick ${designLimit} design${designLimit === 1 ? "" : "s"} for this quantity.`);
-    toast.success(already ? `${label} removed` : `${label} selected`);
+      return toast.error(`You've already picked ${designLimit} card${designLimit === 1 ? "" : "s"} — tap a picked design again to remove one.`);
+    toast.success(
+      full && count > 0
+        ? `${label} — one copy removed`
+        : count > 0
+          ? `${label} selected again (×${count + 1})`
+          : `${label} selected`,
+    );
   };
 
   return (
@@ -318,7 +325,8 @@ export function FriendshipCardSection() {
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5 max-w-2xl mx-auto">
 
           {designs.map((item, idx) => {
-            const active = selectedFriendshipDesignIds.includes(item.id);
+            const count = selectedFriendshipDesignIds.filter((x) => x === item.id).length;
+            const active = count > 0;
             const disabled = !selectedFriendshipId || (selectedFriendshipDesignIds.length >= designLimit && !active);
             const hero = templateHero(item.id);
             return (
@@ -330,8 +338,8 @@ export function FriendshipCardSection() {
                 } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {active && (
-                  <span className="absolute top-2 right-2 grid h-6 w-6 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10">
-                    <Check className="h-3.5 w-3.5" />
+                  <span className="absolute top-2 right-2 grid h-6 min-w-6 px-1 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10 text-[0.65rem] font-bold">
+                    {count > 1 ? `×${count}` : <Check className="h-3.5 w-3.5" />}
                   </span>
                 )}
 
@@ -374,7 +382,7 @@ export function FriendshipCardSection() {
                         : "bg-transparent text-off-white border-pink-mist/50 hover:bg-off-white/10"
                     } disabled:cursor-not-allowed`}
                   >
-                    {active ? "Selected" : "Select"}
+                    {active ? `Selected${count > 1 ? ` ×${count}` : ""}` : "Select"}
                   </button>
                   <button
                     type="button"
