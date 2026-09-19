@@ -67,7 +67,8 @@ type State = {
   // only the first-picked design(s) and drops the rest (truncate, not a
   // full reset) — see catalog.ts's designLimit field.
   setFriendship: (friendId: string) => void;
-  toggleFriendshipDesign: (id: string) => boolean; // returns success
+  addFriendshipDesign: (id: string) => boolean; // false when no tier chosen or pick list full
+  removeFriendshipDesign: (id: string) => boolean; // false when this design isn't picked
   toggleStrip: (id: string) => boolean; // returns success; false if cap reached
   setCoupon: (c: State["coupon"]) => void;
   applyCouponFreebie: (code: string) => void;
@@ -399,24 +400,31 @@ export const useStore = create<State>()(
   },
 
   // Design picks are a MULTISET: the same design can be picked twice (e.g.
-  // a Duo of two identical cards). Clicking a design adds one copy; when the
-  // pick list is full, clicking an already-picked design removes one copy of
-  // it. Cart lines are rebuilt grouped per design ("Card 01 ×2").
-  toggleFriendshipDesign: (id) => {
+  // a Duo of two identical cards). addFriendshipDesign appends one copy
+  // (fails when the pick list is full); removeFriendshipDesign drops one
+  // copy (fails when this design isn't picked). Cart lines are rebuilt
+  // grouped per design ("Card 01 ×2").
+  addFriendshipDesign: (id) => {
     const s = get();
     if (!s.selectedFriendshipId) return false;
     const limit = get().friendshipDesignLimit();
-    const total = s.selectedFriendshipDesignIds.length;
-    const count = s.selectedFriendshipDesignIds.filter((x) => x === id).length;
-    let nextIds: string[];
-    if (total >= limit) {
-      if (count === 0) return false; // full and this design isn't picked
-      // Remove ONE copy of this design.
-      const idx = s.selectedFriendshipDesignIds.lastIndexOf(id);
-      nextIds = s.selectedFriendshipDesignIds.filter((_, i) => i !== idx);
-    } else {
-      nextIds = [...s.selectedFriendshipDesignIds, id];
-    }
+    if (s.selectedFriendshipDesignIds.length >= limit) return false;
+    const nextIds = [...s.selectedFriendshipDesignIds, id];
+    set({
+      selectedFriendshipDesignIds: nextIds,
+      cart: [
+        ...s.cart.filter((c) => c.category !== "friendship-designs"),
+        ...friendshipDesignCartLines(nextIds),
+      ],
+    });
+    return true;
+  },
+
+  removeFriendshipDesign: (id) => {
+    const s = get();
+    const idx = s.selectedFriendshipDesignIds.lastIndexOf(id);
+    if (idx === -1) return false;
+    const nextIds = s.selectedFriendshipDesignIds.filter((_, i) => i !== idx);
     set({
       selectedFriendshipDesignIds: nextIds,
       cart: [

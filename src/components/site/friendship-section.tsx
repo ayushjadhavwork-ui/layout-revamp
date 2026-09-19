@@ -181,7 +181,8 @@ export function FriendshipCardSection() {
   const selectedFriendshipDesignIds = useStore((s) => s.selectedFriendshipDesignIds);
   const setFriendship = useStore((s) => s.setFriendship);
   const removeItem = useStore((s) => s.removeItem);
-  const toggleFriendshipDesign = useStore((s) => s.toggleFriendshipDesign);
+  const addFriendshipDesign = useStore((s) => s.addFriendshipDesign);
+  const removeFriendshipDesign = useStore((s) => s.removeFriendshipDesign);
   const designLimit = useStore((s) => s.friendshipDesignLimit());
 
   const items = CATALOG.friendship;
@@ -205,20 +206,40 @@ export function FriendshipCardSection() {
     );
   };
 
-  const handleToggleDesign = (id: string, label: string) => {
+  // Card body click: unselected → add one copy (Qty ×1); selected → remove
+  // one copy (×2 → ×1 → deselected). Unselecting is always just a tap on
+  // the card itself.
+  const handleCardToggle = (id: string, label: string) => {
     if (!selectedFriendshipId) return toast.error("Choose Single or Duo Card above first.");
     const count = selectedFriendshipDesignIds.filter((x) => x === id).length;
-    const full = selectedFriendshipDesignIds.length >= designLimit;
-    const ok = toggleFriendshipDesign(id);
-    if (!ok)
-      return toast.error(`You've already picked ${designLimit} card${designLimit === 1 ? "" : "s"} — tap a picked design again to remove one.`);
-    toast.success(
-      full && count > 0
-        ? `${label} — one copy removed`
-        : count > 0
-          ? `${label} selected again (×${count + 1})`
-          : `${label} selected`,
-    );
+    if (count > 0) {
+      removeFriendshipDesign(id);
+      toast.success(count > 1 ? `${label} — one copy removed (×${count - 1})` : `${label} deselected`);
+      return;
+    }
+    if (!addFriendshipDesign(id))
+      return toast.error(
+        `You've already picked ${designLimit} card${designLimit === 1 ? "" : "s"} — tap a picked design to remove one.`,
+      );
+    toast.success(`${label} selected`);
+  };
+
+  // Qty chip click: adds ANOTHER copy of this design (×1 → ×2). On a Single
+  // Card it explains that two copies need the Duo tier; on a full Duo it
+  // explains the limit.
+  const handleQtyClick = (id: string, label: string) => {
+    if (!selectedFriendshipId) return toast.error("Choose Single or Duo Card above first.");
+    const count = selectedFriendshipDesignIds.filter((x) => x === id).length;
+    if (!addFriendshipDesign(id)) {
+      if (count === 0)
+        return toast.error(`You've already picked ${designLimit} card${designLimit === 1 ? "" : "s"}.`);
+      return toast.error(
+        designLimit === 1
+          ? "This is a Single Card — switch to Duo Card above to get two of the same design."
+          : "A Duo Card holds 2 designs — you've reached the limit.",
+      );
+    }
+    toast.success(`${label} — Qty ×${count + 1}`);
   };
 
   return (
