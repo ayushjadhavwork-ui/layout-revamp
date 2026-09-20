@@ -343,6 +343,11 @@ export function FriendshipCardSection() {
             ? `${selectedFriendshipDesignIds.length} of ${designLimit} selected`
             : "Choose a quantity above to unlock designs"}
         </p>
+        {selectedFriendshipId && (
+          <p className="mt-1 text-center text-[0.65rem] uppercase tracking-[0.2em] text-pink-mist/80">
+            Tap a design to pick it · tap its Qty chip to add another copy · tap the design again to remove
+          </p>
+        )}
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5 max-w-2xl mx-auto">
 
           {designs.map((item, idx) => {
@@ -353,7 +358,7 @@ export function FriendshipCardSection() {
             return (
               <div
                 key={item.id}
-                onClick={() => handleToggleDesign(item.id, item.name)}
+                onClick={() => handleCardToggle(item.id, item.name)}
                 className={`relative rounded-xl p-3 md:p-4 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
                   active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
                 } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
@@ -396,14 +401,23 @@ export function FriendshipCardSection() {
                   <button
                     type="button"
                     disabled={disabled}
-                    onClick={() => handleToggleDesign(item.id, item.name)}
-                    className={`flex-1 min-w-0 rounded-full px-3 py-1.5 text-[0.7rem] font-medium transition border truncate ${
+                    title={
                       active
-                        ? "bg-off-white text-rose-wine border-off-white"
+                        ? "Tap to add another copy of this design"
+                        : "Tap to select this design"
+                    }
+                    onClick={() =>
+                      active
+                        ? handleQtyClick(item.id, item.name)
+                        : handleCardToggle(item.id, item.name)
+                    }
+                    className={`flex-1 min-w-0 rounded-full px-3 py-1.5 text-[0.7rem] font-semibold transition border truncate ${
+                      active
+                        ? "bg-off-white text-rose-wine border-off-white hover:bg-off-white/90"
                         : "bg-transparent text-off-white border-pink-mist/50 hover:bg-off-white/10"
                     } disabled:cursor-not-allowed`}
                   >
-                    {active ? `Selected${count > 1 ? ` ×${count}` : ""}` : "Select"}
+                    {active ? `Qty ×${count}` : "Select"}
                   </button>
                   <button
                     type="button"
@@ -449,8 +463,14 @@ export function FriendshipCardSection() {
         item={openDesignIdx !== null ? designs[openDesignIdx] : null}
         index={openDesignIdx ?? -1}
         active={openDesignIdx !== null && selectedFriendshipDesignIds.includes(designs[openDesignIdx].id)}
+        count={
+          openDesignIdx !== null
+            ? selectedFriendshipDesignIds.filter((x) => x === designs[openDesignIdx].id).length
+            : 0
+        }
         limit={designLimit}
-        onToggle={toggleFriendshipDesign}
+        onAdd={addFriendshipDesign}
+        onRemove={removeFriendshipDesign}
         onClose={() => setOpenDesignIdx(null)}
       />
     </>
@@ -587,16 +607,20 @@ function FriendshipDesignDetailModal({
   item,
   index,
   active,
+  count,
   limit,
-  onToggle,
+  onAdd,
+  onRemove,
   onClose,
 }: {
   open: boolean;
   item: Product | null;
   index: number;
   active: boolean;
+  count: number;
   limit: number;
-  onToggle: (id: string) => boolean;
+  onAdd: (id: string) => boolean;
+  onRemove: (id: string) => boolean;
   onClose: () => void;
 }) {
   const [slide, setSlide] = useState<0 | 1>(0);
@@ -621,10 +645,14 @@ function FriendshipDesignDetailModal({
   const currentBroken = brokenSlides.has(slide);
 
   const handleToggle = () => {
-    const already = active;
-    const ok = onToggle(item.id);
-    if (!ok) return toast.error(`You can only pick ${limit} design${limit === 1 ? "" : "s"}.`);
-    toast.success(already ? `${item.name} removed` : `${item.name} selected`);
+    if (active) {
+      onRemove(item.id);
+      toast.success(count > 1 ? `${item.name} — one copy removed (×${count - 1})` : `${item.name} removed`);
+      return;
+    }
+    if (!onAdd(item.id))
+      return toast.error(`You can only pick ${limit} design${limit === 1 ? "" : "s"}.`);
+    toast.success(`${item.name} selected`);
   };
 
   return (
@@ -696,7 +724,7 @@ function FriendshipDesignDetailModal({
               active ? "!bg-rose-wine !text-white !border-rose-wine" : "pill-primary"
             }`}
           >
-            {active ? "Remove from selection" : "Add to selection"}
+            {active ? `Remove from selection${count > 1 ? ` (×${count})` : ""}` : "Add to selection"}
           </button>
         </div>
       </div>
