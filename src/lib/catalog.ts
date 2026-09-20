@@ -83,7 +83,7 @@ const TEMPLATES: Product[] = Array.from({ length: SITE.templateCount }, (_, i) =
 // (see FRIENDSHIP_DESIGN_IMAGE_COUNT convention in site-content.ts's
 // productImages: ["<front>", "<back>"]). A customer picks 1 (Single) or up
 // to 2 (Duo) of these, tracked separately from the quantity tier itself —
-// see selectedFriendshipDesignIds / toggleFriendshipDesign in store.ts.
+// see selectedFriendshipDesignIds / addFriendshipDesign in store.ts.
 const FRIENDSHIP_DESIGNS: Product[] = Array.from({ length: 4 }, (_, i) => ({
   id: `card-${i + 1}`,
   name: `Card ${String(i + 1).padStart(2, "0")}`,

@@ -724,7 +724,7 @@ function FriendshipDesignDetailModal({
               active ? "!bg-rose-wine !text-white !border-rose-wine" : "pill-primary"
             }`}
           >
-            {active ? "Remove from selection" : "Add to selection"}
+            {active ? `Remove from selection${count > 1 ? ` (×${count})` : ""}` : "Add to selection"}
           </button>
         </div>
       </div>
