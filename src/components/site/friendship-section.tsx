@@ -607,16 +607,20 @@ function FriendshipDesignDetailModal({
   item,
   index,
   active,
+  count,
   limit,
-  onToggle,
+  onAdd,
+  onRemove,
   onClose,
 }: {
   open: boolean;
   item: Product | null;
   index: number;
   active: boolean;
+  count: number;
   limit: number;
-  onToggle: (id: string) => boolean;
+  onAdd: (id: string) => boolean;
+  onRemove: (id: string) => boolean;
   onClose: () => void;
 }) {
   const [slide, setSlide] = useState<0 | 1>(0);
@@ -641,10 +645,14 @@ function FriendshipDesignDetailModal({
   const currentBroken = brokenSlides.has(slide);
 
   const handleToggle = () => {
-    const already = active;
-    const ok = onToggle(item.id);
-    if (!ok) return toast.error(`You can only pick ${limit} design${limit === 1 ? "" : "s"}.`);
-    toast.success(already ? `${item.name} removed` : `${item.name} selected`);
+    if (active) {
+      onRemove(item.id);
+      toast.success(count > 1 ? `${item.name} — one copy removed (×${count - 1})` : `${item.name} removed`);
+      return;
+    }
+    if (!onAdd(item.id))
+      return toast.error(`You can only pick ${limit} design${limit === 1 ? "" : "s"}.`);
+    toast.success(`${item.name} selected`);
   };
 
   return (
