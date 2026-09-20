@@ -1,0 +1,364 @@
+import { useState } from "react";
+import { createPortal } from "react-dom";
+import { Layers, Check, Eye, X, ChevronLeft, ChevronRight } from "lucide-react";
+
+import { toast } from "sonner";
+import { CATALOG, fmt, type SizeFormat } from "@/lib/catalog";
+import { useStore } from "@/lib/store";
+import { SITE } from "@/lib/site-content";
+import { ModalShell } from "./shop";
+import { useProductReviews } from "@/lib/use-product-reviews";
+import { ReviewsPanel, ReviewStars } from "./reviews-panel";
+import { ScrollHint } from "./scroll-hint";
+
+// Each package has two images, matched by page count and format:
+//   Standard → /public/media/sizes/<n>_pages_magazine.webp  +  <n>_pages_sizeGuide.webp
+//   Mini     → /public/media/sizes-mini/<n>_pages_magazine.webp  +  <n>_pages_sizeGuide.webp
+// Override either by adding paths under SITE.productImages["sz-<n>"] / ["sz-<n>-mini"].
+function pageCount(id: string): string {
+  return id.replace(/\D/g, "");
+}
+
+function sizeFolder(format?: SizeFormat): string {
+  return format === "mini" ? "sizes-mini" : "sizes";
+}
+
+// Thumbnail + size guide both come from the format's own folder, so Mini (A5)
+// and Standard (A4) can show different artwork. Override either in
+// SITE.productImages["sz-<n>"] / ["sz-<n>-mini"] (first entry = thumbnail).
+function sizeHero(id: string, format?: SizeFormat): string | undefined {
+  const override = SITE.productImages?.[id]?.[0];
+  if (override) return override;
+  const n = pageCount(id);
+  return n ? `/media/${sizeFolder(format)}/${n}_pages_magazine.webp` : undefined;
+}
+
+function sizeGallery(id: string, format?: SizeFormat): string[] {
+  const override = SITE.productImages?.[id];
+  if (override && override.length > 1) return override.slice(1);
+  const n = pageCount(id);
+  return n ? [`/media/${sizeFolder(format)}/${n}_pages_sizeGuide.webp`] : [];
+}
+
+
+
+
+function SizePlaceholder({ label }: { label: string }) {
+  return (
+    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-pink-mist/30 via-blush-rose/25 to-rose-wine/25 text-off-white">
+      <span className="font-display text-3xl md:text-4xl">{label}</span>
+      <span className="mt-1 w-full px-1 text-center text-[0.5rem] sm:text-[0.55rem] uppercase tracking-[0.05em] sm:tracking-[0.35em] opacity-80">Magazine pages</span>
+    </div>
+  );
+}
+
+/* -------------------------------------------------------------- */
+export function SizesSection() {
+  const [openId, setOpenId] = useState<string | null>(null);
+  const selectedSizeId = useStore((s) => s.selectedSizeId);
+  const setSize = useStore((s) => s.setSize);
+  const removeItem = useStore((s) => s.removeItem);
+  const cart = useStore((s) => s.cart);
+  const format = useStore((s) => s.format);
+  const setFormat = useStore((s) => s.setFormat);
+  const selectedTemplateIds = useStore((s) => s.selectedTemplateIds);
+  const templateLimit = useStore((s) => s.templateLimit());
+
+  const items = CATALOG.sizes.filter((s) => s.format === format);
+
+  const handleToggle = (id: string, name: string) => {
+    if (selectedSizeId === id) {
+      const item = cart.find((c) => c.category === "sizes" && c.id === id);
+      if (item) removeItem(item.key);
+      toast.success(`${name} deselected`);
+    } else {
+      setSize(id);
+      toast.success(`${name} selected`);
+    }
+  };
+
+  const formats: { key: SizeFormat; label: string; sub: string }[] = [
+    { key: "standard", label: "Standard", sub: "A4" },
+    { key: "mini", label: "Mini", sub: "A5" },
+  ];
+
+  return (
+    <>
+      <div className="mt-6 rounded-3xl p-6 md:p-10 bg-rose-wine">
+
+        {/* Format toggle — pick before choosing a page count */}
+        <div className="mb-5 sm:mb-8 flex flex-col items-center">
+          <p className="text-[0.6rem] sm:text-[0.65rem] uppercase tracking-[0.3em] text-pink-mist">
+            Choose your format
+          </p>
+          <div className="mt-2 inline-flex rounded-full bg-black/20 p-1 ring-1 ring-pink-mist/30">
+            {formats.map((f) => {
+              const on = format === f.key;
+              return (
+                <button
+                  key={f.key}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => {
+                    if (format === f.key) return;
+                    setFormat(f.key);
+                    toast.success(`${f.label} (${f.sub}) format selected`);
+                  }}
+                  className={`rounded-full px-4 sm:px-7 py-1.5 sm:py-2 text-[0.65rem] sm:text-xs font-medium uppercase tracking-[0.2em] transition ${
+                    on ? "bg-off-white text-rose-wine shadow" : "text-off-white/80 hover:text-off-white"
+                  }`}
+                >
+                  {f.label} <span className="opacity-60">· {f.sub}</span>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-4 gap-1.5 sm:gap-4 md:gap-5">
+          {items.map((item) => {
+            const active = selectedSizeId === item.id;
+            const hero = sizeHero(item.id, item.format);
+
+
+
+            return (
+              <div
+                key={item.id}
+                onClick={() => handleToggle(item.id, item.name)}
+                className={`relative rounded-md sm:rounded-xl p-1.5 sm:p-4 md:p-5 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
+                  active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
+                }`}
+              >
+                {active && (
+                  <span className="absolute top-1 right-1 sm:top-3 sm:right-3 grid h-4 w-4 sm:h-6 sm:w-6 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10">
+                    <Check className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5" />
+                  </span>
+                )}
+
+                <div
+                  onClick={(e) => { e.stopPropagation(); setOpenId(item.id); }}
+                  className="relative w-full aspect-[4/5] overflow-hidden rounded-sm sm:rounded-md bg-white/5 cursor-zoom-in"
+                >
+                  {hero ? (
+                    <img src={hero} alt={item.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
+                  ) : (
+                    <SizePlaceholder label={item.name.replace(/\D/g, "")} />
+                  )}
+                </div>
+
+                <h4 className="mt-1 sm:mt-4 font-display uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[0.6rem] sm:text-sm text-off-white">
+                  {item.name}
+                </h4>
+                <p className="mt-0.5 sm:mt-1 hidden sm:block text-[0.6rem] uppercase tracking-[0.25em] text-pink-mist">
+                  {item.templateLimit} template{item.templateLimit === 1 ? "" : "s"}
+                </p>
+
+                <div className="my-1 sm:my-3 h-px w-8 sm:w-16 bg-pink-mist/40" />
+                <p className="hidden sm:block text-[0.6rem] uppercase tracking-[0.3em] text-pink-mist">Selling price</p>
+                <p className="mt-0.5 sm:mt-1 inline-block rounded sm:rounded-md px-1.5 sm:px-4 py-0.5 sm:py-1 font-display text-xs sm:text-xl text-rose-wine bg-off-white">
+                  {fmt(item.price)}
+                </p>
+
+                <div className="mt-1.5 sm:mt-4 flex gap-1 sm:gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
+                  <button
+                    type="button"
+                    onClick={() => handleToggle(item.id, item.name)}
+                    className={`flex-1 min-w-0 rounded-full px-1 sm:px-3 py-1 sm:py-1.5 text-[0.55rem] sm:text-[0.7rem] font-medium transition border truncate ${
+                      active
+                        ? "bg-off-white text-rose-wine border-off-white"
+                        : "bg-transparent text-off-white border-pink-mist/50 hover:bg-off-white/10"
+                    }`}
+                  >
+                    {active ? "Selected" : "Select"}
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setOpenId(item.id)}
+                    aria-label={`View ${item.name}`}
+                    className="grid shrink-0 place-items-center rounded-full px-1.5 sm:px-3 py-1 sm:py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
+                  >
+                    <Eye className="h-3 w-3 sm:hidden" />
+                    <span className="hidden sm:inline">View</span>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        <p className="mt-6 text-center text-xs tracking-[0.2em] text-pink-mist">
+          ♡ more pages, more stories to tell ♡
+        </p>
+
+        {selectedSizeId && selectedTemplateIds.length < templateLimit && (
+          <ScrollHint
+            text={`Scroll down to pick your ${templateLimit} template${templateLimit === 1 ? "" : "s"}`}
+            targetId="templates"
+          />
+        )}
+      </div>
+
+      <SizeModal open={!!openId} sizeId={openId} onClose={() => setOpenId(null)} />
+    </>
+  );
+}
+
+/* -------------------------------------------------------------- */
+function SizeModal({
+  open,
+  sizeId,
+  onClose,
+}: {
+  open: boolean;
+  sizeId: string | null;
+  onClose: () => void;
+}) {
+  const [slide, setSlide] = useState(0);
+  const [lightbox, setLightbox] = useState<number | null>(null);
+
+  const item = sizeId ? CATALOG.sizes.find((s) => s.id === sizeId) ?? null : null;
+
+  const selectedSizeId = useStore((s) => s.selectedSizeId);
+  const setSize = useStore((s) => s.setSize);
+  const {
+    reviews, loading, posting, avg, reviewerId,
+    rvName, setRvName, rvText, setRvText, rvRating, setRvRating,
+    submitReview, deleteReview,
+  } = useProductReviews(item?.id ?? null);
+
+  if (!open || !item) return null;
+
+  const hero = sizeHero(item.id, item.format);
+  const gallery = sizeGallery(item.id, item.format);
+  const slides = gallery.length ? gallery : hero ? [hero] : [];
+  const active = selectedSizeId === item.id;
+
+  return (
+    <ModalShell onClose={onClose} maxW="max-w-4xl">
+      <div className="grid gap-6 md:grid-cols-12">
+        <div className="md:col-span-5">
+          <div className="mx-auto w-full max-w-[340px]">
+            {slides.length ? (
+              <>
+                <div
+                  className="flex snap-x snap-mandatory overflow-x-auto rounded-xl bg-white shadow-2xl ring-1 ring-rose-wine/10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                  onScroll={(e) => {
+                    const el = e.currentTarget;
+                    setSlide(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
+                  }}
+                >
+                  {slides.map((src, i) => (
+                    <div key={src + i} className="w-full shrink-0 snap-center">
+                      <img
+                        src={src}
+                        alt={`${item.name} size guide ${i + 1}`}
+                        onClick={() => setLightbox(i)}
+                        className="block h-auto w-full cursor-zoom-in object-contain"
+                      />
+                    </div>
+                  ))}
+                </div>
+                {slides.length > 1 && (
+                  <div className="mt-3 flex justify-center gap-1.5">
+                    {slides.map((_, i) => (
+                      <span
+                        key={i}
+                        className={`h-1.5 rounded-full transition-all ${i === slide ? "w-4 bg-rose-wine" : "w-1.5 bg-rose-wine/30"}`}
+                      />
+                    ))}
+                  </div>
+                )}
+                <button
+                  type="button"
+                  onClick={() => setLightbox(slide)}
+                  className="mt-2 w-full text-center text-[0.65rem] uppercase tracking-[0.2em] text-dusty-rose hover:text-rose-wine"
+                >
+                  Size guide · tap to view full image{slides.length > 1 ? " · swipe to browse" : ""}
+                </button>
+
+              </>
+            ) : (
+              <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-rose-wine/10">
+                <SizePlaceholder label={item.name.replace(/\D/g, "")} />
+              </div>
+            )}
+          </div>
+        </div>
+
+
+        <div className="md:col-span-7 flex flex-col">
+          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">Magazine Package</p>
+          <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">{item.name}</h3>
+          <p className="mt-1 text-sm uppercase tracking-[0.2em] text-dusty-rose">
+            {item.templateLimit} template{item.templateLimit === 1 ? "" : "s"} · covers included
+          </p>
+          <ReviewStars avg={avg} count={reviews.length} />
+          <p className="mt-4 text-3xl font-semibold text-blush-rose">{fmt(item.price)}</p>
+          <div className="mt-4 h-px bg-rose-wine/10" />
+          <p className="mt-4 text-sm leading-relaxed text-neutral-700">{item.desc}</p>
+          <ul className="mt-3 space-y-1.5 text-sm text-neutral-700">
+            <li>• Premium matte-finish paper</li>
+            <li>• Front &amp; back cover included</li>
+            <li>• Editorial trim size</li>
+          </ul>
+
+          <button
+            onClick={() => { setSize(item.id); toast.success(`${item.name} selected`); onClose(); }}
+            className={`pill-btn pill-btn-hover mt-6 w-full !py-3 !text-base ${
+              active ? "!bg-rose-wine !text-white !border-rose-wine" : "pill-primary"
+            }`}
+          >
+            {active ? "Selected — click to reconfirm" : `Choose ${item.name}`}
+          </button>
+        </div>
+      </div>
+
+      <ReviewsPanel
+        reviews={reviews} loading={loading} posting={posting} reviewerId={reviewerId}
+        rvName={rvName} setRvName={setRvName} rvText={rvText} setRvText={setRvText}
+        rvRating={rvRating} setRvRating={setRvRating}
+        onSubmit={submitReview} onDelete={deleteReview}
+      />
+
+      {lightbox !== null && slides[lightbox] && createPortal(
+        <div
+          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/90 p-4"
+          onClick={() => setLightbox(null)}
+        >
+          <button
+            onClick={() => setLightbox(null)}
+            aria-label="Close"
+            className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+          >
+            <X className="h-6 w-6" />
+          </button>
+
+          {slides.length > 1 && (
+            <>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightbox((n) => ((n ?? 0) - 1 + slides.length) % slides.length); }}
+                aria-label="Previous image"
+                className="absolute left-4 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+              ><ChevronLeft className="h-6 w-6" /></button>
+              <button
+                onClick={(e) => { e.stopPropagation(); setLightbox((n) => ((n ?? 0) + 1) % slides.length); }}
+                aria-label="Next image"
+                className="absolute right-4 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+              ><ChevronRight className="h-6 w-6" /></button>
+            </>
+          )}
+
+          <img
+            src={slides[lightbox]}
+            alt={`${item.name} size guide`}
+            onClick={(e) => e.stopPropagation()}
+            className="max-h-[92vh] max-w-full object-contain"
+          />
+        </div>,
+        document.body,
+      )}
+    </ModalShell>
+
+  );
+}

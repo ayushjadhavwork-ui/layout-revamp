@@ -1,0 +1,3 @@
+# Vendored third-party build — treat as binary so Git never rewrites its
+# line endings (CRLF/LF) on checkout across different machines/OSes.
+public/vendor/*.js binary
