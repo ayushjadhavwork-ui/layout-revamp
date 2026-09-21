@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import { HeartHandshake, Check, Eye, ChevronLeft, ChevronRight } from "lucide-react";
+import { HeartHandshake, Check, Eye, ChevronLeft, ChevronRight, Minus, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { CATALOG, fmt, type Product } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
@@ -206,30 +206,23 @@ export function FriendshipCardSection() {
     );
   };
 
-  // Card body click: unselected → add one copy (Qty ×1); selected → remove
-  // one copy (×2 → ×1 → deselected). Unselecting is always just a tap on
-  // the card itself.
-  const handleCardToggle = (id: string, label: string) => {
+  // The card itself only makes the first selection. Once selected, quantity
+  // changes are handled exclusively by the clear minus/plus controls below.
+  const handleCardSelect = (id: string, label: string) => {
     if (!selectedFriendshipId) return toast.error("Choose Single or Duo Card above first.");
     const count = selectedFriendshipDesignIds.filter((x) => x === id).length;
-    if (count > 0) {
-      removeFriendshipDesign(id);
-      toast.success(count > 1 ? `${label} — one copy removed (×${count - 1})` : `${label} deselected`);
-      return;
-    }
+    if (count > 0) return;
     if (!addFriendshipDesign(id))
       return toast.error(
-        `You've already picked ${designLimit} card${designLimit === 1 ? "" : "s"} — tap a picked design to remove one.`,
+        `You've already picked ${designLimit} card${designLimit === 1 ? "" : "s"} — use minus to remove one first.`,
       );
     toast.success(`${label} selected`);
   };
 
-  // Qty chip click: adds ANOTHER copy of this design (×1 → ×2). On a Single
-  // Card it explains that two copies need the Duo tier; on a full Duo it
-  // explains the limit.
-  const handleQtyClick = (id: string, label: string) => {
+  const handleIncreaseQty = (id: string, label: string) => {
     if (!selectedFriendshipId) return toast.error("Choose Single or Duo Card above first.");
     const count = selectedFriendshipDesignIds.filter((x) => x === id).length;
+    if (count >= 2) return toast.error("The maximum quantity for one design is 2.");
     if (!addFriendshipDesign(id)) {
       if (count === 0)
         return toast.error(`You've already picked ${designLimit} card${designLimit === 1 ? "" : "s"}.`);
@@ -240,6 +233,12 @@ export function FriendshipCardSection() {
       );
     }
     toast.success(`${label} — Qty ×${count + 1}`);
+  };
+
+  const handleDecreaseQty = (id: string, label: string) => {
+    const count = selectedFriendshipDesignIds.filter((x) => x === id).length;
+    if (!removeFriendshipDesign(id)) return;
+    toast.success(count > 1 ? `${label} — Qty ×${count - 1}` : `${label} deselected`);
   };
 
   return (
@@ -345,7 +344,7 @@ export function FriendshipCardSection() {
         </p>
         {selectedFriendshipId && (
           <p className="mt-1 text-center text-[0.65rem] uppercase tracking-[0.2em] text-pink-mist/80">
-            Tap a design to pick it · tap its Qty chip to add another copy · tap the design again to remove
+            Tap Select for the first card · then use − and + to change its quantity
           </p>
         )}
         <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5 max-w-2xl mx-auto">
@@ -358,7 +357,7 @@ export function FriendshipCardSection() {
             return (
               <div
                 key={item.id}
-                onClick={() => handleCardToggle(item.id, item.name)}
+                onClick={() => handleCardSelect(item.id, item.name)}
                 className={`relative rounded-xl p-3 md:p-4 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
                   active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
                 } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
@@ -398,27 +397,41 @@ export function FriendshipCardSection() {
                 <p className="mt-3 font-display tracking-[0.2em] text-xs text-off-white">{item.name}</p>
 
                 <div className="mt-3 flex gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    type="button"
-                    disabled={disabled}
-                    title={
-                      active
-                        ? "Tap to add another copy of this design"
-                        : "Tap to select this design"
-                    }
-                    onClick={() =>
-                      active
-                        ? handleQtyClick(item.id, item.name)
-                        : handleCardToggle(item.id, item.name)
-                    }
-                    className={`flex-1 min-w-0 rounded-full px-3 py-1.5 text-[0.7rem] font-semibold transition border truncate ${
-                      active
-                        ? "bg-off-white text-rose-wine border-off-white hover:bg-off-white/90"
-                        : "bg-transparent text-off-white border-pink-mist/50 hover:bg-off-white/10"
-                    } disabled:cursor-not-allowed`}
-                  >
-                    {active ? `Qty ×${count}` : "Select"}
-                  </button>
+                  {active ? (
+                    <div className="flex flex-1 min-w-0 items-center justify-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleDecreaseQty(item.id, item.name)}
+                        aria-label={`Decrease ${item.name} quantity`}
+                        title="Decrease quantity"
+                        className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-pink-mist/60 text-off-white transition hover:bg-off-white/10"
+                      >
+                        <Minus className="h-3.5 w-3.5" />
+                      </button>
+                      <span className="flex h-8 min-w-[4.5rem] items-center justify-center rounded-full border border-off-white bg-off-white px-2 text-[0.7rem] font-semibold text-rose-wine">
+                        Qty ×{count}
+                      </span>
+                      <button
+                        type="button"
+                        onClick={() => handleIncreaseQty(item.id, item.name)}
+                        disabled={count >= 2 || selectedFriendshipDesignIds.length >= designLimit}
+                        aria-label={`Increase ${item.name} quantity`}
+                        title="Increase quantity"
+                        className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-pink-mist/60 text-off-white transition hover:bg-off-white/10 disabled:cursor-not-allowed disabled:opacity-35"
+                      >
+                        <Plus className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      type="button"
+                      disabled={disabled}
+                      onClick={() => handleCardSelect(item.id, item.name)}
+                      className="flex-1 min-w-0 rounded-full border border-pink-mist/50 bg-transparent px-3 py-1.5 text-[0.7rem] font-semibold text-off-white transition hover:bg-off-white/10 disabled:cursor-not-allowed"
+                    >
+                      Select
+                    </button>
+                  )}
                   <button
                     type="button"
                     onClick={() => setOpenDesignIdx(idx)}
