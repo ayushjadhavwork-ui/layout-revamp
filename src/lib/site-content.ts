@@ -606,6 +606,8 @@ export const SITE = {
       "tpl-32": ["/media/templates/32.webp"],
       "tpl-33": ["/media/templates/33.webp"],
       "tpl-34": ["/media/templates/34.webp"],
+      "tpl-35": ["/media/templates/35.webp"],
+    
 
     // ── Package / sizes thumbnails + size guides ─────────────────
     // By default the site auto-loads:
