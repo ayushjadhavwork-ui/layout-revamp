@@ -189,32 +189,276 @@ export const SITE = {
   //    Anything you leave out of an override falls back to the defaults.
   // ────────────────────────────────────────────────────────────────
   templateInfo: {
-    defaults: {
-      // Short paragraph under the title. Leave "" to use the built-in one.
-      description: "",
-      includedLabel: "What's included",
-      included: [
-        "Symmetric right–left spread",
-        "Editorial typography & grid",
-        "Fully customised with your photos",
-      ],
-      requirementsLabel: "What we need from you",
-      requirements: [
-        "4–6 clear photos (portrait works best)",
-        "A short caption or note for the page",
-      ],
-      // Optional extra note in italics at the bottom. Leave "" to hide.
-      note: "",
-    },
-    overrides: {
-      // "tpl-1": {
-      //   description: "A bold opening spread for your first chapter.",
-      //   included: ["Full-bleed hero photo", "Handwritten-style caption"],
-      //   requirements: ["1 wide landscape photo", "2 portrait photos"],
-      //   note: "Best with high-resolution photos.",
-      // },
-    } as Record<string, Partial<TemplateInfo>>,
+  defaults: {
+    description: "",
+    includedLabel: "What's included",
+    included: [
+      "Editorial typography & grid",
+      "Fully customised with your photos",
+    ],
+    requirementsLabel: "What we need from you",
+    requirements: [],
+    note: "After ordering, we'll share a Google Drive link for your photos and a Google Form for any text/details. Please upload clear, high-quality photos and the exact number listed.",
   },
+  overrides: {
+    "tpl-1": {
+      description: "A get-to-know-her profile page, from favourites and qualities to dreams and a short bio.",
+      included: ["Profile-style layout", "Fully customised with your photos", "Your details woven into the design"],
+      requirements: [
+        "9 photos",
+        "Name, age, birthday/month, personality, hobbies/interests, favourites, qualities, dreams/goals and a short bio",
+      ],
+    },
+    "tpl-2": {
+      description: "A friendship spread celebrating your bond, favourite memories and special moments.",
+      included: ["Friendship story layout", "Space for memories & moments", "Fully customised with your photos"],
+      requirements: [
+        "8–10 photos",
+        "Friendship story, friends' names, favourite memories, special moments, a friendship message and a short bond write-up",
+      ],
+    },
+    "tpl-3": {
+      description: "A clean photo spread dedicated to the people who matter most to her.",
+      included: ["Photo-only layout", "Fully customised with your photos"],
+      requirements: ["6 photos", "No text or additional details required"],
+    },
+    "tpl-4": {
+      description: "A single-photo doodle-style page with a birthday message and a personal touch.",
+      included: ["Doodle-style single-photo page", "Birthday message space"],
+      requirements: [
+        "1 photo",
+        "Birthday message and a short description or quote",
+      ],
+    },
+    "tpl-5": {
+      description: "A travel-themed page that puts your favourite destinations in the spotlight.",
+      included: ["Travel-journal layout", "Fully customised with your photos"],
+      requirements: [
+        "5 photos",
+        "3 country/city names (names only)",
+      ],
+    },
+    "tpl-6": {
+      description: "A collection of her favourite movies, TV series, anime and more.",
+      included: ["Favourites grid layout", "Fully customised with your images"],
+      requirements: [
+        "12 photos of her favourite movies, TV series, anime or similar",
+        "No text required",
+      ],
+    },
+    "tpl-7": {
+      description: "A fun quiz page that tests how well everyone knows her.",
+      included: ["Quiz-style layout", "Q&A section", "Fully customised with your photos"],
+      requirements: [
+        "2 photos",
+        "5 questions and their answers",
+      ],
+    },
+    "tpl-8": {
+      description: "A pure photo gallery of your favourite moments together.",
+      included: ["Gallery layout", "Fully customised with your photos"],
+      requirements: ["10 photos", "No text or additional details required"],
+    },
+    "tpl-9": {
+      description: "A foodie feature covering her favourite dishes, restaurants and eating habits.",
+      included: ["Food-magazine style layout", "Space for foodie details", "Fully customised with your photos"],
+      requirements: [
+        "7 photos",
+        "Favourite foods/restaurants, preferences, habits and a short foodie description",
+      ],
+    },
+    "tpl-10": {
+      description: "A fashion editorial showing off her personal style.",
+      included: ["Fashion-editorial layout", "Style write-up section", "Fully customised with your photos"],
+      requirements: [
+        "10 photos",
+        "Style details or a short write-up about her fashion/style",
+      ],
+    },
+    "tpl-11": {
+      description: "A photo spread that celebrates staying close, no matter what.",
+      included: ["Photo-only layout", "Fully customised with your photos"],
+      requirements: ["6 photos", "No text or additional details required"],
+    },
+    "tpl-12": {
+      description: "A self-love page about confidence, growth and putting yourself first.",
+      included: ["Personal write-up section", "Quote/message space", "Fully customised with your photos"],
+      requirements: [
+        "3 photos",
+        "A personal write-up about her journey, confidence or self-love, or a meaningful message/quote",
+      ],
+    },
+    "tpl-13": {
+      description: "Turn her life into a streaming-style show, complete with a custom title and tagline.",
+      included: ["Streaming-inspired layout", "Custom title & tagline", "Fully customised with your photos"],
+      requirements: [
+        "11 photos",
+        "Name, custom title/tagline and a short description or fun one-liner",
+      ],
+    },
+    "tpl-14": {
+      description: "A birthday-edition page with a headline, message and a fun quote.",
+      included: ["Birthday headline layout", "Message & quote sections", "Fully customised with your photos"],
+      requirements: [
+        "3 photos",
+        "Name, age, birthday date/year, headline, a short message/story and a fun quote",
+      ],
+    },
+    "tpl-15": {
+      description: "A classic birthday spread with a headline and heartfelt message.",
+      included: ["Birthday layout", "Headline & message sections", "Fully customised with your photos"],
+      requirements: [
+        "6 photos",
+        "Name, birthday date, age, birthday headline and a short birthday message/write-up",
+      ],
+    },
+    "tpl-16": {
+      description: "A spotlight page that makes her the main character of the story.",
+      included: ["Feature-story layout", "Personal headline & write-up", "Fully customised with your photos"],
+      requirements: [
+        "5 photos",
+        "Name, personal headline/title and a short write-up about her personality, journey, dreams or what makes her special",
+      ],
+    },
+    "tpl-17": {
+      description: "A romantic couple spread with a love letter or your story together.",
+      included: ["Couple layout", "Love letter/message section", "Fully customised with your photos"],
+      requirements: [
+        "5 photos",
+        "Names, date, romantic headline/title and a short love letter/message or couple write-up",
+      ],
+    },
+    "tpl-18": {
+      description: "A birthday spread styled like a film roll, packed with photos.",
+      included: ["Film-roll layout", "Birthday headline & message", "Fully customised with your photos"],
+      requirements: [
+        "13 photos",
+        "Name, birthday date, age, birthday headline and a short birthday message/write-up",
+      ],
+    },
+    "tpl-19": {
+      description: "A front-page newspaper made entirely about her, with your own headline and story.",
+      included: ["Newspaper-style layout", "Custom headline & article", "Fully customised with your photos"],
+      requirements: [
+        "15 photos",
+        "Name, occasion/birthday details, headline/title and the personalised newspaper write-up/content",
+      ],
+    },
+    "tpl-20": {
+      description: "A monthly recap of moments and memories, with captions.",
+      included: ["Recap layout", "Caption/write-up sections", "Fully customised with your photos"],
+      requirements: [
+        "16 photos",
+        "Month/date, memory-lane or recap headline and a short write-up/captions describing memories, moments or the month",
+      ],
+    },
+    "tpl-21": {
+      description: "A playlist-style page built around her favourite songs and music taste.",
+      included: ["Playlist-inspired layout", "Song list section", "Fully customised with your photos"],
+      requirements: [
+        "12 photos",
+        "Playlist title, subtitle/description, 4 favourite songs with artists and a short write-up about her music taste",
+      ],
+    },
+    "tpl-22": {
+      description: "A celebration of the lovely people in her life and the memories you share.",
+      included: ["People-focused layout", "Message section", "Fully customised with your photos"],
+      requirements: [
+        "13 photos",
+        "Page headline/title, names of the people featured and a short write-up or message about the people/memories",
+      ],
+    },
+    "tpl-23": {
+      description: "A music-led tribute pairing meaningful songs with the reasons they remind you of her.",
+      included: ["Song-tribute layout", "Explanation for each song", "Fully customised with your photos"],
+      requirements: [
+        "17 photos",
+        "Headline/title, 3–5 meaningful songs with artists and why each song is meaningful",
+      ],
+    },
+    "tpl-24": {
+      description: "A friendship tribute with a big headline, names and a heartfelt message.",
+      included: ["Friendship layout", "Headline & message sections", "Fully customised with your photos"],
+      requirements: [
+        "15 photos",
+        "Main headline/title, names of the people featured and a short write-up/message about friendship, memories or special moments",
+      ],
+    },
+    "tpl-25": {
+      description: "A story-led page that captures who she is, with two standout photos.",
+      included: ["Story-feature layout", "Headline & write-up", "Fully customised with your photos"],
+      requirements: [
+        "2 photos",
+        "Name, main headline/title and a short write-up about her personality, journey, dreams, memories or what makes her special",
+      ],
+    },
+    "tpl-26": {
+      description: "A photo-booth style recap of the year's memories and moments.",
+      included: ["Photo-booth strip layout", "Headline & year", "Fully customised with your photos"],
+      requirements: [
+        "4 photos",
+        "Main headline/title, year and a short write-up about memories, moments or stories",
+      ],
+    },
+    "tpl-27": {
+      description: "A playful user manual that explains her personality, quirks and how to handle her.",
+      included: ["User-manual style layout", "Trait descriptions", "Fully customised with your photo"],
+      requirements: [
+        "1 photo",
+        "Name, short tagline and 4–5 personality traits or user-manual style descriptions",
+      ],
+    },
+    "tpl-28": {
+      description: "A page about growth and who she's becoming, with a closing quote.",
+      included: ["Personality-feature layout", "Closing quote/message", "Fully customised with your photos"],
+      requirements: [
+        "7 photos",
+        "Name, short tagline, 2–3 personality traits, a short personality/dreams description and a closing quote/message",
+      ],
+    },
+    "tpl-29": {
+      description: "An all-about-me photo page that lets the pictures do the talking.",
+      included: ["Photo-only layout", "Fully customised with your photos"],
+      requirements: ["6 photos", "No text or additional details required"],
+    },
+    "tpl-30": {
+      description: "Eight photos, eight reasons to love her.",
+      included: ["8-photo layout", "Fully customised with your photos"],
+      requirements: ["8 photos", "No text or additional details required"],
+    },
+    "tpl-31": {
+      description: "A classic photo collage of your favourite moments.",
+      included: ["Collage layout", "Fully customised with your photos"],
+      requirements: ["7 photos", "No text or additional details required"],
+    },
+    "tpl-32": {
+      description: "Her whole world in one big spread, with 32 photos, a personality intro and heartfelt messages.",
+      included: ["Large photo-spread layout", "Personality description & messages", "Fully customised with your photos"],
+      requirements: [
+        "32 photos",
+        "Name, a short description of her personality, a heartfelt/funny message for her and a closing message or quote",
+      ],
+    },
+    "tpl-33": {
+      description: "A photo-only page made up of little pieces of her.",
+      included: ["Photo-only layout", "Fully customised with your photos"],
+      requirements: ["7 photos", "No text or additional details required"],
+    },
+    "tpl-34": {
+      description: "A birthday page with a heartfelt message and a short closing quote.",
+      included: ["Birthday layout", "Message & closing quote", "Fully customised with your photos"],
+      requirements: [
+        "8 photos",
+        "Birthday message and a short closing quote/message",
+      ],
+    },
+    "tpl-35": {
+      description: "A simple, cheerful photo page to brighten her day.",
+      included: ["Photo-only layout", "Fully customised with your photos"],
+      requirements: ["4 photos", "No text or additional details required"],
+    },
+  } as Record<string, Partial<TemplateInfo>>,
+},
 
   // ────────────────────────────────────────────────────────────────
   // MANDATORY PAGES — note shown at the bottom of that section
@@ -294,7 +538,7 @@ export const SITE = {
   // "tpl-<n>": ["/media/templates/<n>.webp"] line into productImages
   // below (Template <n> just shows a placeholder until you do).
   // ────────────────────────────────────────────────────────────────
-  templateCount: 34,       
+  templateCount: 35,       
 
   // ────────────────────────────────────────────────────────────────
   // PRODUCT IMAGES (for the e-commerce modal)
@@ -362,6 +606,8 @@ export const SITE = {
       "tpl-32": ["/media/templates/32.webp"],
       "tpl-33": ["/media/templates/33.webp"],
       "tpl-34": ["/media/templates/34.webp"],
+      "tpl-35": ["/media/templates/35.webp"],
+    
 
     // ── Package / sizes thumbnails + size guides ─────────────────
     // By default the site auto-loads:

@@ -104,14 +104,14 @@ export const PRICES = {
   // NEWSPAPER MAGAZINE (standalone keepsake)
   // -------------------------------------------------------
   newspaper: {
-    "news-mag": 250,
+    "news-mag": 400,
   },
 
   // -------------------------------------------------------
   // POCKET MAGAZINE (standalone, strictly 6 pages, pocket-sized)
   // -------------------------------------------------------
   pocket: {
-    "pocket-mag": 300,
+    "pocket-mag": 350,
   },
 
   // -------------------------------------------------------
