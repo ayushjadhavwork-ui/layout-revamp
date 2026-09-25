@@ -209,8 +209,8 @@ export function TemplateDetailModal({
 
   const label = `Template ${String(templateIndex + 1).padStart(2, "0")}`;
   const hero = templateHero(item.id);
-  // Copy comes from SITE.templateInfo — defaults, optionally overridden per id.
-  const info = { ...SITE.templateInfo.defaults, ...(SITE.templateInfo.overrides?.[item.id] ?? {}) };
+  // Every template has one explicit, easily editable entry in site-content.ts.
+  const info = SITE.templateInfo[item.id];
 
 
   const handleToggle = () => {
@@ -243,38 +243,24 @@ export function TemplateDetailModal({
             {label}
           </h3>
           <ReviewStars avg={avg} count={reviews.length} />
-          <p className="mt-4 text-3xl font-semibold text-blush-rose">Included</p>
           <div className="mt-4 h-px bg-rose-wine/10" />
-          <p className="mt-4 text-sm leading-relaxed text-neutral-700">{info.description || item.desc}</p>
-          {info.included.length > 0 && (
-            <>
-              {info.includedLabel && (
-                <p className="mt-4 text-xs font-semibold uppercase tracking-[0.25em] text-rose-wine">
-                  {info.includedLabel}
+          {info && (
+            <div className="mt-4 space-y-5 text-neutral-700">
+              <h4 className="font-display text-2xl text-rose-wine">{info.title}</h4>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-rose-wine">
+                  Photos Required
                 </p>
-              )}
-              <ul className="mt-2 space-y-1.5 text-sm text-neutral-700">
-                {info.included.map((b) => (
-                  <li key={b}>• {b}</li>
-                ))}
-              </ul>
-            </>
-          )}
-          {info.requirements.length > 0 && (
-            <>
-              {info.requirementsLabel && (
-                <p className="mt-4 text-xs font-semibold uppercase tracking-[0.25em] text-rose-wine">
-                  {info.requirementsLabel}
+                <p className="mt-1 text-sm leading-relaxed">{info.photosRequired}</p>
+              </div>
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.25em] text-rose-wine">
+                  Details Required
                 </p>
-              )}
-              <ul className="mt-2 space-y-1.5 text-sm text-neutral-700">
-                {info.requirements.map((b) => (
-                  <li key={b}>• {b}</li>
-                ))}
-              </ul>
-            </>
+                <p className="mt-1 text-sm leading-relaxed">{info.detailsRequired}</p>
+              </div>
+            </div>
           )}
-          {info.note && <p className="mt-4 text-xs italic text-dusty-rose">{info.note}</p>}
 
 
           <button
