@@ -496,15 +496,9 @@ export const SITE = {
 
       // The Memory Card — first image is the open-card thumbnail; second is
       // the cover. Both appear in the swipeable detail pop-up.
-<<<<<<< HEAD
-      "memory-birthday": [birthdayOpen.url, birthdayCover.url],
-      "memory-friendship": [friendshipOpen.url, friendshipCover.url],
-      "memory-lover": [loverOpen.url, loverCover.url],
-=======
       "memory-birthday": ["/media/BIRTHDAY_01.webp", "/media/BIRTHDAY_02.webp"],
       "memory-friendship": ["/media/FRIEND_01.webp", "/media/FRIEND_02.webp"],
       "memory-lover": ["/media/LOVE_01.webp", "/media/LOVE_02.webp"],
->>>>>>> d065f4ef1403749d85bbe4effade5db51dcbf275
   } as Record<string, string[]>,
 
   // ────────────────────────────────────────────────────────────────
