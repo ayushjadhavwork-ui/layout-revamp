@@ -1,6 +1,6 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { CATALOG, STRIP_TIERS, STRIP_MAX, POCKET_TEMPLATE_LIMIT, COMBO_RECIPES, COUPON_FREEBIES, type Product, type Category, type SizeFormat } from "./catalog";
+import { CATALOG, STRIP_TIERS, STRIP_MAX, MEMORY_CARD_TIERS, MEMORY_CARD_MAX, POCKET_TEMPLATE_LIMIT, COMBO_RECIPES, COUPON_FREEBIES, type Product, type Category, type SizeFormat } from "./catalog";
 
 
 export type CartItem = {
@@ -43,6 +43,9 @@ type State = {
   // Friendship Card line at a time) rather than multi-unit like Pocket.
   selectedFriendshipId: string | null;
   selectedFriendshipDesignIds: string[];
+  // A multiset of Memory Card design ids. Quantity determines the bundle
+  // price, and the same design may appear up to three times.
+  selectedMemoryCardDesignIds: string[];
   stripSelections: string[];
   coupon: { code: string; percent: number } | null;
   cartId: string | null;
@@ -69,6 +72,8 @@ type State = {
   setFriendship: (friendId: string) => void;
   addFriendshipDesign: (id: string) => boolean; // false when no tier chosen or pick list full
   removeFriendshipDesign: (id: string) => boolean; // false when this design isn't picked
+  addMemoryCardDesign: (id: string) => boolean;
+  removeMemoryCardDesign: (id: string) => boolean;
   toggleStrip: (id: string) => boolean; // returns success; false if cap reached
   setCoupon: (c: State["coupon"]) => void;
   applyCouponFreebie: (code: string) => void;
@@ -84,6 +89,7 @@ type State = {
   templateLimit: () => number;
   pocketTemplateLimit: () => number;
   friendshipDesignLimit: () => number;
+  memoryCardLimit: () => number;
 };
 
 
@@ -107,6 +113,30 @@ const friendshipDesignCartLines = (ids: string[]) => {
   });
 };
 
+const memoryCardCartLines = (ids: string[]): CartItem[] => {
+  if (ids.length === 0) return [];
+  const counts = new Map<string, number>();
+  for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
+  const parent: CartItem = {
+    key: key("memory-card", "bundle"),
+    category: "memory-card",
+    id: "bundle",
+    name: `The Memory Card × ${ids.length}`,
+    price: MEMORY_CARD_TIERS[ids.length] ?? 0,
+  };
+  const designs = [...counts].map(([id, n]) => {
+    const design = CATALOG["memory-card-designs"].find((item) => item.id === id);
+    return {
+      key: key("memory-card-designs", id),
+      category: "memory-card-designs" as Category,
+      id,
+      name: n > 1 ? `${design?.name ?? id} ×${n}` : design?.name ?? id,
+      price: 0,
+    };
+  });
+  return [parent, ...designs];
+};
+
 // Identifies one Pocket Magazine among several in the same cart — never
 // persisted/parsed as meaningful data, just needs to be unique per unit.
 const genUid = () => `${Date.now().toString(36)}${Math.random().toString(36).slice(2, 8)}`;
@@ -119,7 +149,7 @@ const dropCombo = (cart: CartItem[]) => cart.filter((c) => c.category !== "combo
 // Categories no combo recipe ever touches — picking these alongside an active
 // combo (delivery, the unrelated Newspaper/Pocket Magazine products, or a
 // coupon freebie) must not blow away the combo.
-const COMBO_INDEPENDENT: Category[] = ["delivery", "newspaper", "pocket", "pocket-templates", "friendship", "friendship-designs", "promotions"];
+const COMBO_INDEPENDENT: Category[] = ["delivery", "newspaper", "pocket", "pocket-templates", "friendship", "friendship-designs", "memory-card", "memory-card-designs", "promotions"];
 
 // Categories a combo recipe can auto-populate — selecting a combo must clear
 // any of these picked manually beforehand, or their real price would sit in
@@ -137,6 +167,7 @@ export const useStore = create<State>()(
   pocketUnits: [],
   selectedFriendshipId: null,
   selectedFriendshipDesignIds: [],
+  selectedMemoryCardDesignIds: [],
   stripSelections: [],
   coupon: null,
   cartId: null,
@@ -220,6 +251,21 @@ export const useStore = create<State>()(
       }
       if (item?.category === "friendship-designs") {
         patch.selectedFriendshipDesignIds = s.selectedFriendshipDesignIds.filter((id) => id !== item.id);
+      }
+      if (item?.category === "memory-card") {
+        patch.cart = cart.filter((c) => c.category !== "memory-card-designs");
+        patch.selectedMemoryCardDesignIds = [];
+      }
+      if (item?.category === "memory-card-designs") {
+        const idx = s.selectedMemoryCardDesignIds.lastIndexOf(item.id);
+        const nextIds = idx === -1
+          ? s.selectedMemoryCardDesignIds
+          : s.selectedMemoryCardDesignIds.filter((_, i) => i !== idx);
+        patch.selectedMemoryCardDesignIds = nextIds;
+        patch.cart = [
+          ...cart.filter((c) => c.category !== "memory-card" && c.category !== "memory-card-designs"),
+          ...memoryCardCartLines(nextIds),
+        ];
       }
       if (item?.category === "strips") {
         patch.stripSelections = [];
@@ -435,6 +481,36 @@ export const useStore = create<State>()(
     return true;
   },
 
+  addMemoryCardDesign: (id) => {
+    const s = get();
+    if (!CATALOG["memory-card-designs"].some((item) => item.id === id)) return false;
+    if (s.selectedMemoryCardDesignIds.length >= MEMORY_CARD_MAX) return false;
+    const nextIds = [...s.selectedMemoryCardDesignIds, id];
+    set({
+      selectedMemoryCardDesignIds: nextIds,
+      cart: [
+        ...s.cart.filter((c) => c.category !== "memory-card" && c.category !== "memory-card-designs"),
+        ...memoryCardCartLines(nextIds),
+      ],
+    });
+    return true;
+  },
+
+  removeMemoryCardDesign: (id) => {
+    const s = get();
+    const idx = s.selectedMemoryCardDesignIds.lastIndexOf(id);
+    if (idx === -1) return false;
+    const nextIds = s.selectedMemoryCardDesignIds.filter((_, i) => i !== idx);
+    set({
+      selectedMemoryCardDesignIds: nextIds,
+      cart: [
+        ...s.cart.filter((c) => c.category !== "memory-card" && c.category !== "memory-card-designs"),
+        ...memoryCardCartLines(nextIds),
+      ],
+    });
+    return true;
+  },
+
   toggleStrip: (id) => {
     const s = get();
     // A manual strip change breaks an active combo cleanly rather than
@@ -575,6 +651,7 @@ export const useStore = create<State>()(
     pocketUnits: [],
     selectedFriendshipId: null,
     selectedFriendshipDesignIds: [],
+    selectedMemoryCardDesignIds: [],
     stripSelections: [],
     coupon: null,
     cartId: null,
@@ -600,6 +677,7 @@ export const useStore = create<State>()(
     if (!s.selectedFriendshipId) return 0;
     return CATALOG.friendship.find((f) => f.id === s.selectedFriendshipId)?.designLimit ?? 0;
   },
+  memoryCardLimit: () => MEMORY_CARD_MAX,
     }),
     {
       name: "the-layout-cart",
@@ -622,19 +700,24 @@ export const useStore = create<State>()(
       // with zero designs picked. migrate() strips any pre-v3
       // friendship/friendship-designs lines for the same reason v2 strips
       // pre-v2 pocket lines.
-      version: 3,
+      // v4 adds the Memory Card multiset. Old carts have no related lines,
+      // so initializing its selection list is sufficient.
+      version: 4,
       migrate: (persisted, version) => {
         const s = persisted as Record<string, unknown>;
-        if (!s || typeof s !== "object" || version >= 3) return s;
+        if (!s || typeof s !== "object" || version >= 4) return s;
         let cart = Array.isArray(s.cart) ? (s.cart as CartItem[]) : [];
         const patch: Record<string, unknown> = { ...s };
         if (version < 2) {
           cart = cart.filter((c) => c.category !== "pocket" && c.category !== "pocket-templates");
           patch.pocketUnits = [];
         }
-        cart = cart.filter((c) => c.category !== "friendship" && c.category !== "friendship-designs");
-        patch.selectedFriendshipId = null;
-        patch.selectedFriendshipDesignIds = [];
+        if (version < 3) {
+          cart = cart.filter((c) => c.category !== "friendship" && c.category !== "friendship-designs");
+          patch.selectedFriendshipId = null;
+          patch.selectedFriendshipDesignIds = [];
+        }
+        patch.selectedMemoryCardDesignIds = [];
         patch.cart = cart;
         return patch;
       },
@@ -655,6 +738,7 @@ export const useStore = create<State>()(
         pocketUnits: s.pocketUnits,
         selectedFriendshipId: s.selectedFriendshipId,
         selectedFriendshipDesignIds: s.selectedFriendshipDesignIds,
+        selectedMemoryCardDesignIds: s.selectedMemoryCardDesignIds,
         stripSelections: s.stripSelections,
         coupon: s.coupon,
         cartId: s.cartId,
