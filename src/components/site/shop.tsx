@@ -555,6 +555,10 @@ export function CartDrawer({
       return m ? m[1].padStart(2, "0") : c.id;
     });
 
+  const memoryCardDesigns = cart
+    .filter((c) => c.category === "memory-card-designs")
+    .map((c) => c.name);
+
   const activeCombo = cart.find((c) => c.category === "combos");
   const comboOriginal = activeCombo ? comboRealTotal(activeCombo.id) : 0;
   const comboSavings = activeCombo ? Math.max(0, comboOriginal - activeCombo.price) : 0;
@@ -564,7 +568,7 @@ export function CartDrawer({
   // "friendship" row (same relationship templates have to a magazine's
   // "sizes" row) — fold them into a note under that row (below) instead of
   // letting them leak through as their own bare ₹0.00-ish rows.
-  const mainItems = cart.filter((c) => c.category !== "promotions" && c.category !== "friendship-designs");
+  const mainItems = cart.filter((c) => c.category !== "promotions" && c.category !== "friendship-designs" && c.category !== "memory-card-designs");
 
   if (!open) return null;
 
@@ -599,6 +603,11 @@ export function CartDrawer({
                   {item.category === "friendship" && friendshipDesignNumbers.length > 0 && (
                     <p className="mt-1 text-xs text-neutral-600">
                       Design: [{friendshipDesignNumbers.join(", ")}]
+                    </p>
+                  )}
+                  {item.category === "memory-card" && memoryCardDesigns.length > 0 && (
+                    <p className="mt-1 text-xs text-neutral-600">
+                      Designs: {memoryCardDesigns.join(", ")}
                     </p>
                   )}
                   {item.note && <p className="mt-1 text-xs text-neutral-600 italic">"{item.note}"</p>}

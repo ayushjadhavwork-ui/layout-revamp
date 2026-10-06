@@ -19,7 +19,7 @@ the engineering map.
 
 **The Layout** is a single-page e-commerce site selling custom-printed
 keepsakes: magazines (Standard A4 / Mini A5, page-count tiers), a Pocket
-Magazine, a Newspaper Magazine, a Friendship Card, polaroid packs, polaroid
+Magazine, a Newspaper Magazine, The Memory Card, a Friendship Card, polaroid packs, polaroid
 strips, and add-ons (gift wrap, handwritten letter), plus curated
 bundle "combos." Checkout collects customer details and a manually-uploaded
 UPI payment screenshot — there is **no payment gateway** and **no login/auth
@@ -32,6 +32,15 @@ The whole customer-facing site is **one route** (`/`, `src/routes/index.tsx`)
 page (`/happy-customers`) for a testimonials wall.
 
 ---
+
+### The Memory Card
+
+This standalone category appears immediately below Newspaper Magazine. It
+offers Birthday, Friendship Club, and Lover Era designs. Selection is a
+multiset capped at three total cards, so customers may mix designs or choose
+three copies of one. Bundle pricing is ₹150 for one, ₹220 for two, and ₹300
+for three. Editable copy is centralized in `SITE.memoryCardInfo`; invoice and
+shipping output aggregate the chosen quantities under one Memory Card line.
 
 ## 2. Tech stack
 

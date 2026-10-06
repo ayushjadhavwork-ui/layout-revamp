@@ -131,6 +131,17 @@ export const PRICES = {
     "friend-single": 599,
     "friend-duo": 899,
   },
+
+  // -------------------------------------------------------
+  // THE MEMORY CARD — bundle price by total cards selected.
+  // Customers may mix designs or repeat one design; the total
+  // quantity (1, 2, or 3) chooses the matching bundle price.
+  // -------------------------------------------------------
+  memoryCardTiers: {
+    1: 150, // any 1 Memory Card
+    2: 220, // any 2 Memory Cards
+    3: 300, // any 3 Memory Cards
+  },
 } as const;
 
 // ===========================================================

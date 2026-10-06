@@ -34,6 +34,10 @@ stats → magazine packages (A4 / A5 Mini toggle) → mandatory pages → templa
 strips (bundle pricing) → polaroid packs → reels → FAQ → cart drawer +
 payment/success modals → spin-the-wheel popup → WhatsApp button.
 
+The standalone product area also includes Newspaper Magazine, The Memory
+Card (three mix-and-match designs with 1/2/3-card bundle pricing), Pocket
+Magazine, and Friendship Card.
+
 ## Run locally
 
 ```bash

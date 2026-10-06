@@ -321,12 +321,15 @@ function buildInvoiceHtml_(order) {
     const m = String(t.id).match(/card-(\d+)/);
     return m ? m[1].padStart(2, "0") : escapeHtml_(t.name);
   });
-  const invoiceCart = cart.filter((c) => c.category !== "templates" && c.category !== "pocket-templates" && c.category !== "friendship-designs");
+  const memoryCardDesignItems = cart.filter((c) => c.category === "memory-card-designs");
+  const memoryCardDesignLabels = memoryCardDesignItems.map((item) => escapeHtml_(item.name));
+  const invoiceCart = cart.filter((c) => c.category !== "templates" && c.category !== "pocket-templates" && c.category !== "friendship-designs" && c.category !== "memory-card-designs");
 
   const rows = invoiceCart.map((item) => {
     const isSize = item.category === "sizes";
     const isPocket = item.category === "pocket";
     const isFriendship = item.category === "friendship";
+    const isMemoryCard = item.category === "memory-card";
     // Standard and Mini share the same item.name ("8 Pages", etc.) — the
     // format only shows up in the id suffix (sz-8 vs sz-8-mini) — so spell
     // it out here or the invoice can't tell the customer which one they got.
@@ -343,6 +346,8 @@ function buildInvoiceHtml_(order) {
         // second leading dash there reads as a typo, not two separate names.
         : isFriendship
           ? ("Friendship Card (" + item.name + ")")
+          : isMemoryCard
+            ? "The Memory Card"
           : item.name;
     const notes = [];
     if (item.note) notes.push(escapeHtml_(item.note));
@@ -354,12 +359,18 @@ function buildInvoiceHtml_(order) {
       if (pocketLabels.length) notes.push("Templates:- " + pocketLabels.join(", "));
     }
     if (isFriendship && friendshipDesignLabels.length) notes.push("Design:- " + friendshipDesignLabels.join(", "));
+    if (isMemoryCard && memoryCardDesignLabels.length) notes.push("Designs:- " + memoryCardDesignLabels.join(", "));
+    const memoryQuantity = isMemoryCard ? Math.max(1, memoryCardDesignItems.reduce((sum, design) => {
+      const match = String(design.name || "").match(/×(\d+)/);
+      return sum + (match ? Number(match[1]) : 1);
+    }, 0)) : 1;
+    const rate = isMemoryCard ? (Number(item.price) || 0) / memoryQuantity : Number(item.price) || 0;
     const noteHtml = notes.length ? ('<div class="item-note">' + notes.join(" · ") + "</div>") : "";
     return (
       "<tr>" +
       "<td>" + escapeHtml_(label) + noteHtml + "</td>" +
-      '<td class="num">1</td>' +
-      '<td class="num">' + formatINR_(item.price) + "</td>" +
+      '<td class="num">' + memoryQuantity + "</td>" +
+      '<td class="num">' + formatINR_(rate) + "</td>" +
       '<td class="num">' + formatINR_(item.price) + "</td>" +
       "</tr>"
     );
@@ -489,6 +500,7 @@ function shippingItemLabel_(item) {
     case "pocket": return "Pocket Magazine";
     case "newspaper": return "Newspaper Magazine";
     case "friendship": return "Friendship Card";
+    case "memory-card": return "Memory Card";
     case "polaroids": return "Polaroid Pack";
     case "strips": return "Polaroid Strips";
     case "addons": return "Add-on";
@@ -513,13 +525,20 @@ function shippingItemSummaryLines_(cart) {
   // same way templates/pocket-templates are — they're zero-cost
   // sub-selections of the "friendship" row, not their own product; without
   // this they'd otherwise leak through as bogus "Card 01" etc. lines here.
-  const EXCLUDE = { templates: true, "pocket-templates": true, "friendship-designs": true, delivery: true };
+  const EXCLUDE = { templates: true, "pocket-templates": true, "friendship-designs": true, "memory-card-designs": true, delivery: true };
   const counts = {};
   const order = [];
   cart.forEach((item) => {
     if (EXCLUDE[item.category]) return;
     if (item.comboId) return;
     const label = shippingItemLabel_(item);
+    if (item.category === "memory-card") {
+      const match = String(item.name || "").match(/×\s*(\d+)/);
+      const quantity = match ? Number(match[1]) : 1;
+      counts[label] = (counts[label] || 0) + quantity;
+      if (order.indexOf(label) === -1) order.push(label);
+      return;
+    }
     if (!(label in counts)) order.push(label);
     counts[label] = (counts[label] || 0) + 1;
   });
