@@ -22,6 +22,13 @@ export type TemplateInfo = {
   detailsRequired: string;
 };
 
+export type MemoryCardInfo = {
+  name: string;
+  description: string;
+  photosRequired: string;
+  detailsRequired: string;
+};
+
 export const SITE = {
   // ────────────────────────────────────────────────────────────────
   // BRAND
@@ -223,6 +230,32 @@ export const SITE = {
     "tpl-34": { title: "Happiest Birthday", photosRequired: "8 photos", detailsRequired: "Birthday message and a short closing quote/message." },
     "tpl-35": { title: "Have a Good Day", photosRequired: "4 photos", detailsRequired: "No text or additional details required." },
   } as Record<string, TemplateInfo>,
+
+  // ────────────────────────────────────────────────────────────────
+  // MEMORY CARD INFORMATION
+  // Each design's pop-up reads only this explicit record. Edit text inside
+  // quotes to update the name, description, photo, or detail requirement.
+  // ────────────────────────────────────────────────────────────────
+  memoryCardInfo: {
+    "memory-birthday": {
+      name: "The Birthday Card",
+      description: "A personalised little birthday keepsake to make their special day even more memorable. Add a favourite photo and a few words they'll want to keep forever.",
+      photosRequired: "1 horizontal photo",
+      detailsRequired: "A few lines of text — a birthday message, memory, or wishes.",
+    },
+    "memory-friendship": {
+      name: "The Friendship Club Card",
+      description: "For the besties, the day-ones, and all the memories that deserve more than just a place in your camera roll. A tiny card made for your favourite friendship moments.",
+      photosRequired: "1 horizontal photo",
+      detailsRequired: "A few lines of text — an inside joke, memory, or message for your bestie.",
+    },
+    "memory-lover": {
+      name: "The Lover Era Card",
+      description: "A cute little keepsake for your favourite person — made to turn your favourite moment together into something you can actually keep. Perfect for anniversaries, special moments, or just because.",
+      photosRequired: "1 horizontal photo",
+      detailsRequired: "A few lines of text — a message, memory, or little note for them.",
+    },
+  } as Record<string, MemoryCardInfo>,
 
   // ────────────────────────────────────────────────────────────────
   // MANDATORY PAGES — note shown at the bottom of that section

@@ -27,6 +27,8 @@ export type Category =
   | "pocket-templates"
   | "friendship"
   | "friendship-designs"
+  | "memory-card"
+  | "memory-card-designs"
   | "promotions";
 
 
@@ -90,6 +92,12 @@ const FRIENDSHIP_DESIGNS: Product[] = Array.from({ length: 4 }, (_, i) => ({
   price: 0,
   desc: "A curated Friendship Card design — front & back preview available.",
 }));
+
+const MEMORY_CARD_DESIGNS: Product[] = [
+  { id: "memory-birthday", name: "The Birthday Card", price: 0, desc: SITE.memoryCardInfo["memory-birthday"].description },
+  { id: "memory-friendship", name: "The Friendship Club Card", price: 0, desc: SITE.memoryCardInfo["memory-friendship"].description },
+  { id: "memory-lover", name: "The Lover Era Card", price: 0, desc: SITE.memoryCardInfo["memory-lover"].description },
+];
 
 export const CATALOG: Record<Exclude<Category, "templates" | "pocket-templates">, Product[]> & {
   templates: Product[];
@@ -221,6 +229,11 @@ export const CATALOG: Record<Exclude<Category, "templates" | "pocket-templates">
   // as "templates" has to "sizes".
   "friendship-designs": FRIENDSHIP_DESIGNS,
 
+  // One dynamic bundle line is rebuilt by the store as customers select
+  // 1–3 designs. Its price comes from PRICES.memoryCardTiers.
+  "memory-card": [],
+  "memory-card-designs": MEMORY_CARD_DESIGNS,
+
   // Free items granted by redeeming a Spin-the-Wheel coupon code — never sold
   // directly, only ever added by applyCouponFreebie() in store.ts.
   promotions: [
@@ -250,6 +263,9 @@ export const COUPON_FREEBIES: Record<string, string> = {
 // Numbers live in prices.ts → PRICES.stripTiers.
 export const STRIP_TIERS: Record<number, number> = { ...PRICES.stripTiers };
 export const STRIP_MAX = Object.keys(PRICES.stripTiers).length;
+
+export const MEMORY_CARD_TIERS: Record<number, number> = { ...PRICES.memoryCardTiers };
+export const MEMORY_CARD_MAX = Object.keys(PRICES.memoryCardTiers).length;
 
 
 // ===========================================================
