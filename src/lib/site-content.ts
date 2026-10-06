@@ -8,6 +8,14 @@
 //  • To change a link, just paste the new URL between the quotes.
 // ==================================================================
 
+import memoryCardBanner from "@/assets/memory-card/banner.webp.asset.json";
+import birthdayOpen from "@/assets/memory-card/birthday-open.webp.asset.json";
+import birthdayCover from "@/assets/memory-card/birthday-cover.webp.asset.json";
+import friendshipOpen from "@/assets/memory-card/friendship-open.webp.asset.json";
+import friendshipCover from "@/assets/memory-card/friendship-cover.webp.asset.json";
+import loverOpen from "@/assets/memory-card/lover-open.webp.asset.json";
+import loverCover from "@/assets/memory-card/lover-cover.webp.asset.json";
+
 export type Tiles = {
   head?: string;    // 1920×1080 (or any) image drawn once at the top
   repeat?: string;  // tiled vertically to fill the middle (edges MUST match)
@@ -257,6 +265,8 @@ export const SITE = {
     },
   } as Record<string, MemoryCardInfo>,
 
+  memoryCardBanner: memoryCardBanner.url,
+
   // ────────────────────────────────────────────────────────────────
   // MANDATORY PAGES — note shown at the bottom of that section
   // ────────────────────────────────────────────────────────────────
@@ -479,6 +489,12 @@ export const SITE = {
       "card-2": ["/media/friendship/CARD_02_FRONT.webp", "/media/friendship/CARD_02_BACK.webp"],
       "card-3": ["/media/friendship/CARD_03_FRONT.webp", "/media/friendship/CARD_03_BACK.webp"],
       "card-4": ["/media/friendship/CARD_04_FRONT.webp", "/media/friendship/CARD_04_BACK.webp"],
+
+      // The Memory Card — first image is the open-card thumbnail; second is
+      // the cover. Both appear in the swipeable detail pop-up.
+      "memory-birthday": [birthdayOpen.url, birthdayCover.url],
+      "memory-friendship": [friendshipOpen.url, friendshipCover.url],
+      "memory-lover": [loverOpen.url, loverCover.url],
   } as Record<string, string[]>,
 
   // ────────────────────────────────────────────────────────────────
