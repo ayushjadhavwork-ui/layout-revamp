@@ -30,10 +30,10 @@ export const Route = createFileRoute("/")({
   component: Home,
   head: () => ({
     meta: [
-      { property: "og:title", content: "The Layout — Custom Magazines" },
-      { property: "og:description", content: "Design your own custom magazine with curated templates, polaroid packs, and gift add-ons." },
       { title: "The Layout — Custom Magazines & Keepsakes" },
       { name: "description", content: "Create custom magazines, Memory Cards, polaroid keepsakes, and personalised gifts from The Layout." },
+      { property: "og:title", content: "The Layout — Custom Magazines & Keepsakes" },
+      { property: "og:description", content: "Create custom magazines, Memory Cards, polaroid keepsakes, and personalised gifts from The Layout." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
