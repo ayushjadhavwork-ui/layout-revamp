@@ -265,7 +265,7 @@ export const SITE = {
     },
   } as Record<string, MemoryCardInfo>,
 
-  memoryCardBanner: ["/media/CARD__.webp"]
+  memoryCardBanner: ["/media/CARD__.webp"],
 
   // ────────────────────────────────────────────────────────────────
   // MANDATORY PAGES — note shown at the bottom of that section
