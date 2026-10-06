@@ -49,6 +49,7 @@ public/media/
 ├── newspaper/      ← newspaper spread previews (see § 2d)
 ├── pocket/         ← Pocket Magazine card thumbnail (see § 2d)
 ├── friendship/     ← Friendship Card 3D model (§ 2e) + design images (§ 2f)
+├── memory-card/    ← Memory Card banner + three front/back design pairs
 └── bg/             ← background tiles (see § 3)
 ```
 
@@ -130,6 +131,7 @@ just uncomment and point them at your files:
 | Newspaper  | `news-tpl-1`, `news-tpl-2` (the two fixed spread previews — the newspaper product itself has no separate cover slot) |
 | Pocket Magazine | `pocket-mag` (first entry = card thumbnail; its Step 2 template picks reuse the same `tpl-<n>` art as the normal magazine) |
 | Friendship Card designs | `card-1`..`card-4` — each takes a front/back pair, see § 2f |
+| The Memory Card | `memory-birthday`, `memory-friendship`, `memory-lover` — each uses an open-card image and cover image |
 
 ### 2e. Friendship Card — 3D model
 
@@ -182,6 +184,20 @@ pre-crop your artwork to a specific ratio before dropping it in.
 If you ever need a different file extension than `.webp` (e.g. `.jpg`),
 update the matching path under `productImages["card-1"]` (etc.) in
 `site-content.ts` to match.
+
+### 2g. The Memory Card
+
+The Memory Card section uses seven managed images: one full promotional
+banner and two images for each of the Birthday, Friendship Club, and Lover
+Era designs. Their paths are already registered in `site-content.ts`.
+
+To change the wording shown in a design pop-up, edit that design's single
+entry under `memoryCardInfo`. Each entry has four plainly named fields:
+`name`, `description`, `photosRequired`, and `detailsRequired`.
+
+The bundle prices are in `src/lib/prices.ts` under `memoryCardTiers`:
+1 card ₹150, 2 cards ₹220, and 3 cards ₹300. Customers can mix designs or
+select up to three copies of one design; the total quantity chooses the price.
 
 ---
 

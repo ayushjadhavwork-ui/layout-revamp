@@ -20,6 +20,7 @@ import { PocketMagazineSection } from "@/components/site/pocket-section";
 import { AddonsSection } from "@/components/site/addons-section";
 import { CombosSection } from "@/components/site/combos-section";
 import { NewspaperSection } from "@/components/site/newspaper-section";
+import { MemoryCardSection } from "@/components/site/memory-card-section";
 import { FriendshipCardSection } from "@/components/site/friendship-section";
 import { SpinWheel } from "@/components/site/spin-wheel";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -31,6 +32,10 @@ export const Route = createFileRoute("/")({
     meta: [
       { property: "og:title", content: "The Layout — Custom Magazines" },
       { property: "og:description", content: "Design your own custom magazine with curated templates, polaroid packs, and gift add-ons." },
+      { title: "The Layout — Custom Magazines & Keepsakes" },
+      { name: "description", content: "Create custom magazines, Memory Cards, polaroid keepsakes, and personalised gifts from The Layout." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
 });
@@ -245,6 +250,13 @@ function Home() {
           <div className="mx-auto max-w-6xl">
             <SectionHead eyebrow="Something different" title="Newspaper Magazine" sub="A special standalone keepsake — not part of the package above." />
             <NewspaperSection />
+          </div>
+        </div>
+
+        <div id="memory-card" className="relative z-10 px-4 py-12 sm:py-20">
+          <div className="mx-auto max-w-6xl">
+            <SectionHead eyebrow="Turn moments into keepsakes" title="The Memory Card" sub="Choose one, two, or three cards — mix the designs or repeat your favourite." />
+            <MemoryCardSection />
           </div>
         </div>
 
