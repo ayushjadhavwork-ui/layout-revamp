@@ -134,24 +134,11 @@ export const CATALOG: Record<Exclude<Category, "templates" | "pocket-templates">
     { id: "add-combo",  name: "Combo (Wrap + Letter)", price: priceOf("addons", "add-combo"), desc: "Both — because why not?" },
   ],
   combos: [
-    {
-      id: "combo-main",
-      name: "Main Character Pack",
-      price: priceOf("combos", "combo-main"),
-      desc: "8-Page Custom Magazine + Gift Wrap + Personalized Letter. Everything you need to feel like the main character. You save ₹50.",
-    },
-    {
-      id: "combo-core",
-      name: "Core Memory Pack",
-      price: priceOf("combos", "combo-core"),
-      desc: "12-Page Custom Magazine + Classic Polaroid Pack (18 Photos) + 1 Polaroid Strip. A whole core memory in a box. You save ₹51.",
-    },
-    {
-      id: "combo-soft",
-      name: "Soft Launch Bundle",
-      price: priceOf("combos", "combo-soft"),
-      desc: "16-Page Custom Magazine + Memory Polaroid Pack (27 Photos) + Gift Wrap + Personalized Letter. The full soft launch treatment. You save ₹130.",
-    },
+    ...Array.from({ length: 9 }, (_, index) => {
+      const id = `combo-${String(index + 1).padStart(2, "0")}`;
+      const info = SITE.comboInfo[id];
+      return { id, name: info.name, price: priceOf("combos", id), desc: info.description };
+    }),
   ],
 
   polaroids: [
@@ -275,15 +262,26 @@ export const MEMORY_CARD_MAX = Object.keys(PRICES.memoryCardTiers).length;
 // ===========================================================
 export type ComboRecipe = {
   sizeId?: string;
+  newspaper?: boolean;
+  pocketCount?: number;
   addonIds?: string[];
   polaroidId?: string;
   stripCount?: number;
+  friendshipCount?: number;
+  memoryCardCount?: number;
+  freePostcard?: boolean;
 };
 
 export const COMBO_RECIPES: Record<string, ComboRecipe> = {
-  "combo-main": { sizeId: "sz-8", addonIds: ["add-wrap", "add-letter"] },
-  "combo-core": { sizeId: "sz-12", polaroidId: "pol-classic", stripCount: 1 },
-  "combo-soft": { sizeId: "sz-16", polaroidId: "pol-memory", addonIds: ["add-wrap", "add-letter"] },
+  "combo-01": { sizeId: "sz-6-mini", stripCount: 1, polaroidId: "pol-mini", addonIds: ["add-combo"], freePostcard: true },
+  "combo-02": { sizeId: "sz-12-mini", memoryCardCount: 1, stripCount: 1, freePostcard: true },
+  "combo-03": { newspaper: true, friendshipCount: 1, polaroidId: "pol-mini", freePostcard: true },
+  "combo-04": { pocketCount: 1, memoryCardCount: 1, addonIds: ["add-letter"], polaroidId: "pol-classic", freePostcard: true },
+  "combo-05": { friendshipCount: 2, memoryCardCount: 2, stripCount: 2, freePostcard: true },
+  "combo-06": { sizeId: "sz-12", memoryCardCount: 1, friendshipCount: 1, freePostcard: true },
+  "combo-07": { sizeId: "sz-14", stripCount: 1, addonIds: ["add-combo"], freePostcard: true },
+  "combo-08": { sizeId: "sz-20-mini", friendshipCount: 1, memoryCardCount: 1, stripCount: 2, polaroidId: "pol-classic", freePostcard: true },
+  "combo-09": { sizeId: "sz-18", polaroidId: "pol-mini", stripCount: 1, addonIds: ["add-combo"], friendshipCount: 1, memoryCardCount: 1, freePostcard: true },
 };
 
 // Real sum of what a combo's included items would cost bought separately —
@@ -293,11 +291,18 @@ export function comboRealTotal(comboId: string): number {
   if (!recipe) return 0;
   let total = 0;
   if (recipe.sizeId) total += CATALOG.sizes.find((s) => s.id === recipe.sizeId)?.price ?? 0;
+  if (recipe.newspaper) total += CATALOG.newspaper[0]?.price ?? 0;
+  if (recipe.pocketCount) total += (CATALOG.pocket[0]?.price ?? 0) * recipe.pocketCount;
   for (const id of recipe.addonIds ?? []) {
     total += CATALOG.addons.find((a) => a.id === id)?.price ?? 0;
   }
   if (recipe.polaroidId) total += CATALOG.polaroids.find((p) => p.id === recipe.polaroidId)?.price ?? 0;
   if (recipe.stripCount) total += STRIP_TIERS[recipe.stripCount] ?? 0;
+  if (recipe.friendshipCount) {
+    const tier = recipe.friendshipCount > 1 ? "friend-duo" : "friend-single";
+    total += CATALOG.friendship.find((item) => item.id === tier)?.price ?? 0;
+  }
+  if (recipe.memoryCardCount) total += MEMORY_CARD_TIERS[recipe.memoryCardCount] ?? 0;
   return total;
 }
 
