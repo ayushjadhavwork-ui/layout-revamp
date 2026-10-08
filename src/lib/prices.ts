@@ -64,9 +64,15 @@ export const PRICES = {
   // update that wording there if you change these numbers.
   // -------------------------------------------------------
   combos: {
-    "combo-main": 1049, // Main Character Pack
-    "combo-core": 1399, // Core Memory Pack
-    "combo-soft": 1649, // Soft Launch Bundle
+    "combo-01": 699, // Look At Me
+    "combo-02": 799, // Birthday Bits
+    "combo-03": 849, // The Little Archive
+    "combo-04": 699, // The Pocket Edit
+    "combo-05": 1399, // The Double Trouble
+    "combo-06": 1699, // The Love Dream
+    "combo-07": 1399, // The Keepsake Edit
+    "combo-08": 1799, // The Treasure Basket
+    "combo-09": 2199, // The Layout Bundle
   },
 
   // -------------------------------------------------------
