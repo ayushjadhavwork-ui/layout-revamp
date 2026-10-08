@@ -37,6 +37,16 @@ export type MemoryCardInfo = {
   detailsRequired: string;
 };
 
+export type ComboInfo = {
+  name: string;
+  description: string;
+  photosRequired: string;
+  detailsRequired: string;
+  included: string[];
+  perfectFor: string;
+  originalValue: number;
+};
+
 export const SITE = {
   // ────────────────────────────────────────────────────────────────
   // BRAND
@@ -268,6 +278,23 @@ export const SITE = {
   memoryCardBanner: ["/media/CARD__.webp"],
 
   // ────────────────────────────────────────────────────────────────
+  // COMBO INFORMATION
+  // Every combo pop-up reads one complete record from here. Edit quoted
+  // text only; originalValue is the crossed-out amount shown on the card.
+  // ────────────────────────────────────────────────────────────────
+  comboInfo: {
+    "combo-01": { name: "Look At Me", description: "A little bit of everything, because one memory is never enough. A pocket-sized collection made for the moments you want to keep close.", photosRequired: "Photos for a 6-page A5 magazine, 1 Polaroid Strip, and 8 Mini Pack images.", detailsRequired: "Magazine content based on the templates selected, plus the text for a handwritten letter.", included: ["A5 Magazine — 6 Pages", "Polaroid Strip — Any 1", "Mini Pack — 8 Images", "Gift Wrap + Handwritten Letter", "FREE Postcard"], perfectFor: "Birthdays • Besties • Little Surprises • Just Because", originalValue: 710 },
+    "combo-02": { name: "Birthday Bits", description: "Because birthdays deserve more than just a text message. Turn someone's favourite memories into a little birthday keepsake.", photosRequired: "Photos for a 12-page A5 magazine, 1 Photo Card, and 1 Polaroid Strip.", detailsRequired: "Magazine content based on the templates selected, plus the message for the Photo Card.", included: ["A5 Magazine — 12 Pages", "Photo Card — Any 1", "Polaroid Strip — Any 1", "FREE Postcard"], perfectFor: "Birthdays • Birthday Surprises • Best Friends • Siblings", originalValue: 850 },
+    "combo-03": { name: "The Little Archive", description: "For the memories that deserve their own little archive. A quirky, nostalgic bundle for people who love their memories with personality.", photosRequired: "Photos for the Newspaper Magazine, 1 Single Card, and 8 Mini Pack images.", detailsRequired: "Newspaper content and the personalisation details for the selected Single Card.", included: ["Newspaper Magazine", "Single Card — Any 1", "Mini Pack — 8 Images", "FREE Postcard"], perfectFor: "Birthdays • Friendships • Couples • Memory Keeping", originalValue: 879 },
+    "combo-04": { name: "The Pocket Edit", description: "Small enough to carry. Special enough to keep forever. A personalised pocket magazine paired with photos and a handwritten letter.", photosRequired: "Photos for a 6-page A6 Pocket Magazine, 1 Photo Card, and 18 Classic Pack images.", detailsRequired: "Pocket Magazine content based on the templates selected, Photo Card text, and handwritten letter text.", included: ["A6 Pocket Magazine — 6 Pages", "Photo Card — Any 1", "Handwritten Letter — Any 1", "Classic Pack — 18 Images", "FREE Postcard"], perfectFor: "Little Gifts • Besties • Couples • Mini Surprises", originalValue: 700 },
+    "combo-05": { name: "The Double Trouble", description: "Twice the cards. Twice the memories. Twice the trouble. Made for duos who come as a package deal.", photosRequired: "Photos for 2 Duo Cards, 2 Photo Cards, and 2 Polaroid Strips.", detailsRequired: "Personalisation details for both Duo Cards and both Photo Cards.", included: ["Duo Cards — Any 2", "Photo Cards — Any 2", "Polaroid Strips — Any 2", "FREE Postcard"], perfectFor: "Couples • Best Friends • Friendship Gifts • Anniversaries", originalValue: 1548 },
+    "combo-06": { name: "The Love Dream", description: "For the person who deserves an entire magazine. Go all out with a personalised A4 magazine and two keepsake cards.", photosRequired: "Photos for a 12-page A4 magazine, 1 Photo Card, and 1 Single Card.", detailsRequired: "Magazine content based on the templates selected and personalisation details for both cards.", included: ["A4 Magazine — 12 Pages", "Photo Card — Any 1", "Single Card — Any 1", "FREE Postcard"], perfectFor: "Partners • Anniversaries • Valentine's Day • Love Gifts", originalValue: 1749 },
+    "combo-07": { name: "The Keepsake Edit", description: "A proper keepsake for memories worth holding onto, finished with gift-ready wrap and a handwritten letter.", photosRequired: "Photos for a 14-page A4 magazine and 1 Polaroid Strip.", detailsRequired: "Magazine content based on the templates selected, plus the handwritten letter text.", included: ["A4 Magazine — 14 Pages", "Polaroid Strip — Any 1", "Gift Wrap + Handwritten Letter", "FREE Postcard"], perfectFor: "Birthdays • Anniversaries • Milestones • Special Gifts", originalValue: 1480 },
+    "combo-08": { name: "The Treasure Basket", description: "A whole basket of memories — because choosing just one is impossible. A memory-packed bundle for someone who deserves more.", photosRequired: "Photos for a 20-page A5 magazine, 1 Single Card, 1 Photo Card, 2 Polaroid Strips, and 18 Classic Pack images.", detailsRequired: "Magazine content based on the templates selected and personalisation details for both cards.", included: ["A5 Magazine — 20 Pages", "Single Card — Any 1", "Photo Card — Any 1", "Polaroid Strips — Any 2", "Classic Pack — 18 Images", "FREE Postcard"], perfectFor: "Big Birthdays • Best Friends • Couples • Milestone Gifts", originalValue: 1948 },
+    "combo-09": { name: "The Layout Bundle", description: "The ultimate Layout experience. All your favourites, in one bundle — made for going all in.", photosRequired: "Photos for an 18-page A4 magazine, 8 Mini Pack images, 1 Polaroid Strip, 1 Single Card, and 1 Photo Card.", detailsRequired: "Magazine content based on the templates selected, card personalisation, and handwritten letter text.", included: ["A4 Magazine — 18 Pages", "Mini Pack — 8 Images", "Polaroid Strip — Any 1", "Gift Wrap + Handwritten Letter", "Single Card — Any 1", "Photo Card — Any 1", "FREE Postcard"], perfectFor: "Premium Gifting • Birthdays • Anniversaries • Couples • Best Friends", originalValue: 2409 },
+  } as Record<string, ComboInfo>,
+
+  // ────────────────────────────────────────────────────────────────
   // MANDATORY PAGES — note shown at the bottom of that section
   // ────────────────────────────────────────────────────────────────
   mandatoryNote:
@@ -459,10 +486,16 @@ export const SITE = {
       "add-letter": ["/media/addons/letter.webp"] as string[],
       "add-combo":  ["/media/addons/combo.webp"] as string[],
 
-      // Combos (Curated bundles section) — optional cover imagery.
-      "combo-main": ["/media/combos/main_character_pack.webp"],
-      "combo-core": ["/media/combos/core_memory_pack.webp"],
-      "combo-soft": ["/media/combos/soft_launch_pack.webp"],
+      // Combos (Curated bundles section).
+      "combo-01": ["/media/combos/COMBO_01.jpg"],
+      "combo-02": ["/media/combos/COMBO_02.jpg"],
+      "combo-03": ["/media/combos/COMBO_03.jpg"],
+      "combo-04": ["/media/combos/COMBO_04.jpg"],
+      "combo-05": ["/media/combos/COMBO_05.jpg"],
+      "combo-06": ["/media/combos/COMBO_06.jpg"],
+      "combo-07": ["/media/combos/COMBO_07.jpg"],
+      "combo-08": ["/media/combos/COMBO_08.jpg"],
+      "combo-09": ["/media/combos/COMBO_09.jpg"],
 
       // Delivery (Step 6) — optional cover imagery.
       // "del-std": ["/media/delivery/standard.webp"],
