@@ -31,7 +31,7 @@ export function MemoryCardSection() {
     <>
       <div className="overflow-hidden rounded-xl bg-rose-wine p-3 sm:p-6 md:p-10">
         <img
-          src={SITE.memoryCardBanner}
+          src={SITE.memoryCardBanner[0]}
           alt="The Memory Card collection"
           className="block w-full rounded-lg object-cover"
         />

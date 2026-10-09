@@ -563,12 +563,12 @@ export function CartDrawer({
   const comboOriginal = activeCombo ? comboRealTotal(activeCombo.id) : 0;
   const comboSavings = activeCombo ? Math.max(0, comboOriginal - activeCombo.price) : 0;
 
-  const promoItems = cart.filter((c) => c.category === "promotions");
+  const promoItems = cart.filter((c) => c.category === "promotions" && !c.comboId);
   // Friendship Card design picks are zero-cost sub-selections of the
   // "friendship" row (same relationship templates have to a magazine's
   // "sizes" row) — fold them into a note under that row (below) instead of
   // letting them leak through as their own bare ₹0.00-ish rows.
-  const mainItems = cart.filter((c) => c.category !== "promotions" && c.category !== "friendship-designs" && c.category !== "memory-card-designs");
+  const mainItems = cart.filter((c) => c.category !== "promotions" && c.category !== "friendship-designs" && c.category !== "memory-card-designs" && !c.comboId);
 
   if (!open) return null;
 
@@ -609,6 +609,13 @@ export function CartDrawer({
                     <p className="mt-1 text-xs text-neutral-600">
                       Designs: {memoryCardDesigns.join(", ")}
                     </p>
+                  )}
+                  {item.category === "combos" && (
+                    <ul className="mt-2 space-y-0.5 text-xs text-neutral-600">
+                      {cart.filter((included) => included.comboId === item.id && included.category !== "friendship-designs" && included.category !== "memory-card-designs").map((included) => (
+                        <li key={included.key}>• {included.name}</li>
+                      ))}
+                    </ul>
                   )}
                   {item.note && <p className="mt-1 text-xs text-neutral-600 italic">"{item.note}"</p>}
                 </div>
