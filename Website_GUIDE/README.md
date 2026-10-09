@@ -30,7 +30,7 @@ public/media/             all images/video
 
 Hero → marquee → showreel → banners → how to order → **The Team** → Journey /
 stats → magazine packages (A4 / A5 Mini toggle) → mandatory pages → templates
-(with "randomise for me") → newspaper templates → combos → add-ons → polaroid
+(with "randomise for me") → newspaper templates → nine curated combos → add-ons → polaroid
 strips (bundle pricing) → polaroid packs → reels → FAQ → cart drawer +
 payment/success modals → spin-the-wheel popup → WhatsApp button.
 

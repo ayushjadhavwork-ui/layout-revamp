@@ -456,11 +456,13 @@ export const useStore = create<State>()(
     const limit = get().friendshipDesignLimit();
     if (s.selectedFriendshipDesignIds.length >= limit) return false;
     const nextIds = [...s.selectedFriendshipDesignIds, id];
+    const combo = s.cart.find((item) => item.category === "combos");
+    const comboId = combo?.id;
     set({
       selectedFriendshipDesignIds: nextIds,
       cart: [
         ...s.cart.filter((c) => c.category !== "friendship-designs"),
-        ...friendshipDesignCartLines(nextIds),
+        ...friendshipDesignCartLines(nextIds).map((line) => comboId ? { ...line, comboId } : line),
       ],
     });
     return true;
@@ -471,11 +473,13 @@ export const useStore = create<State>()(
     const idx = s.selectedFriendshipDesignIds.lastIndexOf(id);
     if (idx === -1) return false;
     const nextIds = s.selectedFriendshipDesignIds.filter((_, i) => i !== idx);
+    const combo = s.cart.find((item) => item.category === "combos");
+    const comboId = combo?.id;
     set({
       selectedFriendshipDesignIds: nextIds,
       cart: [
         ...s.cart.filter((c) => c.category !== "friendship-designs"),
-        ...friendshipDesignCartLines(nextIds),
+        ...friendshipDesignCartLines(nextIds).map((line) => comboId ? { ...line, comboId } : line),
       ],
     });
     return true;
@@ -484,13 +488,16 @@ export const useStore = create<State>()(
   addMemoryCardDesign: (id) => {
     const s = get();
     if (!CATALOG["memory-card-designs"].some((item) => item.id === id)) return false;
-    if (s.selectedMemoryCardDesignIds.length >= MEMORY_CARD_MAX) return false;
+    const activeCombo = s.cart.find((item) => item.category === "combos");
+    const comboLimit = activeCombo ? COMBO_RECIPES[activeCombo.id]?.memoryCardCount : undefined;
+    const limit = comboLimit ?? MEMORY_CARD_MAX;
+    if (s.selectedMemoryCardDesignIds.length >= limit) return false;
     const nextIds = [...s.selectedMemoryCardDesignIds, id];
     set({
       selectedMemoryCardDesignIds: nextIds,
       cart: [
         ...s.cart.filter((c) => c.category !== "memory-card" && c.category !== "memory-card-designs"),
-        ...memoryCardCartLines(nextIds),
+        ...memoryCardCartLines(nextIds).map((line) => activeCombo ? { ...line, price: 0, comboId: activeCombo.id } : line),
       ],
     });
     return true;
@@ -501,11 +508,12 @@ export const useStore = create<State>()(
     const idx = s.selectedMemoryCardDesignIds.lastIndexOf(id);
     if (idx === -1) return false;
     const nextIds = s.selectedMemoryCardDesignIds.filter((_, i) => i !== idx);
+    const activeCombo = s.cart.find((item) => item.category === "combos");
     set({
       selectedMemoryCardDesignIds: nextIds,
       cart: [
         ...s.cart.filter((c) => c.category !== "memory-card" && c.category !== "memory-card-designs"),
-        ...memoryCardCartLines(nextIds),
+        ...memoryCardCartLines(nextIds).map((line) => activeCombo ? { ...line, price: 0, comboId: activeCombo.id } : line),
       ],
     });
     return true;
@@ -589,13 +597,32 @@ export const useStore = create<State>()(
       let selectedSizeId = s.selectedSizeId;
       let selectedTemplateIds: string[] = [];
       let stripSelections = s.stripSelections;
+      let selectedFriendshipId: string | null = null;
+      let selectedFriendshipDesignIds: string[] = [];
+      let selectedMemoryCardDesignIds: string[] = [];
+      let pocketUnits: PocketUnit[] = [];
+      let format = s.format;
 
       if (recipe?.sizeId) {
         const size = CATALOG.sizes.find((sz) => sz.id === recipe.sizeId);
         if (size) {
+          format = size.format ?? "standard";
           selectedSizeId = size.id;
           linked.push({ key: `combo:${combo.id}:size`, category: "sizes", id: size.id, name: size.name, price: 0, comboId: combo.id });
         }
+      }
+
+      if (recipe?.newspaper) {
+        const newspaper = CATALOG.newspaper[0];
+        if (newspaper) linked.push({ key: `combo:${combo.id}:newspaper`, category: "newspaper", id: newspaper.id, name: newspaper.name, price: 0, comboId: combo.id });
+      }
+
+      for (let index = 0; index < (recipe?.pocketCount ?? 0); index += 1) {
+        const pocket = CATALOG.pocket[0];
+        if (!pocket) continue;
+        const uid = genUid();
+        pocketUnits.push({ uid, templateIds: [] });
+        linked.push({ key: `combo:${combo.id}:pocket:${uid}`, category: "pocket", id: pocket.id, name: pocket.name, price: 0, comboId: combo.id, unit: uid });
       }
 
       for (const aid of recipe?.addonIds ?? []) {
@@ -627,9 +654,43 @@ export const useStore = create<State>()(
         });
       }
 
+      if (recipe?.friendshipCount) {
+        const friendship = CATALOG.friendship.find((item) => item.id === (recipe.friendshipCount === 2 ? "friend-duo" : "friend-single"));
+        const firstDesign = CATALOG["friendship-designs"][0];
+        if (friendship && firstDesign) {
+          selectedFriendshipId = friendship.id;
+          selectedFriendshipDesignIds = Array.from({ length: recipe.friendshipCount }, () => firstDesign.id);
+          linked.push({ key: `combo:${combo.id}:friendship`, category: "friendship", id: friendship.id, name: friendship.name, price: 0, comboId: combo.id });
+          linked.push(...friendshipDesignCartLines(selectedFriendshipDesignIds).map((line) => ({ ...line, comboId: combo.id })));
+        }
+      }
+
+      if (recipe?.memoryCardCount) {
+        const firstDesign = CATALOG["memory-card-designs"][0];
+        if (firstDesign) {
+          selectedMemoryCardDesignIds = Array.from({ length: recipe.memoryCardCount }, () => firstDesign.id);
+          linked.push(...memoryCardCartLines(selectedMemoryCardDesignIds).map((line) => ({ ...line, price: 0, comboId: combo.id })));
+        }
+      }
+
+      if (recipe?.freePostcard) {
+        const postcard = CATALOG.promotions.find((item) => item.id === "promo-postcard");
+        if (postcard) linked.push({ key: `combo:${combo.id}:postcard`, category: "promotions", id: postcard.id, name: postcard.name, price: 0, comboId: combo.id });
+      }
+
       const comboLine: CartItem = { key: key("combos", combo.id), category: "combos", id: combo.id, name: combo.name, price: combo.price };
 
-      return { cart: [...cart, comboLine, ...linked], selectedSizeId, selectedTemplateIds, stripSelections };
+      return {
+        cart: [...cart, comboLine, ...linked],
+        format,
+        selectedSizeId,
+        selectedTemplateIds,
+        stripSelections,
+        pocketUnits,
+        selectedFriendshipId,
+        selectedFriendshipDesignIds,
+        selectedMemoryCardDesignIds,
+      };
     });
   },
 
@@ -641,6 +702,10 @@ export const useStore = create<State>()(
     cart: s.cart.filter((c) => !(c.category === "combos" && c.id === comboId) && c.comboId !== comboId && c.category !== "templates"),
     selectedSizeId: null,
     selectedTemplateIds: [],
+    pocketUnits: [],
+    selectedFriendshipId: null,
+    selectedFriendshipDesignIds: [],
+    selectedMemoryCardDesignIds: [],
     stripSelections: [],
   })),
 
@@ -677,7 +742,10 @@ export const useStore = create<State>()(
     if (!s.selectedFriendshipId) return 0;
     return CATALOG.friendship.find((f) => f.id === s.selectedFriendshipId)?.designLimit ?? 0;
   },
-  memoryCardLimit: () => MEMORY_CARD_MAX,
+  memoryCardLimit: () => {
+    const combo = get().cart.find((item) => item.category === "combos");
+    return combo ? COMBO_RECIPES[combo.id]?.memoryCardCount ?? MEMORY_CARD_MAX : MEMORY_CARD_MAX;
+  },
     }),
     {
       name: "the-layout-cart",

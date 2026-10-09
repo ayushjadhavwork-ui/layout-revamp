@@ -130,6 +130,8 @@ function Home() {
   const selectedFriendshipId = useStore((s) => s.selectedFriendshipId);
   const selectedFriendshipDesignIds = useStore((s) => s.selectedFriendshipDesignIds);
   const friendshipDesignLimit = useStore((s) => s.friendshipDesignLimit());
+  const selectedMemoryCardDesignIds = useStore((s) => s.selectedMemoryCardDesignIds);
+  const activeCombo = cart.find((item) => item.category === "combos");
 
   const openProduct = (cat: Category) => (p: Product) => {
     setModalCat(cat);
@@ -156,6 +158,18 @@ function Home() {
     if (selectedFriendshipId && selectedFriendshipDesignIds.length < friendshipDesignLimit) {
       toast.error(`Pick your ${friendshipDesignLimit} design${friendshipDesignLimit === 1 ? "" : "s"} for the Friendship Card before ordering — ${selectedFriendshipDesignIds.length}/${friendshipDesignLimit} selected.`);
       document.getElementById("friendship-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
+      return;
+    }
+    const comboMemoryLines = activeCombo
+      ? cart.filter((item) => item.comboId === activeCombo.id && item.category === "memory-card-designs")
+      : [];
+    const expectedMemoryCards = comboMemoryLines.reduce((sum, item) => {
+      const match = item.name.match(/×(\d+)/);
+      return sum + (match ? Number(match[1]) : 1);
+    }, 0);
+    if (expectedMemoryCards > 0 && selectedMemoryCardDesignIds.length < expectedMemoryCards) {
+      toast.error(`Pick ${expectedMemoryCards} Memory Card design${expectedMemoryCards === 1 ? "" : "s"} included in your combo before ordering.`);
+      document.getElementById("memory-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     if (total < SITE.commerce.minOrderValue) {

@@ -199,6 +199,16 @@ The bundle prices are in `src/lib/prices.ts` under `memoryCardTiers`:
 1 card ₹150, 2 cards ₹220, and 3 cards ₹300. Customers can mix designs or
 select up to three copies of one design; the total quantity chooses the price.
 
+### 2h. Curated combos
+
+The nine combo covers are `/public/media/combos/COMBO_01.jpg` through
+`COMBO_09.jpg`. Replace a file while keeping its filename to update its cover.
+
+All editable combo pop-up wording lives in `SITE.comboInfo`. Each combo has
+one complete record containing `name`, `description`, `photosRequired`,
+`detailsRequired`, `included`, `perfectFor`, and the crossed-out
+`originalValue`. Selling prices remain in `src/lib/prices.ts` under `combos`.
+
 ---
 
 ## 3. Custom tiled backgrounds

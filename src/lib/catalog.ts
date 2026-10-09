@@ -227,6 +227,7 @@ export const CATALOG: Record<Exclude<Category, "templates" | "pocket-templates">
     { id: "promo-strip",   name: "Free Polaroid Strip",       price: 0, desc: "Redeemed via spin-the-wheel coupon." },
     { id: "promo-letter",  name: "Free Personalized Letter",  price: 0, desc: "Redeemed via spin-the-wheel coupon." },
     { id: "promo-sticker", name: "Free Sticker Pack",         price: 0, desc: "Redeemed via spin-the-wheel coupon." },
+    { id: "promo-postcard", name: "Free Postcard", price: 0, desc: "Included with a curated combo." },
   ],
 };
 

@@ -1,39 +1,11 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
-import { Heart, Sparkles, Rocket, Check, Package, Eye, X } from "lucide-react";
+import { Check, Package, Eye, X } from "lucide-react";
 import { toast } from "sonner";
-import { CATALOG, fmt, comboRealTotal } from "@/lib/catalog";
+import { CATALOG, fmt } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
 import { SITE } from "@/lib/site-content";
 import { ModalShell } from "./shop";
-
-type ComboMeta = {
-  icon: React.ComponentType<React.SVGProps<SVGSVGElement>>;
-  emoji: string;
-  includes: string[];
-  tag?: string;
-};
-
-// Pricing (original/save) is computed live from comboRealTotal() below —
-// never hand-typed, so it can't drift from the actual catalog prices.
-const COMBO_META: Record<string, ComboMeta> = {
-  "combo-main": {
-    icon: Heart,
-    emoji: "💌",
-    includes: ["8-Page Custom Magazine", "Gift Wrap", "Personalized Letter"],
-  },
-  "combo-core": {
-    icon: Sparkles,
-    emoji: "📸",
-    tag: "MOST LOVED ♡",
-    includes: ["12-Page Custom Magazine", "Classic Polaroid Pack (18 Photos)", "1 Polaroid Strip"],
-  },
-  "combo-soft": {
-    icon: Rocket,
-    emoji: "✨",
-    includes: ["16-Page Custom Magazine", "Memory Polaroid Pack (27 Photos)", "Gift Wrap", "Personalized Letter"],
-  },
-};
 
 function comboHero(id: string): string | undefined {
   return SITE.productImages?.[id]?.[0];
@@ -64,11 +36,9 @@ export function CombosSection() {
           {items.map((item) => {
             const cartItem = cart.find((c) => c.category === "combos" && c.id === item.id);
             const active = !!cartItem;
-            const meta = COMBO_META[item.id];
-            const Icon = meta?.icon ?? Package;
+            const info = SITE.comboInfo[item.id];
             const hero = comboHero(item.id);
-            const featured = item.id === "combo-core";
-            const original = comboRealTotal(item.id);
+            const original = info.originalValue;
             const save = Math.max(0, original - item.price);
 
             const handleToggle = () => {
@@ -87,14 +57,8 @@ export function CombosSection() {
                 onClick={handleToggle}
                 className={`relative rounded-md sm:rounded-2xl p-1.5 sm:p-5 md:p-6 flex flex-col text-center transition bg-black/15 backdrop-blur-sm cursor-pointer select-none ${
                   active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
-                } ${featured ? "md:scale-[1.04] md:-my-2 bg-black/25" : ""}`}
+                }`}
               >
-                {meta?.tag && (
-                  <span className="absolute -top-2 sm:-top-3 left-1/2 -translate-x-1/2 px-1.5 sm:px-3 py-0.5 sm:py-1 rounded-full text-[0.45rem] sm:text-[0.6rem] font-semibold uppercase tracking-[0.1em] sm:tracking-[0.25em] bg-off-white text-rose-wine shadow whitespace-nowrap">
-                    {meta.tag}
-                  </span>
-                )}
-
                 {active && (
                   <span className="absolute top-1 right-1 sm:top-3 sm:right-3 grid h-4 w-4 sm:h-6 sm:w-6 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10">
                     <Check className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5" />
@@ -107,12 +71,7 @@ export function CombosSection() {
                 >
                   {hero ? (
                     <img src={hero} alt={item.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
-                  ) : (
-                    <div className="flex flex-col items-center gap-1 sm:gap-2 text-off-white/85">
-                      <span className="text-lg sm:text-4xl md:text-5xl">{meta?.emoji ?? "🎁"}</span>
-                      <Icon className="hidden sm:block h-10 w-10" strokeWidth={1.25} />
-                    </div>
-                  )}
+                  ) : <Package className="h-8 w-8 text-off-white" />}
                 </div>
 
                 <h4 className="mt-1 sm:mt-4 flex min-h-[2.4em] sm:min-h-0 items-center justify-center font-display uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[0.6rem] sm:text-sm md:text-base text-off-white leading-tight sm:line-clamp-1">
@@ -120,7 +79,7 @@ export function CombosSection() {
                 </h4>
 
                 <ul className="mt-1 sm:mt-3 hidden sm:block space-y-1 text-[0.7rem] text-pink-mist/90 leading-relaxed">
-                  {(meta?.includes ?? []).map((line) => (
+                  {info.included.map((line) => (
                     <li key={line}>♡ {line}</li>
                   ))}
                 </ul>
@@ -188,11 +147,10 @@ function ComboModal({
   if (!open || !item) return null;
 
 
-  const meta = COMBO_META[item.id];
-  const Icon = meta?.icon ?? Package;
+  const info = SITE.comboInfo[item.id];
   const hero = comboHero(item.id);
   const inCart = cart.some((c) => c.category === "combos" && c.id === item.id);
-  const original = comboRealTotal(item.id);
+  const original = info.originalValue;
   const save = Math.max(0, original - item.price);
 
   return (
@@ -207,12 +165,7 @@ function ComboModal({
             {hero ? (
               <img src={hero} alt={item.name} className="w-full h-auto object-contain" />
             ) : (
-              <div className="aspect-[2480/1754] relative grid place-items-center bg-gradient-to-br from-pink-mist/40 to-blush-rose/40">
-                <div className="flex flex-col items-center gap-3 text-rose-wine">
-                  <span className="text-6xl">{meta?.emoji ?? "🎁"}</span>
-                  <Icon className="h-14 w-14" strokeWidth={1.25} />
-                </div>
-              </div>
+                <div className="aspect-[2480/1754] relative grid place-items-center bg-pink-mist/40"><Package className="h-14 w-14 text-rose-wine" /></div>
             )}
           </div>
         </div>
@@ -238,16 +191,23 @@ function ComboModal({
           </div>
 
           <div className="mt-4 h-px bg-rose-wine/10" />
-          <p className="mt-4 text-sm leading-relaxed text-neutral-700">{item.desc}</p>
+          <p className="mt-4 text-sm leading-relaxed text-neutral-700">{info.description}</p>
+
+          <div className="mt-4 grid gap-3 sm:grid-cols-2">
+            <div><p className="text-xs font-semibold uppercase text-rose-wine">Photos Required</p><p className="mt-1 text-sm text-neutral-700">{info.photosRequired}</p></div>
+            <div><p className="text-xs font-semibold uppercase text-rose-wine">Details Required</p><p className="mt-1 text-sm text-neutral-700">{info.detailsRequired}</p></div>
+          </div>
 
           <div className="mt-4">
             <p className="text-xs font-semibold uppercase tracking-[0.2em] text-rose-wine">Includes</p>
             <ul className="mt-2 space-y-1 text-sm text-neutral-700">
-              {(meta?.includes ?? []).map((line) => (
+              {info.included.map((line) => (
                 <li key={line}>♡ {line}</li>
               ))}
             </ul>
           </div>
+
+          <p className="mt-4 text-xs leading-relaxed text-dusty-rose"><span className="font-semibold uppercase text-rose-wine">Perfect for:</span> {info.perfectFor}</p>
 
           <button
             onClick={() => { selectCombo(item); toast.success(`${item.name} added ✨`); onClose(); }}
