@@ -546,7 +546,14 @@ function shippingItemSummaryLines_(cart) {
   const order = [];
   cart.forEach((item) => {
     if (EXCLUDE[item.category]) return;
-    if (item.comboId) return;
+    if (item.comboId) {
+      if (item.category === "addons" && /gift wrap|wrap \+ letter/i.test(String(item.name || ""))) {
+        const addonLabel = "Gift Wrap";
+        if (!(addonLabel in counts)) order.push(addonLabel);
+        counts[addonLabel] = (counts[addonLabel] || 0) + 1;
+      }
+      return;
+    }
     const label = shippingItemLabel_(item);
     if (item.category === "memory-card") {
       const match = String(item.name || "").match(/×\s*(\d+)/);

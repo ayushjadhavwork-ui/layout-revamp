@@ -275,7 +275,7 @@ export const SITE = {
     },
   } as Record<string, MemoryCardInfo>,
 
-  memoryCardBanner: ["/media/CARD__.webp"],
+  memoryCardBanner: [memoryCardBanner.url],
 
   // ────────────────────────────────────────────────────────────────
   // COMBO INFORMATION
