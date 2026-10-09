@@ -245,8 +245,9 @@ function completeOrder(body) {
 // and can be restyled without touching any external template file).
 function generateInvoicePdf_(order) {
   const html = buildInvoiceHtml_(order);
-  const htmlBlob = Utilities.newBlob(html, "text/html", "Invoice-" + order.orderId + ".html");
-  const pdfBlob = htmlBlob.getAs("application/pdf").setName("Invoice-" + order.orderId + ".pdf");
+  const baseName = documentFileBase_(order, "invoice");
+  const htmlBlob = Utilities.newBlob(html, "text/html", baseName + ".html");
+  const pdfBlob = htmlBlob.getAs("application/pdf").setName(baseName + ".pdf");
 
   const folder = getOrCreateFolder("The Layout — Invoices");
   const file = folder.createFile(pdfBlob);
@@ -323,13 +324,14 @@ function buildInvoiceHtml_(order) {
   });
   const memoryCardDesignItems = cart.filter((c) => c.category === "memory-card-designs");
   const memoryCardDesignLabels = memoryCardDesignItems.map((item) => escapeHtml_(item.name));
-  const invoiceCart = cart.filter((c) => c.category !== "templates" && c.category !== "pocket-templates" && c.category !== "friendship-designs" && c.category !== "memory-card-designs");
+  const invoiceCart = cart.filter((c) => c.category !== "templates" && c.category !== "pocket-templates" && c.category !== "friendship-designs" && c.category !== "memory-card-designs" && !c.comboId);
 
   const rows = invoiceCart.map((item) => {
     const isSize = item.category === "sizes";
     const isPocket = item.category === "pocket";
     const isFriendship = item.category === "friendship";
     const isMemoryCard = item.category === "memory-card";
+    const isCombo = item.category === "combos";
     // Standard and Mini share the same item.name ("8 Pages", etc.) — the
     // format only shows up in the id suffix (sz-8 vs sz-8-mini) — so spell
     // it out here or the invoice can't tell the customer which one they got.
@@ -351,7 +353,6 @@ function buildInvoiceHtml_(order) {
           : item.name;
     const notes = [];
     if (item.note) notes.push(escapeHtml_(item.note));
-    if (item.comboId) notes.push("Included in " + escapeHtml_(comboNameById[item.comboId] || "combo"));
     if (item.promoCode) notes.push("Free — redeemed with " + escapeHtml_(item.promoCode));
     if (isSize && templateLabels.length) notes.push("Templates:- " + templateLabels.join(", "));
     if (isPocket) {
@@ -360,6 +361,17 @@ function buildInvoiceHtml_(order) {
     }
     if (isFriendship && friendshipDesignLabels.length) notes.push("Design:- " + friendshipDesignLabels.join(", "));
     if (isMemoryCard && memoryCardDesignLabels.length) notes.push("Designs:- " + memoryCardDesignLabels.join(", "));
+    if (isCombo) {
+      const included = cart
+        .filter((child) => child.comboId === item.id && child.category !== "friendship-designs" && child.category !== "memory-card-designs")
+        .map((child) => escapeHtml_(child.name));
+      if (included.length) notes.push("Included:- " + included.join("; "));
+      if (templateLabels.length) notes.push("Templates:- " + templateLabels.join(", "));
+      const comboMemoryDesigns = memoryCardDesignItems.filter((design) => design.comboId === item.id).map((design) => escapeHtml_(design.name));
+      if (comboMemoryDesigns.length) notes.push("Memory Card designs:- " + comboMemoryDesigns.join(", "));
+      const comboFriendshipDesigns = friendshipDesignItems.filter((design) => design.comboId === item.id).map((design) => escapeHtml_(design.name));
+      if (comboFriendshipDesigns.length) notes.push("Friendship Card designs:- " + comboFriendshipDesigns.join(", "));
+    }
     const memoryQuantity = isMemoryCard ? Math.max(1, memoryCardDesignItems.reduce((sum, design) => {
       const match = String(design.name || "").match(/×(\d+)/);
       return sum + (match ? Number(match[1]) : 1);
@@ -477,8 +489,9 @@ function escapeHtml_(s) {
 // courier label rather than a billing document.
 function generateShippingLabelPdf_(order) {
   const html = buildShippingLabelHtml_(order);
-  const htmlBlob = Utilities.newBlob(html, "text/html", "ShippingLabel-" + order.orderId + ".html");
-  const pdfBlob = htmlBlob.getAs("application/pdf").setName("ShippingLabel-" + order.orderId + ".pdf");
+  const baseName = documentFileBase_(order, "shippinglabel");
+  const htmlBlob = Utilities.newBlob(html, "text/html", baseName + ".html");
+  const pdfBlob = htmlBlob.getAs("application/pdf").setName(baseName + ".pdf");
 
   const folder = getOrCreateFolder("The Layout — Shipping Labels");
   const file = folder.createFile(pdfBlob);
@@ -503,7 +516,10 @@ function shippingItemLabel_(item) {
     case "memory-card": return "Memory Card";
     case "polaroids": return "Polaroid Pack";
     case "strips": return "Polaroid Strips";
-    case "addons": return "Add-on";
+    case "addons": {
+      const name = String(item.name || "Add-on");
+      return /gift wrap/i.test(name) || /wrap \+ letter/i.test(name) ? "Gift Wrap" : name;
+    }
     case "combos": return String(item.name || "Combo");
     case "promotions": return String(item.name || "Free Gift");
     default: return String(item.name || item.category || "Item");
@@ -937,6 +953,22 @@ function sanitizeTextCell_(value) {
   const str = String(value).trim();
   if (!str) return "";
   return /^[=+\-@]/.test(str) ? "'" + str : str;
+}
+
+function safeFilenamePart_(value, fallback) {
+  const cleaned = String(value || "")
+    .trim()
+    .replace(/[^a-zA-Z0-9 _-]+/g, "")
+    .replace(/\s+/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
+  return cleaned || fallback;
+}
+
+function documentFileBase_(order, kind) {
+  const customerName = safeFilenamePart_(order.customer && order.customer.name, "customer");
+  const invoiceNumber = safeFilenamePart_(order.orderId, "order");
+  return customerName + "_" + invoiceNumber + "_" + kind;
 }
 
 
