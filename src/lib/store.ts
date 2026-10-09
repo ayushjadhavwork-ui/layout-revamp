@@ -742,7 +742,10 @@ export const useStore = create<State>()(
     if (!s.selectedFriendshipId) return 0;
     return CATALOG.friendship.find((f) => f.id === s.selectedFriendshipId)?.designLimit ?? 0;
   },
-  memoryCardLimit: () => MEMORY_CARD_MAX,
+  memoryCardLimit: () => {
+    const combo = get().cart.find((item) => item.category === "combos");
+    return combo ? COMBO_RECIPES[combo.id]?.memoryCardCount ?? MEMORY_CARD_MAX : MEMORY_CARD_MAX;
+  },
     }),
     {
       name: "the-layout-cart",

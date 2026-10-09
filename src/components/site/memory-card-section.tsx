@@ -14,9 +14,10 @@ export function MemoryCardSection() {
   const removeDesign = useStore((state) => state.removeMemoryCardDesign);
   const designs = CATALOG["memory-card-designs"];
   const total = selectedIds.length;
+  const limit = useStore((state) => state.memoryCardLimit());
 
   const add = (item: Product) => {
-    if (!addDesign(item.id)) return toast.error(`You can select up to ${MEMORY_CARD_MAX} Memory Cards.`);
+    if (!addDesign(item.id)) return toast.error(`You can select up to ${limit} Memory Cards.`);
     const next = total + 1;
     toast.success(`${item.name} — Qty ×${selectedIds.filter((id) => id === item.id).length + 1}. Bundle total: ${fmt(MEMORY_CARD_TIERS[next])}`);
   };
@@ -48,7 +49,7 @@ export function MemoryCardSection() {
         <div className="mt-6 text-center">
           <p className="text-xs font-semibold uppercase text-off-white">Choose any mix of up to three cards</p>
           <p className="mt-1 text-[0.65rem] uppercase text-pink-mist">
-            {total === 0 ? "Nothing selected yet" : `${total} of ${MEMORY_CARD_MAX} selected · Bundle ${fmt(MEMORY_CARD_TIERS[total])}`}
+            {total === 0 ? "Nothing selected yet" : `${total} of ${limit} selected${limit === MEMORY_CARD_MAX ? ` · Bundle ${fmt(MEMORY_CARD_TIERS[total])}` : " · included in combo"}`}
           </p>
         </div>
 
@@ -56,7 +57,7 @@ export function MemoryCardSection() {
           {designs.map((item, index) => {
             const count = selectedIds.filter((id) => id === item.id).length;
             const active = count > 0;
-            const disabled = total >= MEMORY_CARD_MAX && !active;
+            const disabled = total >= limit && !active;
             const thumbnail = SITE.productImages[item.id]?.[0];
             return (
               <article
@@ -90,7 +91,7 @@ export function MemoryCardSection() {
                         <Minus className="h-3.5 w-3.5" />
                       </button>
                       <span className="flex h-8 min-w-0 items-center justify-center rounded-full bg-off-white px-1 text-[0.65rem] font-semibold text-rose-wine sm:text-xs">Qty ×{count}</span>
-                      <button type="button" onClick={() => add(item)} disabled={total >= MEMORY_CARD_MAX} aria-label={`Increase ${item.name} quantity`} className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-pink-mist/60 text-off-white disabled:opacity-35">
+                      <button type="button" onClick={() => add(item)} disabled={total >= limit} aria-label={`Increase ${item.name} quantity`} className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-pink-mist/60 text-off-white disabled:opacity-35">
                         <Plus className="h-3.5 w-3.5" />
                       </button>
                     </div>
