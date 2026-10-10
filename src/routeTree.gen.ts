@@ -9,17 +9,17 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as HappyCustomersRouteImport } from './routes/happy-customers'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as HappyCustomersRouteImport } from './routes/happy-customers'
 
-const HappyCustomersRoute = HappyCustomersRouteImport.update({
-  id: '/happy-customers',
-  path: '/happy-customers',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HappyCustomersRoute = HappyCustomersRouteImport.update({
+  id: '/happy-customers',
+  path: '/happy-customers',
   getParentRoute: () => rootRouteImport,
 } as any)
 
@@ -51,18 +51,18 @@ export interface RootRouteChildren {
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/happy-customers': {
-      id: '/happy-customers'
-      path: '/happy-customers'
-      fullPath: '/happy-customers'
-      preLoaderRoute: typeof HappyCustomersRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/': {
       id: '/'
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/happy-customers': {
+      id: '/happy-customers'
+      path: '/happy-customers'
+      fullPath: '/happy-customers'
+      preLoaderRoute: typeof HappyCustomersRouteImport
       parentRoute: typeof rootRouteImport
     }
   }
