@@ -1,4 +1,5 @@
-import { describe, expect, test } from "bun:test";
+import assert from "node:assert/strict";
+import { describe, it } from "node:test";
 import { comboSelectionIssues, type ComboSelection } from "./combo-validation";
 
 const completeComboFive: ComboSelection = {
@@ -18,22 +19,22 @@ const completeComboFive: ComboSelection = {
 };
 
 describe("combo selection validation", () => {
-  test("allows combo 05 only when both strip and card quantities are present", () => {
-    expect(comboSelectionIssues("combo-05", completeComboFive)).toEqual([]);
+  it("allows combo 05 only when both strip and card quantities are present", () => {
+    assert.deepEqual(comboSelectionIssues("combo-05", completeComboFive), []);
   });
 
-  test("blocks checkout if an included Memory Card design is removed", () => {
+  it("blocks checkout if an included Memory Card design is removed", () => {
     const selection = {
       ...completeComboFive,
       cart: completeComboFive.cart.filter((item) => item.category !== "memory-card-designs"),
       selectedMemoryCardDesignIds: [],
     };
-    expect(comboSelectionIssues("combo-05", selection)).toContain("Choose 2 Memory Card designs included in your combo.");
+    assert.ok(comboSelectionIssues("combo-05", selection).includes("Choose 2 Memory Card designs included in your combo."));
   });
 
-  test("blocks checkout until the exact included strip quantity is selected", () => {
-    expect(comboSelectionIssues("combo-05", { ...completeComboFive, stripSelections: ["strip-1"] })).toContain(
+  it("blocks checkout until the exact included strip quantity is selected", () => {
+    assert.ok(comboSelectionIssues("combo-05", { ...completeComboFive, stripSelections: ["strip-1"] }).includes(
       "Choose 2 Polaroid Strips for your combo.",
-    );
+    ));
   });
 });
