@@ -156,9 +156,44 @@ const COMBO_INDEPENDENT: Category[] = ["delivery", "newspaper", "pocket", "pocke
 // for e.g. the page size their combo already includes).
 const COMBO_MANAGED: Category[] = ["sizes", "templates", "addons", "polaroids", "strips"];
 
+// Every order ships with one free keepsake postcard, so a non-empty cart
+// always carries exactly one "promo-postcard" line and an empty cart none.
+// A combo adds its own comboId-linked postcard (checked by
+// combo-validation.ts) — that one wins when present; otherwise a standalone
+// line is added. Enforced centrally by the wrapped `set` in the store below,
+// so no individual cart action can forget it.
+export const POSTCARD_ID = "promo-postcard";
+export const isPostcard = (c: CartItem) => c.category === "promotions" && c.id === POSTCARD_ID;
+
+const withPostcard = (cart: CartItem[]): CartItem[] => {
+  const postcards = cart.filter(isPostcard);
+  if (postcards.length === cart.length) return postcards.length ? [] : cart;
+  const keep = postcards.find((c) => c.comboId) ?? postcards[0];
+  if (keep && postcards.length === 1) return cart;
+  const product = CATALOG.promotions.find((p) => p.id === POSTCARD_ID);
+  const line: CartItem = keep ?? {
+    key: key("promotions", POSTCARD_ID),
+    category: "promotions",
+    id: POSTCARD_ID,
+    name: product?.name ?? "Free Postcard",
+    price: 0,
+  };
+  return [...cart.filter((c) => !isPostcard(c)), line];
+};
+
 export const useStore = create<State>()(
   persist(
-    (set, get) => ({
+    (rawSet, get) => {
+  // Every state update passes through here so the postcard invariant above
+  // holds after any cart change. withPostcard returns the same array when
+  // nothing needs fixing, so unchanged carts don't trigger re-renders.
+  const set = (partial: Partial<State> | ((s: State) => Partial<State>)) =>
+    rawSet((s) => {
+      const next = typeof partial === "function" ? partial(s) : partial;
+      return next.cart ? { ...next, cart: withPostcard(next.cart) } : next;
+    });
+
+  return {
   cart: [],
   format: "standard",
   selectedSizeId: null,
@@ -223,6 +258,9 @@ export const useStore = create<State>()(
 
   removeItem: (k) => {
     const item = get().cart.find((c) => c.key === k);
+    // The free postcard can't be removed on its own — it leaves with the
+    // last other item (see withPostcard).
+    if (item && isPostcard(item)) return;
     set((s) => {
       let cart = s.cart.filter((c) => c.key !== k);
       const patch: Partial<State> = { cart };
@@ -758,7 +796,8 @@ export const useStore = create<State>()(
     const combo = get().cart.find((item) => item.category === "combos");
     return combo ? COMBO_RECIPES[combo.id]?.memoryCardCount ?? MEMORY_CARD_MAX : MEMORY_CARD_MAX;
   },
-    }),
+  };
+    },
     {
       name: "the-layout-cart",
       // v2: selectedPocketTemplateIds (one flat array, one Pocket Magazine)
@@ -831,6 +870,11 @@ export const useStore = create<State>()(
         coupon: s.coupon,
         cartId: s.cartId,
       }),
+      // Carts saved before the universal postcard existed won't have one —
+      // patch it in on load rather than waiting for the next cart change.
+      onRehydrateStorage: () => (state) => {
+        if (state) useStore.setState({ cart: withPostcard(state.cart) });
+      },
     },
   ),
 );

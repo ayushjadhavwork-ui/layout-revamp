@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { X, ShoppingBag, Trash2, Plus, Check, ArrowUpRight, ChevronLeft, ChevronRight, Maximize2 } from "lucide-react";;
+import { X, ShoppingBag, Trash2, Plus, Check, ArrowUpRight, ChevronLeft, ChevronRight, Maximize2, Sparkles, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { CATALOG, CONFIG, fmt, comboRealTotal, COUPON_FREEBIES, type Category, type Product } from "@/lib/catalog";
-import { useStore } from "@/lib/store";
+import { useStore, isPostcard } from "@/lib/store";
 import { validateCoupon, logCart, completeOrder } from "@/lib/gas";
 import { SITE } from "@/lib/site-content";
 import { createPortal } from "react-dom";
@@ -563,7 +563,11 @@ export function CartDrawer({
   const comboOriginal = activeCombo ? comboRealTotal(activeCombo.id) : 0;
   const comboSavings = activeCombo ? Math.max(0, comboOriginal - activeCombo.price) : 0;
 
-  const promoItems = cart.filter((c) => c.category === "promotions" && !c.comboId);
+  // The free postcard (in every non-empty cart, see withPostcard in
+  // store.ts) gets its own gold row below — combo-linked or not — so it's
+  // kept out of both the coupon-freebie list and the combo's bullet list.
+  const postcard = cart.find(isPostcard);
+  const promoItems = cart.filter((c) => c.category === "promotions" && !c.comboId && !isPostcard(c));
   // Friendship Card design picks are zero-cost sub-selections of the
   // "friendship" row (same relationship templates have to a magazine's
   // "sizes" row) — fold them into a note under that row (below) instead of
@@ -587,6 +591,19 @@ export function CartDrawer({
 
           <div className="mt-4 flex-1 space-y-3 overflow-y-auto pr-1">
             {cart.length === 0 && <p className="text-center text-dusty-rose py-10">Your cart is empty.</p>}
+
+            {cart.length > 0 && (
+              <div className="gold-glow relative overflow-hidden rounded-2xl border border-amber-300/80 bg-gradient-to-r from-amber-100 via-amber-50 to-amber-100 p-4 text-center">
+                <div className="gold-shimmer pointer-events-none absolute inset-0" aria-hidden />
+                <Sparkles className="gold-sparkle relative mx-auto h-6 w-6 text-amber-500" />
+                <p className="relative mt-2 text-[0.7rem] font-bold uppercase tracking-[0.15em] text-amber-900">
+                  ✧ ✨ Complimentary postcard included with every order ✨ ✧
+                </p>
+                <p className="relative mt-1 text-xs italic text-amber-700">
+                  A free limited-edition aesthetic postcard has been added to your package as our gift to you.
+                </p>
+              </div>
+            )}
 
             {cart.length > 0 && <CartSummaryPanel />}
 
@@ -612,7 +629,7 @@ export function CartDrawer({
                   )}
                   {item.category === "combos" && (
                     <ul className="mt-2 space-y-0.5 text-xs text-neutral-600">
-                      {cart.filter((included) => included.comboId === item.id && included.category !== "friendship-designs" && included.category !== "memory-card-designs").map((included) => (
+                      {cart.filter((included) => included.comboId === item.id && included.category !== "friendship-designs" && included.category !== "memory-card-designs" && !isPostcard(included)).map((included) => (
                         <li key={included.key}>• {included.name}</li>
                       ))}
                     </ul>
@@ -634,6 +651,21 @@ export function CartDrawer({
                 </div>
               </div>
             ))}
+
+            {postcard && (
+              <div className="flex items-center gap-3 rounded-2xl border border-amber-300/60 bg-amber-50/70 p-3">
+                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 text-white">
+                  <Gift className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate font-medium text-amber-900">Free Keepsake Postcard</p>
+                  <span className="mt-1 inline-block rounded-full border border-amber-300/60 bg-amber-100 px-2 py-0.5 text-[0.65rem] font-semibold text-amber-900">
+                    ✨ FREE GIFT
+                  </span>
+                </div>
+                <p className="text-sm font-bold text-amber-600">FREE</p>
+              </div>
+            )}
 
             {promoItems.length > 0 && (
               <div className="rounded-2xl bg-blush-rose/10 p-3 ring-1 ring-blush-rose/20">

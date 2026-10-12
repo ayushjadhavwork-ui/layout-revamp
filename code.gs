@@ -375,7 +375,10 @@ function buildInvoiceHtml_(order) {
   });
   const memoryCardDesignItems = cart.filter((c) => c.category === "memory-card-designs");
   const memoryCardDesignLabels = memoryCardDesignItems.map((item) => escapeHtml_(item.name));
-  const invoiceCart = cart.filter((c) => c.category !== "templates" && c.category !== "pocket-templates" && c.category !== "friendship-designs" && c.category !== "memory-card-designs" && !c.comboId);
+  // The frontend puts a "promo-postcard" line in every cart; it's skipped
+  // here because the postcard is rendered explicitly (postcardRow / the combo
+  // sub-list below), so it must never also appear as its own cart row.
+  const invoiceCart = cart.filter((c) => c.category !== "templates" && c.category !== "pocket-templates" && c.category !== "friendship-designs" && c.category !== "memory-card-designs" && !c.comboId && c.id !== "promo-postcard");
 
   // A combo's contents as an indented sub-list under its row — one bullet per
   // included product, with that product's own picks (templates, strips,
