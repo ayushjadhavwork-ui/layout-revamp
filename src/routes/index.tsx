@@ -217,14 +217,17 @@ function Home() {
         <HowToOrder />
       </TiledSection>
 
+      <FreePostcardSection />
+
 
 
       <CreateMagazineSection />
 
       <section className="pattern-satin">
         <Mandatory />
-        
       </section>
+
+      <SizeComparisonSection />
 
       <TiledSection tiles={SITE.backgrounds.customize}>
         <div id="combos" className="relative z-10 px-4 py-12 sm:py-20">
@@ -942,6 +945,42 @@ function CustomImageSection() {
           Check your delivery date <ArrowUpRight className="h-4 w-4" />
         </a>
       </div>
+    </section>
+  );
+}
+
+// Poster-style artwork with its own cream background and baked-in text, so
+// it's shown as a rounded card rather than a full-bleed banner. The postcard
+// art is portrait (1086×1448): full card width on phones, capped on desktop
+// so it doesn't grow taller than the screen.
+function FreePostcardSection() {
+  return (
+    <section className="relative z-10 px-4 py-10 sm:py-16">
+      <img
+        src="/media/bg/free_postcard.webp"
+        alt="A free postcard with every order — a little something from The Layout Club"
+        width={1086}
+        height={1448}
+        loading="lazy"
+        className="mx-auto block h-auto w-full max-w-md rounded-3xl shadow-xl ring-1 ring-rose-wine/10 lg:max-w-lg"
+      />
+    </section>
+  );
+}
+
+// Landscape (1672×941) A4 / A5 / A6 comparison. Nearly edge-to-edge on phones
+// so the size labels stay legible, capped at the content width on desktop.
+function SizeComparisonSection() {
+  return (
+    <section className="relative z-10 px-3 py-10 sm:px-6 sm:py-16">
+      <img
+        src="/media/bg/same_story_sizes.webp"
+        alt="Same story, different sizes — A4 original magazine, A5 mini magazine and A6 pocket magazine"
+        width={1672}
+        height={941}
+        loading="lazy"
+        className="mx-auto block h-auto w-full max-w-6xl rounded-2xl shadow-xl ring-1 ring-rose-wine/10 sm:rounded-3xl"
+      />
     </section>
   );
 }
