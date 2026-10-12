@@ -273,6 +273,57 @@ function sendInvoiceEmail_(order, pdfBlob) {
   });
 }
 
+// Every order ships with one free keepsake postcard — combo or not — so both
+// documents add it themselves rather than relying on a cart line (only
+// combos carry a "promo-postcard" line; a plain order has none).
+const POSTCARD_INVOICE_LABEL = "Free Keepsake Postcard (Complimentary Gift)";
+const POSTCARD_SHIPPING_LABEL = "Free Keepsake Postcard";
+
+// The Pocket Magazine is a fixed 6-page SKU (see CATALOG.pocket in catalog.ts).
+const POCKET_MAGAZINE_PAGES = 6;
+
+// Page count of a "sizes" line, read from its id (sz-12 / sz-12-mini) rather
+// than item.name ("12 Pages") so a renamed size can't break it.
+function magazinePageCount_(item) {
+  const m = String(item.id).match(/^sz-(\d+)/);
+  return m ? m[1] : String(item.name || "").replace(/\s*pages?$/i, "");
+}
+
+// Full invoice wording for any magazine line — standalone or combo-included.
+// Standard and Mini share the same item.name ("8 Pages", etc.) and only differ
+// by the id suffix, so the format has to be spelled out here or the invoice
+// can't tell the customer which one they got. Returns null for non-magazines.
+function magazineInvoiceLabel_(item) {
+  switch (item.category) {
+    case "sizes": {
+      const format = /-mini$/.test(String(item.id)) ? "Mini A5" : "Standard A4";
+      return "Custom Magazine (" + magazinePageCount_(item) + " Pages, " + format + ")";
+    }
+    case "pocket": return "Pocket Magazine (" + POCKET_MAGAZINE_PAGES + " Pages, Pocket A6)";
+    case "newspaper": return "Newspaper Magazine (Broadsheet A4 Spreads)";
+    default: return null;
+  }
+}
+
+// Strips and Memory Card lines are single "bundle" lines whose quantity only
+// lives in the name ("Polaroid Strips × 3", "The Memory Card × 2").
+function bundleQuantity_(item) {
+  const m = String(item.name || "").match(/×\s*(\d+)/);
+  return m ? Number(m[1]) : 1;
+}
+
+// Display order for a combo's included items, shared by the invoice sub-list
+// and the shipping label — magazines first, then extras, in the same order
+// the combo cards describe them. Unknown categories sort last.
+const COMBO_CHILD_ORDER_ = ["sizes", "newspaper", "pocket", "polaroids", "addons", "strips", "friendship", "memory-card"];
+function compareComboChildren_(a, b) {
+  const rank = (item) => {
+    const i = COMBO_CHILD_ORDER_.indexOf(item.category);
+    return i === -1 ? COMBO_CHILD_ORDER_.length : i;
+  };
+  return rank(a) - rank(b);
+}
+
 function buildInvoiceHtml_(order) {
   const cart = order.cart;
   const customer = order.customer || {};
@@ -326,30 +377,79 @@ function buildInvoiceHtml_(order) {
   const memoryCardDesignLabels = memoryCardDesignItems.map((item) => escapeHtml_(item.name));
   const invoiceCart = cart.filter((c) => c.category !== "templates" && c.category !== "pocket-templates" && c.category !== "friendship-designs" && c.category !== "memory-card-designs" && !c.comboId);
 
+  // A combo's contents as an indented sub-list under its row — one bullet per
+  // included product, with that product's own picks (templates, strips,
+  // designs) on a "↳" line beneath it. Templates never carry a comboId, but
+  // a combo cart can only ever hold the combo's own magazine size (picking a
+  // size drops the combo, see setSize in store.ts), so the flat template list
+  // belongs to the combo's "sizes" line. The free postcard is always last.
+  const comboSublistHtml = (combo) => {
+    const children = cart
+      .filter((child) => child.comboId === combo.id &&
+        child.category !== "friendship-designs" &&
+        child.category !== "memory-card-designs" &&
+        child.id !== "promo-postcard")
+      .sort(compareComboChildren_);
+    const lines = [];
+    const bullet = (text) => lines.push("<div>• <strong>" + escapeHtml_(text) + "</strong></div>");
+    // `values` must already be HTML-safe (template numbers or escaped names).
+    const detail = (heading, values) => {
+      if (values.length) lines.push('<div class="combo-sub">↳ ' + heading + ":- " + values.join(", ") + "</div>");
+    };
+    const comboDesigns = (items) => items.filter((d) => d.comboId === combo.id).map((d) => escapeHtml_(d.name));
+
+    children.forEach((child) => {
+      const magazineLabel = magazineInvoiceLabel_(child);
+      if (magazineLabel) {
+        bullet(magazineLabel);
+        if (child.category === "sizes") detail("Templates", templateLabels);
+        if (child.category === "pocket") detail("Templates", pocketTemplateLabelsByUnit[child.unit || ""] || []);
+        return;
+      }
+      switch (child.category) {
+        case "polaroids":
+          bullet(child.name + " (Polaroids)");
+          break;
+        case "strips":
+          bullet(child.name);
+          if (child.note) detail("Strips", [escapeHtml_(child.note)]);
+          break;
+        case "friendship":
+          bullet("Friendship Card (" + child.name + ")");
+          detail("Designs", comboDesigns(friendshipDesignItems));
+          break;
+        case "memory-card": {
+          const qty = bundleQuantity_(child);
+          bullet(qty > 1 ? "The Memory Card × " + qty : "The Memory Card");
+          detail("Designs", comboDesigns(memoryCardDesignItems));
+          break;
+        }
+        default:
+          bullet(child.name);
+      }
+    });
+    bullet(POSTCARD_INVOICE_LABEL);
+    return '<div class="combo-sublist">' + lines.join("") + "</div>";
+  };
+
   const rows = invoiceCart.map((item) => {
     const isSize = item.category === "sizes";
     const isPocket = item.category === "pocket";
     const isFriendship = item.category === "friendship";
     const isMemoryCard = item.category === "memory-card";
     const isCombo = item.category === "combos";
-    // Standard and Mini share the same item.name ("8 Pages", etc.) — the
-    // format only shows up in the id suffix (sz-8 vs sz-8-mini) — so spell
-    // it out here or the invoice can't tell the customer which one they got.
-    const isMini = isSize && /-mini$/.test(String(item.id));
-    const formatLabel = isMini ? "Mini Magazine, A5" : "Normal Magazine, A4";
-    const label = isSize
-      ? ("Custom Magazine (" + item.name + ", " + formatLabel + ")")
-      : isPocket
-        ? "Pocket Magazine (6 Pages, Pocket Size)"
-        // "Single Card" / "Duo Card — BESTIE SET" read fine on-site (under a
-        // section already titled Friendship Card) but are ambiguous on a
-        // flat invoice line. Parenthesise rather than prefix with a dash —
-        // the item name already contains "Duo Card — BESTIE SET", and a
-        // second leading dash there reads as a typo, not two separate names.
-        : isFriendship
-          ? ("Friendship Card (" + item.name + ")")
-          : isMemoryCard
-            ? "The Memory Card"
+    const magazineLabel = magazineInvoiceLabel_(item);
+    const label = magazineLabel
+      ? magazineLabel
+      // "Single Card" / "Duo Card — BESTIE SET" read fine on-site (under a
+      // section already titled Friendship Card) but are ambiguous on a
+      // flat invoice line. Parenthesise rather than prefix with a dash —
+      // the item name already contains "Duo Card — BESTIE SET", and a
+      // second leading dash there reads as a typo, not two separate names.
+      : isFriendship
+        ? ("Friendship Card (" + item.name + ")")
+        : isMemoryCard
+          ? "The Memory Card"
           : item.name;
     const notes = [];
     if (item.note) notes.push(escapeHtml_(item.note));
@@ -361,32 +461,34 @@ function buildInvoiceHtml_(order) {
     }
     if (isFriendship && friendshipDesignLabels.length) notes.push("Design:- " + friendshipDesignLabels.join(", "));
     if (isMemoryCard && memoryCardDesignLabels.length) notes.push("Designs:- " + memoryCardDesignLabels.join(", "));
-    if (isCombo) {
-      const included = cart
-        .filter((child) => child.comboId === item.id && child.category !== "friendship-designs" && child.category !== "memory-card-designs")
-        .map((child) => escapeHtml_(child.name));
-      if (included.length) notes.push("Included:- " + included.join("; "));
-      if (templateLabels.length) notes.push("Templates:- " + templateLabels.join(", "));
-      const comboMemoryDesigns = memoryCardDesignItems.filter((design) => design.comboId === item.id).map((design) => escapeHtml_(design.name));
-      if (comboMemoryDesigns.length) notes.push("Memory Card designs:- " + comboMemoryDesigns.join(", "));
-      const comboFriendshipDesigns = friendshipDesignItems.filter((design) => design.comboId === item.id).map((design) => escapeHtml_(design.name));
-      if (comboFriendshipDesigns.length) notes.push("Friendship Card designs:- " + comboFriendshipDesigns.join(", "));
-    }
     const memoryQuantity = isMemoryCard ? Math.max(1, memoryCardDesignItems.reduce((sum, design) => {
       const match = String(design.name || "").match(/×(\d+)/);
       return sum + (match ? Number(match[1]) : 1);
     }, 0)) : 1;
     const rate = isMemoryCard ? (Number(item.price) || 0) / memoryQuantity : Number(item.price) || 0;
     const noteHtml = notes.length ? ('<div class="item-note">' + notes.join(" · ") + "</div>") : "";
+    const sublistHtml = isCombo ? comboSublistHtml(item) : "";
     return (
       "<tr>" +
-      "<td>" + escapeHtml_(label) + noteHtml + "</td>" +
+      "<td>" + escapeHtml_(label) + noteHtml + sublistHtml + "</td>" +
       '<td class="num">' + memoryQuantity + "</td>" +
       '<td class="num">' + formatINR_(rate) + "</td>" +
       '<td class="num">' + formatINR_(item.price) + "</td>" +
       "</tr>"
     );
   }).join("");
+
+  // A combo already lists the postcard in its sub-list; every other order
+  // gets it as its own ₹0 row so the gift is on every invoice exactly once.
+  const hasCombo = invoiceCart.some((c) => c.category === "combos");
+  const postcardRow = hasCombo
+    ? ""
+    : (
+      "<tr><td>" + escapeHtml_(POSTCARD_INVOICE_LABEL) + "</td>" +
+      '<td class="num">1</td>' +
+      '<td class="num">' + formatINR_(0) + "</td>" +
+      '<td class="num">' + formatINR_(0) + "</td></tr>"
+    );
 
   const discountRow = discount > 0
     ? (
@@ -419,6 +521,8 @@ function buildInvoiceHtml_(order) {
     "table.items th.num, table.items td.num { text-align: right; }" +
     "table.items td { padding: 10px 8px; font-size: 12px; border-bottom: 1px solid #f6dde5; vertical-align: top; }" +
     ".item-note { color: #ba7080; font-size: 10px; margin-top: 2px; }" +
+    ".combo-sublist { margin-top: 6px; padding-left: 12px; border-left: 2px solid #e092a8; font-size: 11px; color: #4a4a4a; }" +
+    ".combo-sub { padding-left: 12px; color: #7a3548; }" +
     ".total-row td { font-weight: bold; font-size: 14px; border-top: 2px solid #c1476d; padding-top: 12px; border-bottom: none; }" +
     ".footer { margin-top: 24px; font-size: 11px; color: #444; line-height: 1.6; }" +
     ".terms-title { font-weight: bold; }" +
@@ -442,7 +546,7 @@ function buildInvoiceHtml_(order) {
     "</div>" +
     "<table class=\"items\">" +
     "<tr><th>ITEM</th><th class=\"num\">QTY</th><th class=\"num\">RATE</th><th class=\"num\">AMOUNT</th></tr>" +
-    rows + discountRow +
+    rows + postcardRow + discountRow +
     "<tr class=\"total-row\"><td colspan=\"3\">Total</td><td class=\"num\">" + formatINR_(order.total) + "</td></tr>" +
     "</table>" +
     "<div class=\"footer\">" +
@@ -500,72 +604,92 @@ function generateShippingLabelPdf_(order) {
   return { url: file.getUrl(), blob: pdfBlob };
 }
 
-// Cart-line category → the generic product name that belongs on a shipping
-// label. Deliberately coarser than the invoice's per-item labels (no page
-// count, no format spelled out beyond A4/A5, no note text) — a packer needs
-// to know *what to grab off the shelf*, not the customer's exact spec.
+// Cart-line category → the product name that belongs on a shipping label.
+// Magazines carry their exact format and page count (a packer has to grab
+// the right print), but everything else stays coarser than the invoice — no
+// templates, designs or note text, just *what to grab off the shelf*.
+// Polaroids per pack, mirroring CATALOG.polaroids in catalog.ts — the cart
+// line only carries the pack name ("Mini Pack"), not how many to print.
+const SHIPPING_POLAROID_COUNTS_ = { "pol-mini": 9, "pol-classic": 18, "pol-memory": 27, "pol-premium": 36 };
+
+// Add-on ids (CATALOG.addons) → what physically goes in the box. The
+// "Combo (Wrap + Letter)" add-on must name both, or the letter gets missed.
+const SHIPPING_ADDON_LABELS_ = {
+  "add-wrap": "Gift Wrap",
+  "add-letter": "Handwritten Letter",
+  "add-combo": "Gift Wrap + Handwritten Letter",
+};
+
 function shippingItemLabel_(item) {
   switch (item.category) {
     case "sizes": {
       const isMini = /-mini$/.test(String(item.id));
-      return isMini ? "A5 Magazine" : "A4 Magazine";
+      return (isMini ? "Mini A5 Magazine" : "Standard A4 Magazine") + " (" + magazinePageCount_(item) + " Pages)";
     }
-    case "pocket": return "Pocket Magazine";
-    case "newspaper": return "Newspaper Magazine";
-    case "friendship": return "Friendship Card";
+    case "pocket": return "Pocket A6 Magazine (" + POCKET_MAGAZINE_PAGES + " Pages)";
+    case "newspaper": return "Newspaper Magazine (Broadsheet A4)";
+    case "friendship": return item.id === "friend-duo" ? "Friendship Card (Duo Set)" : "Friendship Card (Single)";
     case "memory-card": return "Memory Card";
-    case "polaroids": return "Polaroid Pack";
-    case "strips": return "Polaroid Strips";
-    case "addons": {
-      const name = String(item.name || "Add-on");
-      return /gift wrap/i.test(name) || /wrap \+ letter/i.test(name) ? "Gift Wrap" : name;
+    case "polaroids": {
+      const count = SHIPPING_POLAROID_COUNTS_[item.id];
+      return "Polaroid " + String(item.name || "Pack") + (count ? " (" + count + " Polaroids)" : "");
     }
+    case "strips": return "Polaroid Strips";
+    case "addons": return SHIPPING_ADDON_LABELS_[item.id] || String(item.name || "Add-on");
     case "combos": return String(item.name || "Combo");
     case "promotions": return String(item.name || "Free Gift");
     default: return String(item.name || item.category || "Item");
   }
 }
 
-// Builds the "ITEM" cell content as an array of label strings — one per
-// distinct product category in the order, collapsed to a count (e.g.
-// "Pocket Magazine × 3") rather than one line per unit — a 3-pocket-magazine
-// order shouldn't produce three identical lines. Templates are zero-cost
-// sub-selections (same reason the invoice folds them into a note, not a
-// row) and delivery drives the banner text instead of appearing here, so
-// both are excluded; combo-linked lines (comboId set) are skipped since the
-// combo's own line already represents them. Returned as an array (rather
-// than pre-joined HTML) so buildShippingLabelHtml_ can also read the line
-// count to size the item font — see shippingItemFontSize_ below.
-function shippingItemSummaryLines_(cart) {
-  // Friendship Card design picks ("friendship-designs") are excluded the
-  // same way templates/pocket-templates are — they're zero-cost
-  // sub-selections of the "friendship" row, not their own product; without
-  // this they'd otherwise leak through as bogus "Card 01" etc. lines here.
-  const EXCLUDE = { templates: true, "pocket-templates": true, "friendship-designs": true, "memory-card-designs": true, delivery: true };
+// Collapses cart lines to one label per distinct product with a count (e.g.
+// "Pocket A6 Magazine (6 Pages) × 3") rather than one line per unit — a
+// 3-pocket-magazine order shouldn't produce three identical lines. Strips
+// and Memory Card are single bundle lines whose quantity is in the name.
+function shippingTally_(items) {
   const counts = {};
   const order = [];
-  cart.forEach((item) => {
-    if (EXCLUDE[item.category]) return;
-    if (item.comboId) {
-      if (item.category === "addons" && /gift wrap|wrap \+ letter/i.test(String(item.name || ""))) {
-        const addonLabel = "Gift Wrap";
-        if (!(addonLabel in counts)) order.push(addonLabel);
-        counts[addonLabel] = (counts[addonLabel] || 0) + 1;
-      }
-      return;
-    }
+  items.forEach((item) => {
     const label = shippingItemLabel_(item);
-    if (item.category === "memory-card") {
-      const match = String(item.name || "").match(/×\s*(\d+)/);
-      const quantity = match ? Number(match[1]) : 1;
-      counts[label] = (counts[label] || 0) + quantity;
-      if (order.indexOf(label) === -1) order.push(label);
-      return;
+    const quantity = (item.category === "memory-card" || item.category === "strips") ? bundleQuantity_(item) : 1;
+    if (!(label in counts)) {
+      order.push(label);
+      counts[label] = 0;
     }
-    if (!(label in counts)) order.push(label);
-    counts[label] = (counts[label] || 0) + 1;
+    counts[label] += quantity;
   });
   return order.map((label) => (counts[label] > 1 ? (label + " × " + counts[label]) : label));
+}
+
+// Builds the "ITEM" cell content as an array of label strings. A combo gets
+// its name followed by an indented line per included product, so the packer
+// sees exactly what goes in the box instead of just the combo's name; other
+// products follow, tallied by shippingTally_. Templates and design picks are
+// zero-cost sub-selections (the invoice folds them into notes, not rows) and
+// delivery drives the banner text instead, so all are excluded. The free
+// postcard ships with every order, so it is always the last line (a combo's
+// own "promo-postcard" line is skipped so it isn't listed twice). Returned as
+// an array (rather than pre-joined HTML) so buildShippingLabelHtml_ can also
+// read the line count to size the item font — see shippingItemFontSize_.
+function shippingItemSummaryLines_(cart) {
+  const EXCLUDE = { templates: true, "pocket-templates": true, "friendship-designs": true, "memory-card-designs": true, delivery: true };
+  const packable = cart.filter((item) => !EXCLUDE[item.category] && item.id !== "promo-postcard");
+  // Non-breaking spaces survive escapeHtml_ and the PDF renderer's
+  // whitespace collapsing, giving the combo contents a visible indent.
+  const INDENT = "  • ";
+  const lines = [];
+
+  packable.filter((item) => item.category === "combos").forEach((combo) => {
+    lines.push(shippingItemLabel_(combo));
+    const children = packable.filter((item) => item.comboId === combo.id).sort(compareComboChildren_);
+    shippingTally_(children).forEach((label) => lines.push(INDENT + label));
+  });
+
+  shippingTally_(packable.filter((item) => !item.comboId && item.category !== "combos"))
+    .forEach((label) => lines.push(label));
+
+  lines.push(POSTCARD_SHIPPING_LABEL);
+  return lines;
 }
 
 // The item box has room for ~4 lines at the base 11px size before it starts
@@ -632,6 +756,11 @@ function buildShippingLabelHtml_(order) {
   // Tighter line-height at the smaller sizes packs lines closer instead of
   // leaving the same generous 1.4x gap a 6.5px line doesn't need.
   const itemLineHeight = itemFontSize <= 8 ? 1.15 : itemFontSize <= 9.5 ? 1.25 : 1.4;
+  // A combo now lists every included product, so a big order can run to 10+
+  // item lines — more than even the 6.5px floor fits. Past 6 lines, the three
+  // fixed rows above collapse to one line each (label and value inline),
+  // handing roughly 60px back to the item row.
+  const compactRows = itemLines.length > 6;
 
   const addressText = String(customer.address || "") + (customer.pincode ? "\nPIN: " + customer.pincode : "");
   const addressHtml = escapeHtml_(customer.address || "").replace(/\n/g, "<br/>") +
@@ -690,6 +819,9 @@ function buildShippingLabelHtml_(order) {
     // sees — the old bug this replaces.
     ".right-row.item-row { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }" +
     ".right-row.item-row .field-value { overflow: visible; }" +
+    ".col-right.compact .fixed-row { padding: 3px 14px; }" +
+    ".col-right.compact .fixed-row .field-label, .col-right.compact .fixed-row .field-value { display: inline; margin-top: 0; }" +
+    ".col-right.compact .fixed-row .field-value { margin-left: 4px; }" +
     ".footer-row { flex: 0 0 auto; display: flex; align-items: center; justify-content: space-between; padding: 8px 14px; }" +
     ".footer-right { text-align: right; font-size: 10px; font-style: italic; line-height: 1.4; }" +
     ".order-label { font-size: 9px; font-weight: 800; text-transform: uppercase; }" +
@@ -707,10 +839,10 @@ function buildShippingLabelHtml_(order) {
     "<div><div class=\"field-label\">Ship To:</div><div class=\"field-value\" style=\"font-size:" + addressFontSize + "px;line-height:" + addressLineHeight + ";\">" + addressHtml + "</div></div>" +
 
     "</div>" +
-    "<div class=\"col-right\">" +
-    "<div class=\"right-row\"><div class=\"field-label\">From :</div><div class=\"field-value\">The Layout</div></div>" +
-    "<div class=\"right-row\"><div class=\"field-label\">Payment Status:</div><div class=\"field-value\">PRE-PAID</div></div>" +
-    "<div class=\"right-row\"><div class=\"field-label\">Amount:</div><div class=\"field-value\">" + formatPlainINR_(order.total) + "</div></div>" +
+    "<div class=\"col-right" + (compactRows ? " compact" : "") + "\">" +
+    "<div class=\"right-row fixed-row\"><div class=\"field-label\">From :</div><div class=\"field-value\">The Layout</div></div>" +
+    "<div class=\"right-row fixed-row\"><div class=\"field-label\">Payment Status:</div><div class=\"field-value\">PRE-PAID</div></div>" +
+    "<div class=\"right-row fixed-row\"><div class=\"field-label\">Amount:</div><div class=\"field-value\">" + formatPlainINR_(order.total) + "</div></div>" +
     "<div class=\"right-row item-row\"><div class=\"field-label\">Item :</div><div class=\"field-value\" style=\"font-size:" + itemFontSize + "px;line-height:" + itemLineHeight + ";\">" + itemHtml + "</div></div>" +
     "</div>" +
     "</div>" +
