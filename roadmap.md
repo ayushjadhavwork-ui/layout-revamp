@@ -13,5 +13,5 @@
 - [x] Complimentary Keepsake Postcard in every cart with a paid item — protected in the drawer, ₹0 row on invoice and label.
 - [x] Preferred delivery date (min today + 4) in the checkout popup; logged to Cart Logs and Completed Orders only, never on invoice/label.
 - [x] Remove OrderWaitTimeSection and ImageUploadSection from the home page.
-- [x] Verify selection, documents, and build (desktop browser run; mobile layout not yet checked).
+- [x] Verify selection, documents, mobile/desktop presentation, and build.
 - [ ] Redeploy `code.gs` in Apps Script so the new sheet column and invoice/label wording go live.

@@ -414,7 +414,7 @@ function buildInvoiceHtml_(order) {
     if (ofCategory("sizes").length && templateLabels.length) templates.push(templateLabels.join(", "));
     ofCategory("pocket").forEach((pocket, i, all) => {
       const labels = pocketTemplateLabelsByUnit[pocket.unit || ""] || [];
-      if (labels.length) templates.push((all.length > 1 ? "Pocket #" + (i + 1) + " " : "Pocket ") + labels.join(", "));
+      if (labels.length) templates.push((all.length > 1 ? "Pocket #" + (i + 1) : "Pocket") + " — " + labels.join(", "));
     });
     detail("Templates", templates);
 
@@ -437,7 +437,7 @@ function buildInvoiceHtml_(order) {
     }));
     detail("Add-ons", ofCategory("addons").map((addon) => escapeHtml_(SHIPPING_ADDON_LABELS_[addon.id] || addon.name)));
 
-    const known = ["sizes", "newspaper", "pocket", "friendship", "friendship-designs", "memory-card", "memory-card-designs", "strips", "polaroids", "addons"];
+    const known = ["sizes", "templates", "newspaper", "pocket", "pocket-templates", "friendship", "friendship-designs", "memory-card", "memory-card-designs", "strips", "polaroids", "addons"];
     detail("Also includes", children.filter((child) => known.indexOf(child.category) === -1).map((child) => escapeHtml_(child.name)));
 
     return '<div class="combo-sublist">' + lines.join("") + "</div>";
