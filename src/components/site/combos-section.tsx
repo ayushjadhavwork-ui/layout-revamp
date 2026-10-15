@@ -18,6 +18,7 @@ export function CombosSection() {
   const deselectCombo = useStore((s) => s.deselectCombo);
 
   const items = CATALOG.combos;
+  const activeCombo = cart.find((c) => c.category === "combos");
 
   return (
     <>
@@ -124,6 +125,13 @@ export function CombosSection() {
             );
           })}
         </div>
+
+        {activeCombo && (
+          <div role="status" className="mx-auto mt-6 max-w-2xl rounded-2xl border border-amber-300/80 bg-amber-50 px-4 py-3 text-center text-sm text-rose-wine shadow-lg">
+            <span className="font-semibold">You selected {SITE.comboInfo[activeCombo.id]?.name ?? activeCombo.name}!</span>{" "}
+            Don't forget to scroll down and choose your included items below (marked ₹0 in cart).
+          </div>
+        )}
 
         <p className="mt-6 text-center text-xs tracking-[0.25em] text-pink-mist">
           ♡ hand-picked bundles, softly priced ♡

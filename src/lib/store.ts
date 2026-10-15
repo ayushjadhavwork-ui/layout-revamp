@@ -1,5 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { useMemo } from "react";
+import { comboCheckoutIssues, type ComboIssue } from "./combo-validation";
 import { CATALOG, STRIP_TIERS, STRIP_MAX, MEMORY_CARD_TIERS, MEMORY_CARD_MAX, POCKET_TEMPLATE_LIMIT, COMBO_RECIPES, COUPON_FREEBIES, type Product, type Category, type SizeFormat } from "./catalog";
 
 
@@ -52,7 +54,9 @@ type State = {
   // `phone` = shipping/contact number (printed on invoice + shipping label).
   // `whatsapp` = number used only to share the photo-upload Drive link, so a
   // gift order's recipient never sees it. Never printed on any document.
-  customer: null | { name: string; phone: string; email: string; address: string; pincode?: string; whatsapp?: string };
+  // `preferredDeliveryDate` (YYYY-MM-DD) is logged to the sheet for internal
+  // planning only — like `whatsapp`, it never appears on any document.
+  customer: null | { name: string; phone: string; email: string; address: string; pincode?: string; whatsapp?: string; preferredDeliveryDate?: string };
 
 
   addItem: (category: Category, product: Product, note?: string) => void;
@@ -156,8 +160,9 @@ const COMBO_INDEPENDENT: Category[] = ["delivery", "newspaper", "pocket", "pocke
 // for e.g. the page size their combo already includes).
 const COMBO_MANAGED: Category[] = ["sizes", "templates", "addons", "polaroids", "strips"];
 
-// Every order ships with one free keepsake postcard, so a non-empty cart
-// always carries exactly one "promo-postcard" line and an empty cart none.
+// Every order ships with one free keepsake postcard, so a cart holding at
+// least one paid item always carries exactly one "promo-postcard" line, and
+// any other cart (empty, or only free lines like Standard Shipping) none.
 // A combo adds its own comboId-linked postcard (checked by
 // combo-validation.ts) — that one wins when present; otherwise a standalone
 // line is added. Enforced centrally by the wrapped `set` in the store below,
@@ -167,7 +172,7 @@ export const isPostcard = (c: CartItem) => c.category === "promotions" && c.id =
 
 const withPostcard = (cart: CartItem[]): CartItem[] => {
   const postcards = cart.filter(isPostcard);
-  if (postcards.length === cart.length) return postcards.length ? [] : cart;
+  if (!cart.some((c) => c.price > 0)) return postcards.length ? cart.filter((c) => !isPostcard(c)) : cart;
   const keep = postcards.find((c) => c.comboId) ?? postcards[0];
   if (keep && postcards.length === 1) return cart;
   const product = CATALOG.promotions.find((p) => p.id === POSTCARD_ID);
@@ -878,3 +883,25 @@ export const useStore = create<State>()(
     },
   ),
 );
+
+// Everything still missing from the active combo — shared by the cart
+// drawer's warning box and the page's startCheckout() gate so the two can
+// never disagree about whether checkout is allowed. Selects raw slices and
+// derives in useMemo: a selector returning a fresh array would re-render forever.
+export function useComboIssues(): ComboIssue[] {
+  const cart = useStore((s) => s.cart);
+  const stripSelections = useStore((s) => s.stripSelections);
+  const selectedFriendshipId = useStore((s) => s.selectedFriendshipId);
+  const selectedFriendshipDesignIds = useStore((s) => s.selectedFriendshipDesignIds);
+  const selectedMemoryCardDesignIds = useStore((s) => s.selectedMemoryCardDesignIds);
+  const selectedTemplateIds = useStore((s) => s.selectedTemplateIds);
+  const pocketUnits = useStore((s) => s.pocketUnits);
+  return useMemo(() => {
+    const combo = cart.find((c) => c.category === "combos");
+    if (!combo) return [];
+    return comboCheckoutIssues(combo.id, {
+      cart, stripSelections, selectedFriendshipId, selectedFriendshipDesignIds,
+      selectedMemoryCardDesignIds, selectedTemplateIds, pocketUnits,
+    });
+  }, [cart, stripSelections, selectedFriendshipId, selectedFriendshipDesignIds, selectedMemoryCardDesignIds, selectedTemplateIds, pocketUnits]);
+}

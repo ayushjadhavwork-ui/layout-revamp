@@ -103,8 +103,15 @@ export async function validateCoupon(code: string): Promise<{ valid: boolean; pe
   }
 }
 
+// code.gs logs customer.preferredDeliveryDate to the sheet (internal only,
+// never on the invoice or label) — always send the key, blank when unset.
+function withDeliveryDate(payload: Record<string, unknown>): Record<string, unknown> {
+  const customer = (payload.customer ?? {}) as { preferredDeliveryDate?: string };
+  return { ...payload, customer: { ...customer, preferredDeliveryDate: customer.preferredDeliveryDate || "" } };
+}
+
 export const logCart = (payload: Record<string, unknown>) =>
-  post<{ ok: boolean; cartId?: string }>({ action: "logCart", ...payload });
+  post<{ ok: boolean; cartId?: string }>({ action: "logCart", ...withDeliveryDate(payload) });
 
 /**
  * The order write. Given the screenshot upload, this needs a much longer
@@ -115,7 +122,7 @@ export const logCart = (payload: Record<string, unknown>) =>
  */
 export const completeOrder = (payload: Record<string, unknown>) =>
   post<{ ok: boolean; orderId?: string }>(
-    { action: "completeOrder", ...payload },
+    { action: "completeOrder", ...withDeliveryDate(payload) },
     { timeoutMs: UPLOAD_TIMEOUT_MS, retries: 1 },
   );
 

@@ -4,7 +4,7 @@ import { ArrowUpRight, Sparkles, Instagram, Youtube, Heart } from "lucide-react"
 import { Toaster, toast } from "sonner";
 import logoAsset from "@/assets/logo.png.asset.json";
 import { CATALOG, CONFIG, type Category, type Product } from "@/lib/catalog";
-import { useStore } from "@/lib/store";
+import { useStore, useComboIssues } from "@/lib/store";
 import { SITE } from "@/lib/site-content";
 import { TiledSection } from "@/components/site/TiledSection";
 import {
@@ -132,6 +132,7 @@ function Home() {
   const friendshipDesignLimit = useStore((s) => s.friendshipDesignLimit());
   const selectedMemoryCardDesignIds = useStore((s) => s.selectedMemoryCardDesignIds);
   const activeCombo = cart.find((item) => item.category === "combos");
+  const comboIssues = useComboIssues();
 
   const openProduct = (cat: Category) => (p: Product) => {
     setModalCat(cat);
@@ -141,6 +142,21 @@ function Home() {
   const startCheckout = () => {
     if (cartCount === 0) {
       toast.error("Add something to your cart first.");
+      return;
+    }
+    // Hard stop: every item a combo includes must be picked before checkout.
+    // Same issue list the cart drawer shows, so the two gates always agree.
+    if (comboIssues.length > 0) {
+      toast.error("Please complete your combo selection before checking out!", {
+        description: comboIssues.map((issue) => issue.message).join(" "),
+      });
+      setCartOpen(false);
+      // Scroll to whichever missing section comes first on the page.
+      const targets = comboIssues
+        .map((issue) => document.getElementById(issue.section))
+        .filter((el): el is HTMLElement => !!el)
+        .sort((a, b) => a.getBoundingClientRect().top - b.getBoundingClientRect().top);
+      targets[0]?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
     if (selectedSizeId && selectedTemplateIds.length < templateLimit) {
@@ -293,7 +309,7 @@ function Home() {
               <PacksSection />
             </div>
 
-            <div>
+            <div id="strips" className="scroll-mt-24">
               <SectionHead eyebrow="Step 5" title="Polaroid Strips" sub="Click a strip to add it, or tap View for details." />
               <StripsSection />
             </div>

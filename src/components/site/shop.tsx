@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { X, ShoppingBag, Trash2, Plus, Check, ArrowUpRight, ChevronLeft, ChevronRight, Maximize2, Sparkles, Gift } from "lucide-react";
 import { toast } from "sonner";
 import { CATALOG, CONFIG, fmt, comboRealTotal, COUPON_FREEBIES, type Category, type Product } from "@/lib/catalog";
-import { useStore, isPostcard } from "@/lib/store";
+import { useStore, isPostcard, useComboIssues } from "@/lib/store";
 import { validateCoupon, logCart, completeOrder } from "@/lib/gas";
 import { SITE } from "@/lib/site-content";
 import { createPortal } from "react-dom";
@@ -541,6 +541,23 @@ export function CartDrawer({
   const pocketTemplatesIncomplete = pocketUnits.some((u) => u.templateIds.length < pocketTemplateLimit);
   const friendshipDesignsIncomplete =
     !!selectedFriendshipId && selectedFriendshipDesignIds.length < friendshipDesignLimit;
+  // Combo gaps first (each names exactly what's missing), then the general
+  // picks every order needs — skipped when a combo issue already covers that
+  // section so the same gap isn't listed twice.
+  const comboIssues = useComboIssues();
+  const comboSections = new Set(comboIssues.map((issue) => issue.section));
+  const checkoutIssues = [
+    ...comboIssues.map((issue) => issue.message),
+    ...(templatesIncomplete && !comboSections.has("templates")
+      ? [`Select ${templateLimit - selectedTemplateIds.length} more template${templateLimit - selectedTemplateIds.length === 1 ? "" : "s"} for your magazine (${selectedTemplateIds.length}/${templateLimit} picked).`]
+      : []),
+    ...(pocketTemplatesIncomplete && !comboSections.has("pocket")
+      ? ["Finish picking templates for every Pocket Magazine in your cart."]
+      : []),
+    ...(friendshipDesignsIncomplete && !comboSections.has("friendship-card")
+      ? [`Select ${friendshipDesignLimit - selectedFriendshipDesignIds.length} more Friendship Card design${friendshipDesignLimit - selectedFriendshipDesignIds.length === 1 ? "" : "s"} (${selectedFriendshipDesignIds.length}/${friendshipDesignLimit} picked).`]
+      : []),
+  ];
   // Delivery is no longer gated here — it's chosen either on-page (Step 6)
   // or inside the checkout popup (CustomerInfoModal), which blocks moving
   // on to payment until it's picked. Gating it a second time here would
@@ -597,7 +614,7 @@ export function CartDrawer({
                 <div className="gold-shimmer pointer-events-none absolute inset-0" aria-hidden />
                 <Sparkles className="gold-sparkle relative mx-auto h-6 w-6 text-amber-500" />
                 <p className="relative mt-2 text-[0.7rem] font-bold uppercase tracking-[0.15em] text-amber-900">
-                  ✧ ✨ Complimentary postcard included with every order ✨ ✧
+                  ✧ ✨ Free keepsake postcard included with every order ✨ ✧
                 </p>
                 <p className="relative mt-1 text-xs italic text-amber-700">
                   A free limited-edition aesthetic postcard has been added to your package as our gift to you.
@@ -715,26 +732,20 @@ export function CartDrawer({
                 Add {fmt(minOrder - total)} more to reach the {fmt(minOrder)} minimum order value.
               </p>
             )}
-            {templatesIncomplete && (
-              <p className="text-center text-xs text-rose-wine">
-                Select {templateLimit - selectedTemplateIds.length} more template{templateLimit - selectedTemplateIds.length === 1 ? "" : "s"} for your magazine ({selectedTemplateIds.length}/{templateLimit} picked) before checking out.
-              </p>
-            )}
-            {pocketTemplatesIncomplete && (
-              <p className="text-center text-xs text-rose-wine">
-                Finish picking templates for every Pocket Magazine in your cart before checking out.
-              </p>
-            )}
-            {friendshipDesignsIncomplete && (
-              <p className="text-center text-xs text-rose-wine">
-                Select {friendshipDesignLimit - selectedFriendshipDesignIds.length} more Friendship Card design{friendshipDesignLimit - selectedFriendshipDesignIds.length === 1 ? "" : "s"} ({selectedFriendshipDesignIds.length}/{friendshipDesignLimit} picked) before checking out.
-              </p>
-            )}
           </div>
+
+          {checkoutIssues.length > 0 && (
+            <div role="alert" className="mt-3 text-rose-wine text-xs bg-rose-50 border border-rose-200 rounded-md p-3 space-y-1">
+              <p className="font-semibold">Complete your order before checking out:</p>
+              <ul className="space-y-0.5">
+                {checkoutIssues.map((issue) => <li key={issue}>• {issue}</li>)}
+              </ul>
+            </div>
+          )}
 
           <button
             onClick={onCheckout}
-            disabled={cart.length === 0 || belowMin || templatesIncomplete || pocketTemplatesIncomplete || friendshipDesignsIncomplete}
+            disabled={cart.length === 0 || belowMin || checkoutIssues.length > 0}
             className="pill-btn pill-btn-hover pill-primary mt-5 w-full disabled:opacity-50"
           >
             Checkout <ArrowUpRight className="h-4 w-4" />
@@ -769,6 +780,7 @@ export function CustomerInfoModal({
   const [submitting, setSubmitting] = useState(false);
 
   const deliveryItem = cart.find((c) => c.category === "delivery");
+  const minDeliveryDate = earliestDeliveryDate();
 
   const handle = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -781,11 +793,15 @@ export function CustomerInfoModal({
       address: String(fd.get("address") || "").trim(),
       pincode: String(fd.get("pincode") || "").trim(),
       whatsapp: String(fd.get("whatsapp") || "").trim(),
+      // Optional — an empty value just means "as soon as possible".
+      preferredDeliveryDate: String(fd.get("preferredDeliveryDate") || "").trim(),
     };
     if (!info.name || !info.phone || !info.email || !info.address || !info.pincode || !info.whatsapp)
       return toast.error("Fill all fields");
     if (!/^\d{6}$/.test(info.pincode)) return toast.error("Enter a valid 6-digit pincode");
     if (info.whatsapp.replace(/\D/g, "").length < 10) return toast.error("Enter a valid WhatsApp number");
+    if (info.preferredDeliveryDate && info.preferredDeliveryDate < minDeliveryDate)
+      return toast.error("Pick a delivery date at least 4 days from today.");
 
 
     setSubmitting(true);
@@ -864,6 +880,10 @@ export function CustomerInfoModal({
         <p className="-mt-1 text-xs text-dusty-rose">
           We'll message this number the Google Drive link where you upload the photos for your magazine. It never appears on the
           invoice or shipping label — so if this is a gift, the surprise stays safe.
+        </p>
+        <Field label="Preferred delivery date" name="preferredDeliveryDate" type="date" min={minDeliveryDate} defaultValue={customer?.preferredDeliveryDate} />
+        <p className="-mt-1 text-xs text-dusty-rose">
+          Select your desired delivery date. We will try our best to deliver it by that date!
         </p>
 
 
@@ -1080,10 +1100,19 @@ export function ModalShell({ children, onClose, maxW = "max-w-2xl" }: { children
   );
 }
 
+// Production plus shipping needs at least 4 days. Built from local date parts
+// (not toISOString, which is UTC and lands a day early before 05:30 IST).
+const DELIVERY_BUFFER_DAYS = 4;
+function earliestDeliveryDate(): string {
+  const d = new Date();
+  d.setDate(d.getDate() + DELIVERY_BUFFER_DAYS);
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
+
 function Field({
-  label, name, type = "text", as = "input", rows, required, maxLength, defaultValue, inputMode,
+  label, name, type = "text", as = "input", rows, required, maxLength, defaultValue, inputMode, min,
 }: {
-  label: string; name: string; type?: string; as?: "input" | "textarea"; rows?: number; required?: boolean; maxLength?: number; defaultValue?: string; inputMode?: "text" | "numeric" | "tel" | "email";
+  label: string; name: string; type?: string; as?: "input" | "textarea"; rows?: number; required?: boolean; maxLength?: number; defaultValue?: string; inputMode?: "text" | "numeric" | "tel" | "email"; min?: string;
 }) {
   const cls = "mt-1 w-full rounded-xl border border-rose-wine/20 bg-white/60 px-4 py-2.5 text-sm outline-none focus:border-rose-wine transition-colors";
   return (
@@ -1092,7 +1121,7 @@ function Field({
       {as === "textarea" ? (
         <textarea name={name} rows={rows} required={required} maxLength={maxLength} defaultValue={defaultValue} className={cls} />
       ) : (
-        <input name={name} type={type} inputMode={inputMode} required={required} maxLength={maxLength} defaultValue={defaultValue} className={cls} />
+        <input name={name} type={type} inputMode={inputMode} required={required} maxLength={maxLength} defaultValue={defaultValue} min={min} className={cls} />
       )}
 
     </div>

@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { describe, it } from "node:test";
-import { comboSelectionIssues, type ComboSelection } from "./combo-validation";
+import { comboCheckoutIssues, comboSelectionIssues, type ComboSelection } from "./combo-validation";
 
 const completeComboFive: ComboSelection = {
   cart: [
@@ -36,5 +36,31 @@ describe("combo selection validation", () => {
     assert.ok(comboSelectionIssues("combo-05", { ...completeComboFive, stripSelections: ["strip-1"] }).includes(
       "Choose 2 Polaroid Strips for your combo.",
     ));
+  });
+
+  it("blocks checkout until every combo magazine template is picked", () => {
+    const comboSeven: ComboSelection = {
+      cart: [
+        { category: "combos", id: "combo-07", name: "The Keepsake Edit" },
+        { category: "sizes", id: "sz-14", name: "14 Pages", comboId: "combo-07" },
+        { category: "addons", id: "add-combo", name: "Combo (Wrap + Letter)", comboId: "combo-07" },
+        { category: "strips", id: "bundle", name: "Polaroid Strips × 1", comboId: "combo-07" },
+        { category: "promotions", id: "promo-postcard", name: "Free Postcard", comboId: "combo-07" },
+      ],
+      stripSelections: ["strip-1"],
+      selectedFriendshipId: null,
+      selectedFriendshipDesignIds: [],
+      selectedMemoryCardDesignIds: [],
+      selectedTemplateIds: ["tpl-1"],
+    };
+    const issues = comboCheckoutIssues("combo-07", comboSeven);
+    assert.equal(issues.length, 1);
+    assert.equal(issues[0].section, "templates");
+    assert.match(issues[0].message, /^Please pick all \d+ magazine templates \(1\/\d+ selected\)\.$/);
+  });
+
+  it("points a missing strip at the strips section", () => {
+    const issues = comboCheckoutIssues("combo-05", { ...completeComboFive, stripSelections: [] });
+    assert.deepEqual(issues.map((issue) => issue.section), ["strips"]);
   });
 });
