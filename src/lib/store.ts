@@ -160,6 +160,16 @@ const COMBO_INDEPENDENT: Category[] = ["delivery", "newspaper", "pocket", "pocke
 // for e.g. the page size their combo already includes).
 const COMBO_MANAGED: Category[] = ["sizes", "templates", "addons", "polaroids", "strips"];
 
+// The active combo, but only when its recipe actually includes this product.
+// Strips, Friendship Cards and Memory Cards picked beside a combo that doesn't
+// include them are ordinary paid extras: full price and no comboId (so
+// deselecting the combo keeps them and the invoice lists them on their own).
+type ComboCountField = "stripCount" | "friendshipCount" | "memoryCardCount";
+const comboIncluding = (cart: CartItem[], field: ComboCountField): CartItem | undefined => {
+  const combo = cart.find((c) => c.category === "combos");
+  return combo && COMBO_RECIPES[combo.id]?.[field] ? combo : undefined;
+};
+
 // Every order ships with one free keepsake postcard, so a cart holding at
 // least one paid item always carries exactly one "promo-postcard" line, and
 // any other cart (empty, or only free lines like Standard Shipping) none.
@@ -184,6 +194,58 @@ const withPostcard = (cart: CartItem[]): CartItem[] => {
     price: 0,
   };
   return [...cart.filter((c) => !isPostcard(c)), line];
+};
+
+// Upgrades a cart saved in the browser by an older version of the site
+// (see the version notes on the persist options below).
+export const migrateSavedCart = (persisted: unknown, version: number) => {
+  const s = persisted as Record<string, unknown>;
+  if (!s || typeof s !== "object" || version >= 6) return s;
+  let cart = Array.isArray(s.cart) ? (s.cart as CartItem[]) : [];
+  const patch: Record<string, unknown> = { ...s };
+  if (version < 2) {
+    cart = cart.filter((c) => c.category !== "pocket" && c.category !== "pocket-templates");
+    patch.pocketUnits = [];
+  }
+  if (version < 3) {
+    cart = cart.filter((c) => c.category !== "friendship" && c.category !== "friendship-designs");
+    patch.selectedFriendshipId = null;
+    patch.selectedFriendshipDesignIds = [];
+  }
+  if (version < 5) {
+    const comboIds = new Set(cart.filter((c) => c.category === "combos").map((c) => c.id));
+    cart = cart.filter((c) => !(c.comboId && comboIds.has(c.comboId) && ["strips", "friendship", "friendship-designs", "memory-card", "memory-card-designs"].includes(c.category)));
+    patch.selectedFriendshipId = null;
+    patch.selectedFriendshipDesignIds = [];
+    patch.selectedMemoryCardDesignIds = [];
+    patch.stripSelections = [];
+  }
+  if (version < 6) {
+    // Strips/cards used to go ₹0 beside any combo, even one whose recipe
+    // doesn't include them (see comboIncluding) — drop those free lines.
+    const countField: Partial<Record<Category, ComboCountField>> = {
+      "strips": "stripCount",
+      "friendship": "friendshipCount",
+      "friendship-designs": "friendshipCount",
+      "memory-card": "memoryCardCount",
+      "memory-card-designs": "memoryCardCount",
+    };
+    const notIncluded = (c: CartItem) => {
+      const field = countField[c.category];
+      return !!(field && c.comboId && !COMBO_RECIPES[c.comboId]?.[field]);
+    };
+    const dropped = new Set(cart.filter(notIncluded).map((c) => countField[c.category]));
+    cart = cart.filter((c) => !notIncluded(c));
+    if (dropped.has("stripCount")) patch.stripSelections = [];
+    if (dropped.has("friendshipCount")) {
+      patch.selectedFriendshipId = null;
+      patch.selectedFriendshipDesignIds = [];
+    }
+  }
+  // Memory Card picks only mean something beside their cart lines.
+  if (!cart.some((c) => c.category === "memory-card")) patch.selectedMemoryCardDesignIds = [];
+  patch.cart = cart;
+  return patch;
 };
 
 export const useStore = create<State>()(
@@ -307,17 +369,6 @@ export const useStore = create<State>()(
         patch.cart = cart.filter((c) => c.category !== "memory-card-designs");
         patch.selectedMemoryCardDesignIds = [];
       }
-      if (item?.category === "memory-card-designs") {
-        const idx = s.selectedMemoryCardDesignIds.lastIndexOf(item.id);
-        const nextIds = idx === -1
-          ? s.selectedMemoryCardDesignIds
-          : s.selectedMemoryCardDesignIds.filter((_, i) => i !== idx);
-        patch.selectedMemoryCardDesignIds = nextIds;
-        patch.cart = [
-          ...cart.filter((c) => c.category !== "memory-card" && c.category !== "memory-card-designs"),
-          ...memoryCardCartLines(nextIds),
-        ];
-      }
       if (item?.category === "strips") {
         patch.stripSelections = [];
       }
@@ -330,8 +381,10 @@ export const useStore = create<State>()(
         patch.cart = cart;
       }
       if (item?.category === "memory-card-designs") {
+        // The cart line groups every copy of a design ("Birthday ×2"), so
+        // removing the line removes all of them.
         const nextIds = s.selectedMemoryCardDesignIds.filter((id) => id !== item.id);
-        const combo = s.cart.find((c) => c.category === "combos");
+        const combo = comboIncluding(s.cart, "memoryCardCount");
         patch.selectedMemoryCardDesignIds = nextIds;
         patch.cart = [
           ...cart.filter((c) => c.category !== "memory-card" && c.category !== "memory-card-designs"),
@@ -496,7 +549,7 @@ export const useStore = create<State>()(
     const product = CATALOG.friendship.find((f) => f.id === friendId);
     if (!product) return;
     set((s) => {
-      const activeCombo = s.cart.find((item) => item.category === "combos");
+      const activeCombo = comboIncluding(s.cart, "friendshipCount");
       const comboRecipe = activeCombo ? COMBO_RECIPES[activeCombo.id] : undefined;
       if (comboRecipe?.friendshipCount && product.designLimit !== comboRecipe.friendshipCount) return s;
       const newLimit = product.designLimit ?? 1;
@@ -528,7 +581,7 @@ export const useStore = create<State>()(
     const limit = get().friendshipDesignLimit();
     if (s.selectedFriendshipDesignIds.length >= limit) return false;
     const nextIds = [...s.selectedFriendshipDesignIds, id];
-    const combo = s.cart.find((item) => item.category === "combos");
+    const combo = comboIncluding(s.cart, "friendshipCount");
     const comboId = combo?.id;
     set({
       selectedFriendshipDesignIds: nextIds,
@@ -545,7 +598,7 @@ export const useStore = create<State>()(
     const idx = s.selectedFriendshipDesignIds.lastIndexOf(id);
     if (idx === -1) return false;
     const nextIds = s.selectedFriendshipDesignIds.filter((_, i) => i !== idx);
-    const combo = s.cart.find((item) => item.category === "combos");
+    const combo = comboIncluding(s.cart, "friendshipCount");
     const comboId = combo?.id;
     set({
       selectedFriendshipDesignIds: nextIds,
@@ -560,10 +613,8 @@ export const useStore = create<State>()(
   addMemoryCardDesign: (id) => {
     const s = get();
     if (!CATALOG["memory-card-designs"].some((item) => item.id === id)) return false;
-    const activeCombo = s.cart.find((item) => item.category === "combos");
-    const comboLimit = activeCombo ? COMBO_RECIPES[activeCombo.id]?.memoryCardCount : undefined;
-    const limit = comboLimit ?? MEMORY_CARD_MAX;
-    if (s.selectedMemoryCardDesignIds.length >= limit) return false;
+    const activeCombo = comboIncluding(s.cart, "memoryCardCount");
+    if (s.selectedMemoryCardDesignIds.length >= get().memoryCardLimit()) return false;
     const nextIds = [...s.selectedMemoryCardDesignIds, id];
     set({
       selectedMemoryCardDesignIds: nextIds,
@@ -580,7 +631,7 @@ export const useStore = create<State>()(
     const idx = s.selectedMemoryCardDesignIds.lastIndexOf(id);
     if (idx === -1) return false;
     const nextIds = s.selectedMemoryCardDesignIds.filter((_, i) => i !== idx);
-    const activeCombo = s.cart.find((item) => item.category === "combos");
+    const activeCombo = comboIncluding(s.cart, "memoryCardCount");
     set({
       selectedMemoryCardDesignIds: nextIds,
       cart: [
@@ -593,9 +644,8 @@ export const useStore = create<State>()(
 
   toggleStrip: (id) => {
     const s = get();
-    const activeCombo = s.cart.find((c) => c.category === "combos");
-    const comboStripLimit = activeCombo ? COMBO_RECIPES[activeCombo.id]?.stripCount : undefined;
-    const limit = comboStripLimit ?? STRIP_MAX;
+    const activeCombo = comboIncluding(s.cart, "stripCount");
+    const limit = activeCombo ? COMBO_RECIPES[activeCombo.id].stripCount ?? STRIP_MAX : STRIP_MAX;
     const already = s.stripSelections.includes(id);
     if (!already && s.stripSelections.length >= limit) {
       if (!activeCombo || limit === 0) return false;
@@ -673,14 +723,22 @@ export const useStore = create<State>()(
       // Only one combo (and its linked items) can be active at a time, and
       // any manually-picked size/template/addon/polaroid/strip must go too —
       // otherwise its real price sits in the cart on top of the combo price.
-      const cart = s.cart.filter((c) => c.category !== "combos" && !c.comboId && !COMBO_MANAGED.includes(c.category));
+      // Paid Friendship/Memory Cards survive only when the new combo doesn't
+      // include them; when it does, the customer re-picks them for free and
+      // checkout validates the full count.
+      const cart = s.cart.filter((c) =>
+        c.category !== "combos" && !c.comboId && !COMBO_MANAGED.includes(c.category) &&
+        !(recipe?.friendshipCount && (c.category === "friendship" || c.category === "friendship-designs")) &&
+        !(recipe?.memoryCardCount && (c.category === "memory-card" || c.category === "memory-card-designs")));
+      const keepsFriendship = cart.some((c) => c.category === "friendship");
+      const keepsMemoryCards = cart.some((c) => c.category === "memory-card");
       const linked: CartItem[] = [];
       let selectedSizeId = s.selectedSizeId;
       let selectedTemplateIds: string[] = [];
-      let stripSelections = s.stripSelections;
-      let selectedFriendshipId: string | null = null;
-      let selectedFriendshipDesignIds: string[] = [];
-      let selectedMemoryCardDesignIds: string[] = [];
+      const stripSelections: string[] = [];
+      const selectedFriendshipId = keepsFriendship ? s.selectedFriendshipId : null;
+      const selectedFriendshipDesignIds = keepsFriendship ? s.selectedFriendshipDesignIds : [];
+      const selectedMemoryCardDesignIds = keepsMemoryCards ? s.selectedMemoryCardDesignIds : [];
       let pocketUnits: PocketUnit[] = [];
       let format = s.format;
 
@@ -716,18 +774,6 @@ export const useStore = create<State>()(
         if (pol) linked.push({ key: `combo:${combo.id}:pol:${pol.id}`, category: "polaroids", id: pol.id, name: pol.name, price: 0, comboId: combo.id });
       }
 
-      if (recipe?.friendshipCount) {
-        const friendship = CATALOG.friendship.find((item) => item.id === (recipe.friendshipCount === 2 ? "friend-duo" : "friend-single"));
-        // The combo reserves the right quantity tier, but the customer must
-        // choose both that tier and its designs manually.
-        if (friendship) selectedFriendshipId = null;
-      }
-
-      if (recipe?.memoryCardCount) {
-        // Leave the design multiset empty; checkout validates the full count.
-        selectedMemoryCardDesignIds = [];
-      }
-
       if (recipe?.freePostcard) {
         const postcard = CATALOG.promotions.find((item) => item.id === "promo-postcard");
         if (postcard) linked.push({ key: `combo:${combo.id}:postcard`, category: "promotions", id: postcard.id, name: postcard.name, price: 0, comboId: combo.id });
@@ -749,20 +795,27 @@ export const useStore = create<State>()(
     });
   },
 
-  deselectCombo: (comboId) => set((s) => ({
+  deselectCombo: (comboId) => set((s) => {
     // Templates the customer picked while the combo was active never carry
     // comboId (they're freely chosen, not auto-linked) — but they're
     // meaningless without the size context the combo provided, so clear
     // them too rather than leaving orphaned template lines in the cart.
-    cart: s.cart.filter((c) => !(c.category === "combos" && c.id === comboId) && c.comboId !== comboId && c.category !== "templates"),
-    selectedSizeId: null,
-    selectedTemplateIds: [],
-    pocketUnits: [],
-    selectedFriendshipId: null,
-    selectedFriendshipDesignIds: [],
-    selectedMemoryCardDesignIds: [],
-    stripSelections: [],
-  })),
+    const cart = s.cart.filter((c) => !(c.category === "combos" && c.id === comboId) && c.comboId !== comboId && c.category !== "templates");
+    // Paid extras (no comboId) stay in the cart, so keep their picks too.
+    const keepsFriendship = cart.some((c) => c.category === "friendship");
+    const keepsMemoryCards = cart.some((c) => c.category === "memory-card");
+    const keepsStrips = cart.some((c) => c.category === "strips");
+    return {
+      cart,
+      selectedSizeId: null,
+      selectedTemplateIds: [],
+      pocketUnits: [],
+      selectedFriendshipId: keepsFriendship ? s.selectedFriendshipId : null,
+      selectedFriendshipDesignIds: keepsFriendship ? s.selectedFriendshipDesignIds : [],
+      selectedMemoryCardDesignIds: keepsMemoryCards ? s.selectedMemoryCardDesignIds : [],
+      stripSelections: keepsStrips ? s.stripSelections : [],
+    };
+  }),
 
   clear: () => set({
     cart: [],
@@ -798,8 +851,8 @@ export const useStore = create<State>()(
     return CATALOG.friendship.find((f) => f.id === s.selectedFriendshipId)?.designLimit ?? 0;
   },
   memoryCardLimit: () => {
-    const combo = get().cart.find((item) => item.category === "combos");
-    return combo ? COMBO_RECIPES[combo.id]?.memoryCardCount ?? MEMORY_CARD_MAX : MEMORY_CARD_MAX;
+    const combo = comboIncluding(get().cart, "memoryCardCount");
+    return combo ? COMBO_RECIPES[combo.id].memoryCardCount ?? MEMORY_CARD_MAX : MEMORY_CARD_MAX;
   },
   };
     },
@@ -826,33 +879,9 @@ export const useStore = create<State>()(
       // pre-v2 pocket lines.
       // v4 adds the Memory Card multiset. Old carts have no related lines,
       // so initializing its selection list is sufficient.
-      version: 5,
-      migrate: (persisted, version) => {
-        const s = persisted as Record<string, unknown>;
-        if (!s || typeof s !== "object" || version >= 5) return s;
-        let cart = Array.isArray(s.cart) ? (s.cart as CartItem[]) : [];
-        const patch: Record<string, unknown> = { ...s };
-        if (version < 2) {
-          cart = cart.filter((c) => c.category !== "pocket" && c.category !== "pocket-templates");
-          patch.pocketUnits = [];
-        }
-        if (version < 3) {
-          cart = cart.filter((c) => c.category !== "friendship" && c.category !== "friendship-designs");
-          patch.selectedFriendshipId = null;
-          patch.selectedFriendshipDesignIds = [];
-        }
-        if (version < 5) {
-          const comboIds = new Set(cart.filter((c) => c.category === "combos").map((c) => c.id));
-          cart = cart.filter((c) => !(c.comboId && comboIds.has(c.comboId) && ["strips", "friendship", "friendship-designs", "memory-card", "memory-card-designs"].includes(c.category)));
-          patch.selectedFriendshipId = null;
-          patch.selectedFriendshipDesignIds = [];
-          patch.selectedMemoryCardDesignIds = [];
-          patch.stripSelections = [];
-        }
-        patch.selectedMemoryCardDesignIds = [];
-        patch.cart = cart;
-        return patch;
-      },
+      // v6 drops strips/cards that were made free by a combo not including them.
+      version: 6,
+      migrate: migrateSavedCart,
       // Hydration is triggered manually (see __root.tsx) after mount, not
       // automatically at store-creation time — the store module re-evaluates
       // fresh on the client, so an automatic hydrate would apply localStorage
