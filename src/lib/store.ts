@@ -39,13 +39,13 @@ type State = {
   // own independent template picks, so buying 2-3 Pocket Magazines together
   // means picking templates for each individually.
   pocketUnits: PocketUnit[];
-  // Friendship Card quantity tier (Single/Duo) and its design picks — same
+  // Single & Duo Card quantity tier (Single/Duo) and its design picks — same
   // "parent selection drives a sub-selection limit" shape as
   // selectedSizeId/selectedTemplateIds above, but flat (only ever one
-  // Friendship Card line at a time) rather than multi-unit like Pocket.
+  // Single & Duo Card line at a time) rather than multi-unit like Pocket.
   selectedFriendshipId: string | null;
   selectedFriendshipDesignIds: string[];
-  // A multiset of Memory Card design ids. Quantity determines the bundle
+  // A multiset of Photo Card design ids. Quantity determines the bundle
   // price, and the same design may appear up to three times.
   selectedMemoryCardDesignIds: string[];
   stripSelections: string[];
@@ -69,7 +69,7 @@ type State = {
   removePocketUnit: (uid: string) => void;
   togglePocketTemplate: (uid: string, id: string) => boolean; // returns success
   randomizePocketTemplates: (uid: string) => number; // returns count picked
-  // Selects/switches the Friendship Card quantity tier. If the previously
+  // Selects/switches the Single & Duo Card quantity tier. If the previously
   // selected tier had more design picks than the new tier allows, keeps
   // only the first-picked design(s) and drops the rest (truncate, not a
   // full reset) — see catalog.ts's designLimit field.
@@ -125,7 +125,7 @@ const memoryCardCartLines = (ids: string[]): CartItem[] => {
     key: key("memory-card", "bundle"),
     category: "memory-card",
     id: "bundle",
-    name: `The Memory Card × ${ids.length}`,
+    name: `The Photo Card × ${ids.length}`,
     price: MEMORY_CARD_TIERS[ids.length] ?? 0,
   };
   const designs = [...counts].map(([id, n]) => {
@@ -161,7 +161,7 @@ const COMBO_INDEPENDENT: Category[] = ["delivery", "newspaper", "pocket", "pocke
 const COMBO_MANAGED: Category[] = ["sizes", "templates", "addons", "polaroids", "strips"];
 
 // The active combo, but only when its recipe actually includes this product.
-// Strips, Friendship Cards and Memory Cards picked beside a combo that doesn't
+// Strips, Single & Duo Cards and Photo Cards picked beside a combo that doesn't
 // include them are ordinary paid extras: full price and no comboId (so
 // deselecting the combo keeps them and the invoice lists them on their own).
 type ComboCountField = "stripCount" | "friendshipCount" | "memoryCardCount";
@@ -200,7 +200,7 @@ const withPostcard = (cart: CartItem[]): CartItem[] => {
 // (see the version notes on the persist options below).
 export const migrateSavedCart = (persisted: unknown, version: number) => {
   const s = persisted as Record<string, unknown>;
-  if (!s || typeof s !== "object" || version >= 6) return s;
+  if (!s || typeof s !== "object" || version >= 7) return s;
   let cart = Array.isArray(s.cart) ? (s.cart as CartItem[]) : [];
   const patch: Record<string, unknown> = { ...s };
   if (version < 2) {
@@ -242,7 +242,10 @@ export const migrateSavedCart = (persisted: unknown, version: number) => {
       patch.selectedFriendshipDesignIds = [];
     }
   }
-  // Memory Card picks only mean something beside their cart lines.
+  if (version < 7) {
+    cart = cart.map((c) => c.category === "memory-card" ? { ...c, name: c.name.replace("The Memory Card", "The Photo Card") } : c);
+  }
+  // Photo Card picks only mean something beside their cart lines.
   if (!cart.some((c) => c.category === "memory-card")) patch.selectedMemoryCardDesignIds = [];
   patch.cart = cart;
   return patch;
@@ -540,11 +543,11 @@ export const useStore = create<State>()(
   },
 
 
-  // Selects a Friendship Card quantity tier for the first time, or switches
+  // Selects a Single & Duo Card quantity tier for the first time, or switches
   // between Single/Duo. Unlike setSize (which fully resets templates),
   // switching tiers TRUNCATES the design picks to the new limit — keeping
   // the first-picked design(s) — rather than clearing them, per the
-  // Friendship Card's own "downgrade keeps what still fits" spec.
+  // Single & Duo Card's own "downgrade keeps what still fits" spec.
   setFriendship: (friendId) => {
     const product = CATALOG.friendship.find((f) => f.id === friendId);
     if (!product) return;
@@ -723,7 +726,7 @@ export const useStore = create<State>()(
       // Only one combo (and its linked items) can be active at a time, and
       // any manually-picked size/template/addon/polaroid/strip must go too —
       // otherwise its real price sits in the cart on top of the combo price.
-      // Paid Friendship/Memory Cards survive only when the new combo doesn't
+      // Paid Friendship/Photo Cards survive only when the new combo doesn't
       // include them; when it does, the customer re-picks them for free and
       // checkout validates the full count.
       const cart = s.cart.filter((c) =>
@@ -868,7 +871,7 @@ export const useStore = create<State>()(
       // strips any pre-v2 pocket/pocket-templates lines instead so old carts
       // just lose that one item rather than shipping incomplete.
       //
-      // v3: the Friendship Card became a two-step quantity→design picker
+      // v3: the Single & Duo Card became a two-step quantity→design picker
       // (selectedFriendshipId/selectedFriendshipDesignIds, new
       // "friendship-designs" category) instead of a single addItem'd SKU
       // line. Same risk as v2: an old blob's "friendship" cart line has no
@@ -877,10 +880,11 @@ export const useStore = create<State>()(
       // with zero designs picked. migrate() strips any pre-v3
       // friendship/friendship-designs lines for the same reason v2 strips
       // pre-v2 pocket lines.
-      // v4 adds the Memory Card multiset. Old carts have no related lines,
+      // v4 adds the Photo Card multiset. Old carts have no related lines,
       // so initializing its selection list is sufficient.
       // v6 drops strips/cards that were made free by a combo not including them.
-      version: 6,
+      // v7 renames saved "The Memory Card × N" lines to "The Photo Card × N".
+      version: 7,
       migrate: migrateSavedCart,
       // Hydration is triggered manually (see __root.tsx) after mount, not
       // automatically at store-creation time — the store module re-evaluates

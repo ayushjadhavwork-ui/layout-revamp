@@ -127,7 +127,7 @@ Optional — falls back to an initial-letter avatar if left blank.
 
 ---
 
-## 11. Friendship Card designs (Card 01–04)
+## 11. Single & Duo Card designs (Card 01–04)
 
 | Context | Recommended px | Ratio | Notes |
 |---|---|---|---|
@@ -157,6 +157,6 @@ Instagram post itself has a good cover frame.
 - **Portrait 7:10**: mandatory pages
 - **Portrait 3:8 (tall)**: polaroid strips
 - **Landscape 4:3**: templates, combo cards
-- **Landscape ~3:2 (any ratio actually works)**: Friendship Card designs
+- **Landscape ~3:2 (any ratio actually works)**: Single & Duo Card designs
 - **Landscape 16:9**: banners, showreel video
 - **Seamless tiling**: hero / how-to-order / founders backgrounds

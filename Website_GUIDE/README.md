@@ -36,7 +36,7 @@ payment/success modals → spin-the-wheel popup → WhatsApp button.
 
 The standalone product area also includes Newspaper Magazine, The Memory
 Card (three mix-and-match designs with 1/2/3-card bundle pricing), Pocket
-Magazine, and Friendship Card.
+Magazine, and Single & Duo Cards.
 
 ## Run locally
 

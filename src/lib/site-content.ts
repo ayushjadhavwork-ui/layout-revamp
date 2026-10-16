@@ -67,7 +67,7 @@ export const SITE = {
   // Showreel video — drop your file at /public/media/showreel.mp4
   showreelVideo: "/showreel.webp",
 
-  // Friendship Card — interactive 3D preview (.glb). Swap the file at the
+  // Single & Duo Card — interactive 3D preview (.glb). Swap the file at the
   // same path to update the model; no code change needed. This is a
   // placeholder box model — replace with a real scan/model of the card
   // whenever it's ready.
@@ -511,7 +511,7 @@ export const SITE = {
       // further entries become extra gallery images in its modal.
       "pocket-mag":  ["/media/pocket/pocket-hero.webp"],
 
-      // Friendship Card designs — first entry is the front (used as the
+      // Single & Duo Card designs — first entry is the front (used as the
       // card's thumbnail everywhere), second is the back (shown when the
       // customer swipes past the front in the design detail modal). Files
       // live in /public/media/friendship/ as card_01_front.webp /
@@ -523,7 +523,7 @@ export const SITE = {
       "card-3": ["/media/friendship/CARD_03_FRONT.webp", "/media/friendship/CARD_03_BACK.webp"],
       "card-4": ["/media/friendship/CARD_04_FRONT.webp", "/media/friendship/CARD_04_BACK.webp"],
 
-      // The Memory Card — first image is the open-card thumbnail; second is
+      // The Photo Card — first image is the open-card thumbnail; second is
       // the cover. Both appear in the swipeable detail pop-up.
       "memory-birthday": ["/media/BIRTHDAY_01.webp", "/media/BIRTHDAY_02.webp"],
       "memory-friendship": ["/media/FRIEND_01.webp", "/media/FRIEND_02.webp"],

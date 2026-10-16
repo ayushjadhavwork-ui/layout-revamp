@@ -13,7 +13,7 @@ const single = CATALOG.friendship.find((f) => f.id === "friend-single")!;
 beforeEach(() => store().clear());
 
 describe("extras beside a combo that doesn't include them", () => {
-  it("charges Memory Cards at the normal price, up to the normal max", () => {
+  it("charges Photo Cards at the normal price, up to the normal max", () => {
     assert.equal(COMBO_RECIPES["combo-01"].memoryCardCount, undefined);
     store().selectCombo(combo("combo-01"));
     assert.equal(store().memoryCardLimit(), MEMORY_CARD_MAX);
@@ -23,7 +23,7 @@ describe("extras beside a combo that doesn't include them", () => {
     assert.equal(line("memory-card-designs")?.comboId, undefined);
   });
 
-  it("charges Friendship Cards at the normal price", () => {
+  it("charges Single & Duo Cards at the normal price", () => {
     assert.equal(COMBO_RECIPES["combo-01"].friendshipCount, undefined);
     store().selectCombo(combo("combo-01"));
     store().setFriendship(single.id);
@@ -91,6 +91,7 @@ describe("carts saved before the fix", () => {
   it("keeps lines the combo really includes", () => {
     const state = migrate(savedCart("combo-02"));
     assert.equal((state.cart as unknown[]).length, 4);
+    assert.equal((state.cart as { category: string; name: string }[]).find((c) => c.category === "memory-card")?.name, "The Photo Card × 1");
     assert.deepEqual(state.selectedMemoryCardDesignIds, [memoryDesign]);
     assert.deepEqual(state.stripSelections, [strip]);
   });

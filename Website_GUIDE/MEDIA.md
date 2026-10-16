@@ -48,8 +48,8 @@ public/media/
 ├── delivery/       ← delivery-option cover shots (see § 2d)
 ├── newspaper/      ← newspaper spread previews (see § 2d)
 ├── pocket/         ← Pocket Magazine card thumbnail (see § 2d)
-├── friendship/     ← Friendship Card 3D model (§ 2e) + design images (§ 2f)
-├── memory-card/    ← Memory Card banner + three front/back design pairs
+├── friendship/     ← Single & Duo Card 3D model (§ 2e) + design images (§ 2f)
+├── memory-card/    ← Photo Card banner + three front/back design pairs
 └── bg/             ← background tiles (see § 3)
 ```
 
@@ -130,12 +130,12 @@ just uncomment and point them at your files:
 | Delivery   | `del-std`, `del-exp`                      |
 | Newspaper  | `news-tpl-1`, `news-tpl-2` (the two fixed spread previews — the newspaper product itself has no separate cover slot) |
 | Pocket Magazine | `pocket-mag` (first entry = card thumbnail; its Step 2 template picks reuse the same `tpl-<n>` art as the normal magazine) |
-| Friendship Card designs | `card-1`..`card-4` — each takes a front/back pair, see § 2f |
-| The Memory Card | `memory-birthday`, `memory-friendship`, `memory-lover` — each uses an open-card image and cover image |
+| Single & Duo Card designs | `card-1`..`card-4` — each takes a front/back pair, see § 2f |
+| The Photo Card | `memory-birthday`, `memory-friendship`, `memory-lover` — each uses an open-card image and cover image |
 
-### 2e. Friendship Card — 3D model
+### 2e. Single & Duo Card — 3D model
 
-Unlike every other product, the Friendship Card section shows an interactive,
+Unlike every other product, the Single & Duo Card section shows an interactive,
 auto-rotating 3D model instead of a photo. To swap it:
 
 1. Export your model as a **.glb** file (glTF binary — the standard format
@@ -152,7 +152,7 @@ replace it with a real scan or model whenever one's ready. No other code
 changes needed; the viewer (drag to rotate, pinch/scroll to zoom, slow
 auto-rotate) works with any valid .glb dropped in that same spot.
 
-### 2f. Friendship Card — design template images
+### 2f. Single & Duo Card — design template images
 
 Below the 3D model, the customer picks 1 or 2 of **4 fixed designs**
 (Card 01–Card 04), each a "Friendship Licence" card. Each design needs
@@ -185,9 +185,9 @@ If you ever need a different file extension than `.webp` (e.g. `.jpg`),
 update the matching path under `productImages["card-1"]` (etc.) in
 `site-content.ts` to match.
 
-### 2g. The Memory Card
+### 2g. The Photo Card
 
-The Memory Card section uses seven managed images: one full promotional
+The Photo Card section uses seven managed images: one full promotional
 banner and two images for each of the Birthday, Friendship Club, and Lover
 Era designs. Their paths are already registered in `site-content.ts`.
 

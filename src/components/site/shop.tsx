@@ -512,6 +512,13 @@ export function PromoCodeBox() {
   );
 }
 
+// Cart badges show the category key, except where the key's internal name
+// differs from what customers see.
+const CATEGORY_BADGE: Partial<Record<Category, string>> = {
+  "memory-card": "photo card",
+  friendship: "single & duo card",
+};
+
 export function CartDrawer({
   open,
   onClose,
@@ -555,7 +562,7 @@ export function CartDrawer({
       ? ["Finish picking templates for every Pocket Magazine in your cart."]
       : []),
     ...(friendshipDesignsIncomplete && !comboSections.has("friendship-card")
-      ? [`Select ${friendshipDesignLimit - selectedFriendshipDesignIds.length} more Friendship Card design${friendshipDesignLimit - selectedFriendshipDesignIds.length === 1 ? "" : "s"} (${selectedFriendshipDesignIds.length}/${friendshipDesignLimit} picked).`]
+      ? [`Select ${friendshipDesignLimit - selectedFriendshipDesignIds.length} more card design${friendshipDesignLimit - selectedFriendshipDesignIds.length === 1 ? "" : "s"} (${selectedFriendshipDesignIds.length}/${friendshipDesignLimit} picked).`]
       : []),
   ];
   // Delivery is no longer gated here — it's chosen either on-page (Step 6)
@@ -585,7 +592,7 @@ export function CartDrawer({
   // kept out of both the coupon-freebie list and the combo's bullet list.
   const postcard = cart.find(isPostcard);
   const promoItems = cart.filter((c) => c.category === "promotions" && !c.comboId && !isPostcard(c));
-  // Friendship Card design picks are zero-cost sub-selections of the
+  // Single & Duo Card design picks are zero-cost sub-selections of the
   // "friendship" row (same relationship templates have to a magazine's
   // "sizes" row) — fold them into a note under that row (below) instead of
   // letting them leak through as their own bare ₹0.00-ish rows.
@@ -632,7 +639,7 @@ export function CartDrawer({
                 <div className="min-w-0 flex-1">
                   <p className="truncate font-medium text-rose-wine">{item.name}</p>
                   <p className="text-xs uppercase tracking-wider text-dusty-rose">
-                    {item.category}{item.comboId ? " · in combo" : ""}
+                    {CATEGORY_BADGE[item.category] ?? item.category}{item.comboId ? " · in combo" : ""}
                   </p>
                   {item.category === "friendship" && friendshipDesignNumbers.length > 0 && (
                     <p className="mt-1 text-xs text-neutral-600">

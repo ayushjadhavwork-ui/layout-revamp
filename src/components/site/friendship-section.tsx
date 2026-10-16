@@ -144,7 +144,7 @@ function FriendshipModelViewer({ className = "" }: { className?: string }) {
         <model-viewer
           ref={viewerRef}
           src={SITE.friendshipCardModel}
-          alt="Interactive 3D preview of The Layout's Friendship Card"
+          alt="Interactive 3D preview of The Layout's Single Card"
           camera-controls
           interaction-prompt="none"
           environment-image="neutral"
@@ -248,7 +248,7 @@ export function FriendshipCardSection() {
           <div className="inline-flex items-center gap-2 text-off-white">
             <HeartHandshake className="h-5 w-5" />
             <span className="font-display text-2xl md:text-3xl tracking-[0.2em]">
-              FRIENDSHIP CARD
+              SINGLE & DUO CARDS
             </span>
           </div>
           <p className="mt-2 text-xs uppercase tracking-[0.35em] text-pink-mist">
@@ -559,7 +559,7 @@ function FriendshipModal({
 
         <div className="md:col-span-7 flex flex-col">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">
-            Friendship Card
+            Personalised Card
           </p>
           <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">
             {product.name}
@@ -722,7 +722,7 @@ function FriendshipDesignDetailModal({
 
         <div className="md:col-span-6 flex flex-col">
           <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">
-            Friendship Card Design
+            Card Design
           </p>
           <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">
             {item.name}

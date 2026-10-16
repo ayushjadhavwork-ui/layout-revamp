@@ -315,8 +315,8 @@ function magazineInvoiceLabel_(item) {
   }
 }
 
-// Strips and Memory Card lines are single "bundle" lines whose quantity only
-// lives in the name ("Polaroid Strips × 3", "The Memory Card × 2").
+// Strips and Photo Card lines are single "bundle" lines whose quantity only
+// lives in the name ("Polaroid Strips × 3", "The Photo Card × 2").
 function bundleQuantity_(item) {
   const m = String(item.name || "").match(/×\s*(\d+)/);
   return m ? Number(m[1]) : 1;
@@ -371,7 +371,7 @@ function buildInvoiceHtml_(order) {
     const uk = t.unit || "";
     (pocketTemplateLabelsByUnit[uk] = pocketTemplateLabelsByUnit[uk] || []).push(label);
   });
-  // Friendship Card design picks are the same "zero-cost sub-selection
+  // Single & Duo Card design picks are the same "zero-cost sub-selection
   // folded into the parent row" shape as templates above, but flat — only
   // ever one "friendship" line per order (see friendship-designs) — so no
   // per-unit grouping is needed. Extract the design number from its id
@@ -421,12 +421,12 @@ function buildInvoiceHtml_(order) {
     const cardDesigns = [];
     ofCategory("friendship").forEach((card) => {
       const designs = friendshipDesignItems.filter((d) => d.comboId === combo.id).map((d) => escapeHtml_(d.name));
-      cardDesigns.push(escapeHtml_("Friendship Card (" + card.name + ")") + (designs.length ? " — " + designs.join(", ") : ""));
+      cardDesigns.push(escapeHtml_(card.name) + (designs.length ? " — " + designs.join(", ") : ""));
     });
     ofCategory("memory-card").forEach((card) => {
       const qty = bundleQuantity_(card);
       const designs = memoryCardDesignItems.filter((d) => d.comboId === combo.id).map((d) => escapeHtml_(d.name));
-      cardDesigns.push((qty > 1 ? "Memory Card × " + qty : "Memory Card") + (designs.length ? " — " + designs.join(", ") : ""));
+      cardDesigns.push((qty > 1 ? "Photo Card × " + qty : "Photo Card") + (designs.length ? " — " + designs.join(", ") : ""));
     });
     detail("Card Designs", cardDesigns);
 
@@ -452,16 +452,11 @@ function buildInvoiceHtml_(order) {
     const magazineLabel = magazineInvoiceLabel_(item);
     const label = magazineLabel
       ? magazineLabel
-      // "Single Card" / "Duo Card — BESTIE SET" read fine on-site (under a
-      // section already titled Friendship Card) but are ambiguous on a
-      // flat invoice line. Parenthesise rather than prefix with a dash —
-      // the item name already contains "Duo Card — BESTIE SET", and a
-      // second leading dash there reads as a typo, not two separate names.
-      : isFriendship
-        ? ("Friendship Card (" + item.name + ")")
-        : isMemoryCard
-          ? "The Memory Card"
-          : item.name;
+      // "Single Card" / "Duo Card — BESTIE SET" are the product names, so
+      // they print as-is.
+      : isMemoryCard
+        ? "The Photo Card"
+        : item.name;
     const notes = [];
     if (item.note) notes.push(escapeHtml_(item.note));
     if (item.promoCode) notes.push("Free — redeemed with " + escapeHtml_(item.promoCode));
@@ -633,8 +628,8 @@ function shippingItemLabel_(item) {
     case "pocket":
     case "newspaper":
       return magazineInvoiceLabel_(item);
-    case "friendship": return item.id === "friend-duo" ? "Friendship Card (Duo Set)" : "Friendship Card (Single)";
-    case "memory-card": return "Memory Card";
+    case "friendship": return item.id === "friend-duo" ? "Duo Card (Bestie Set)" : "Single Card";
+    case "memory-card": return "Photo Card";
     case "polaroids": {
       const count = SHIPPING_POLAROID_COUNTS_[item.id];
       return "Polaroid " + String(item.name || "Pack") + (count ? " (" + count + " Polaroids)" : "");
@@ -650,7 +645,7 @@ function shippingItemLabel_(item) {
 // Collapses cart lines to one label per distinct product with a count (e.g.
 // "Pocket Magazine A6 (6 Pages) × 3") rather than one line per unit — a
 // 3-pocket-magazine order shouldn't produce three identical lines. Strips
-// and Memory Card are single bundle lines whose quantity is in the name.
+// and Photo Card are single bundle lines whose quantity is in the name.
 function shippingTally_(items) {
   const counts = {};
   const order = [];

@@ -100,7 +100,7 @@ export function comboCheckoutIssues(comboId: string, selection: ComboSelection):
     const cartDesigns = linkedCount(selection.cart, comboId, "memory-card-designs");
     const parentPresent = linked.some((item) => item.category === "memory-card");
     if (!parentPresent || selectedDesigns !== expectedMemoryCards || cartDesigns !== expectedMemoryCards) {
-      push("memory-card", `Choose ${expectedMemoryCards} Memory Card design${expectedMemoryCards === 1 ? "" : "s"} included in your combo.`);
+      push("memory-card", `Choose ${expectedMemoryCards} Photo Card design${expectedMemoryCards === 1 ? "" : "s"} included in your combo.`);
     }
   }
 

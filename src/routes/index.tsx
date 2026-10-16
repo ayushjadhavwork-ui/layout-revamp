@@ -31,9 +31,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "The Layout — Custom Magazines & Keepsakes" },
-      { name: "description", content: "Create custom magazines, Memory Cards, polaroid keepsakes, and personalised gifts from The Layout." },
+      { name: "description", content: "Create custom magazines, Photo Cards, Single & Duo Cards, polaroid keepsakes, and personalised gifts from The Layout." },
       { property: "og:title", content: "The Layout — Custom Magazines & Keepsakes" },
-      { property: "og:description", content: "Create custom magazines, Memory Cards, polaroid keepsakes, and personalised gifts from The Layout." },
+      { property: "og:description", content: "Create custom magazines, Photo Cards, Single & Duo Cards, polaroid keepsakes, and personalised gifts from The Layout." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -172,7 +172,7 @@ function Home() {
       return;
     }
     if (selectedFriendshipId && selectedFriendshipDesignIds.length < friendshipDesignLimit) {
-      toast.error(`Pick your ${friendshipDesignLimit} design${friendshipDesignLimit === 1 ? "" : "s"} for the Friendship Card before ordering — ${selectedFriendshipDesignIds.length}/${friendshipDesignLimit} selected.`);
+      toast.error(`Pick your ${friendshipDesignLimit} design${friendshipDesignLimit === 1 ? "" : "s"} for your ${selectedFriendshipId === "friend-duo" ? "Duo" : "Single"} Card before ordering — ${selectedFriendshipDesignIds.length}/${friendshipDesignLimit} selected.`);
       document.getElementById("friendship-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
@@ -184,7 +184,7 @@ function Home() {
       return sum + (match ? Number(match[1]) : 1);
     }, 0);
     if (expectedMemoryCards > 0 && selectedMemoryCardDesignIds.length < expectedMemoryCards) {
-      toast.error(`Pick ${expectedMemoryCards} Memory Card design${expectedMemoryCards === 1 ? "" : "s"} included in your combo before ordering.`);
+      toast.error(`Pick ${expectedMemoryCards} Photo Card design${expectedMemoryCards === 1 ? "" : "s"} included in your combo before ordering.`);
       document.getElementById("memory-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
@@ -286,14 +286,14 @@ function Home() {
 
         <div id="memory-card" className="relative z-10 px-4 py-12 sm:py-20">
           <div className="mx-auto max-w-6xl">
-            <SectionHead eyebrow="Turn moments into keepsakes" title="The Memory Card" sub="Choose one, two, or three cards — mix the designs or repeat your favourite." />
+            <SectionHead eyebrow="Turn moments into keepsakes" title="The Photo Card" sub="Choose one, two, or three cards — mix the designs or repeat your favourite." />
             <MemoryCardSection />
           </div>
         </div>
 
         <div id="friendship-card" className="relative z-10 px-4 py-12 sm:py-20">
           <div className="mx-auto max-w-6xl">
-            <SectionHead eyebrow="Something different" title="Friendship Card" sub="A fully personalised keepsake card — not part of the package above." />
+            <SectionHead eyebrow="Something different" title="Single & Duo Cards" sub="A fully personalised keepsake card — not part of the package above." />
             <FriendshipCardSection />
           </div>
         </div>

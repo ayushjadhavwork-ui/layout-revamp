@@ -17,7 +17,7 @@ export function MemoryCardSection() {
   const limit = useStore((state) => state.memoryCardLimit());
 
   const add = (item: Product) => {
-    if (!addDesign(item.id)) return toast.error(`You can select up to ${limit} Memory Cards.`);
+    if (!addDesign(item.id)) return toast.error(`You can select up to ${limit} Photo Cards.`);
     const next = total + 1;
     toast.success(`${item.name} — Qty ×${selectedIds.filter((id) => id === item.id).length + 1}. Bundle total: ${fmt(MEMORY_CARD_TIERS[next])}`);
   };
@@ -33,7 +33,7 @@ export function MemoryCardSection() {
       <div className="overflow-hidden rounded-xl bg-rose-wine p-3 sm:p-6 md:p-10">
         <img
           src={SITE.memoryCardBanner[0]}
-          alt="The Memory Card collection"
+          alt="The Photo Card collection"
           className="block w-full rounded-lg object-cover"
         />
 
@@ -168,7 +168,7 @@ function MemoryCardDetailModal({
         </div>
 
         <div className="min-w-0">
-          <p className="text-xs font-semibold uppercase text-blush-rose">The Memory Card</p>
+          <p className="text-xs font-semibold uppercase text-blush-rose">The Photo Card</p>
           <h3 className="mt-2 font-display text-3xl leading-tight text-rose-wine md:text-4xl">{info.name}</h3>
           <p className="mt-4 text-sm leading-relaxed text-neutral-700">{info.description}</p>
           <div className="mt-5 space-y-4 border-t border-rose-wine/10 pt-5">
