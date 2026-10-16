@@ -13,6 +13,8 @@
 - [x] Complimentary Keepsake Postcard in every cart with a paid item — protected in the drawer, ₹0 row on invoice and label.
 - [x] Preferred delivery date (min today + 4) in the checkout popup; logged to Cart Logs and Completed Orders only, never on invoice/label.
 - [x] Fix: strips, Friendship Cards and Memory Cards were ₹0 beside *any* combo. They're now free only when the combo's recipe includes them; otherwise they're a paid extra (normal price, no `comboId`) that survives deselecting the combo. Shared rule: `comboIncluding` (store.ts), tests in `store.test.ts` (`bun test src/lib`).
+- [x] Rename Memory Card → Photo Card and Friendship Card → Single & Duo Cards in all customer-facing copy, cart, invoice and label (ids/keys unchanged; saved carts migrated).
+- [x] Guided Combo Mode: with a combo in the cart, only its sections show (`guidedVisibleSections`), and a bottom bar tracks progress from the checkout issues (`comboSteps`) with Show all / Remove / Review in cart. Logic in `src/lib/combo-guide.ts`.
 - [x] Remove OrderWaitTimeSection and ImageUploadSection from the home page.
 - [x] Verify selection, documents, mobile/desktop presentation, and build.
 - [ ] Redeploy `code.gs` in Apps Script so the new sheet column and invoice/label wording go live.

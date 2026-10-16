@@ -278,3 +278,9 @@
 @media (prefers-reduced-motion: reduce) {
   .gold-shimmer, .gold-sparkle { animation: none; }
 }
+
+/* Floating buttons (spin wheel, WhatsApp) ride above the Guided Combo bar
+   while it's open (see combo-guide.tsx). */
+body.combo-guide-open .float-above-guide {
+  translate: 0 -6rem;
+}

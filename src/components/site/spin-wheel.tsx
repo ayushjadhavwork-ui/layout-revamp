@@ -403,7 +403,7 @@ export function SpinWheel() {
         <button
           onClick={handleReopen}
           aria-label="Open Spin the Wheel"
-          className="fixed bottom-24 right-4 z-[95] grid h-14 w-14 place-items-center rounded-full bg-blush-rose text-off-white shadow-xl ring-2 ring-white hover:scale-105 transition"
+          className="float-above-guide fixed bottom-24 right-4 z-[95] grid h-14 w-14 place-items-center rounded-full bg-blush-rose text-off-white shadow-xl ring-2 ring-white hover:scale-105 transition"
         >
           <Gift className="h-6 w-6" />
           <span

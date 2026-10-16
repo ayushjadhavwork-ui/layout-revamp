@@ -5,6 +5,7 @@ import { Toaster, toast } from "sonner";
 import logoAsset from "@/assets/logo.png.asset.json";
 import { CATALOG, CONFIG, type Category, type Product } from "@/lib/catalog";
 import { useStore, useComboIssues } from "@/lib/store";
+import { comboSteps, guidedVisibleSections, nextComboAction, type GuidedSection } from "@/lib/combo-guide";
 import { SITE } from "@/lib/site-content";
 import { TiledSection } from "@/components/site/TiledSection";
 import {
@@ -22,6 +23,7 @@ import { CombosSection } from "@/components/site/combos-section";
 import { NewspaperSection } from "@/components/site/newspaper-section";
 import { MemoryCardSection } from "@/components/site/memory-card-section";
 import { FriendshipCardSection } from "@/components/site/friendship-section";
+import { ComboGuideBar } from "@/components/site/combo-guide";
 import { SpinWheel } from "@/components/site/spin-wheel";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
@@ -133,6 +135,40 @@ function Home() {
   const selectedMemoryCardDesignIds = useStore((s) => s.selectedMemoryCardDesignIds);
   const activeCombo = cart.find((item) => item.category === "combos");
   const comboIssues = useComboIssues();
+  const deselectCombo = useStore((s) => s.deselectCombo);
+
+  // Guided Combo Mode: with a combo in the cart, only the sections it needs
+  // are shown unless the customer asks to see everything. "Show all" is
+  // per-combo, so picking a different combo starts focused again.
+  const [showAll, setShowAll] = useState(false);
+  useEffect(() => setShowAll(false), [activeCombo?.id]);
+  const guided = !!activeCombo && !showAll;
+  const visibleSections = activeCombo ? guidedVisibleSections(activeCombo.id, comboIssues, cart) : null;
+  const show = (section: GuidedSection) => !guided || !!visibleSections?.has(section);
+  const comboGuideSteps = activeCombo ? comboSteps(activeCombo.id, comboIssues) : [];
+
+  // In-page links (e.g. the nav's "Build") can point at a hidden section:
+  // reveal everything, then scroll once it has rendered.
+  useEffect(() => {
+    if (!guided) return;
+    const onClick = (event: MouseEvent) => {
+      const link = (event.target as Element | null)?.closest?.('a[href^="#"]');
+      const id = link?.getAttribute("href")?.slice(1);
+      if (!id || document.getElementById(id)) return;
+      event.preventDefault();
+      setShowAll(true);
+      setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 50);
+    };
+    document.addEventListener("click", onClick);
+    return () => document.removeEventListener("click", onClick);
+  }, [guided]);
+
+  const removeActiveCombo = () => {
+    if (!activeCombo) return;
+    if (!window.confirm(`Remove ${activeCombo.name} and everything included with it?`)) return;
+    deselectCombo(activeCombo.id);
+    toast.success(`${activeCombo.name} removed`);
+  };
 
   const openProduct = (cat: Category) => (p: Product) => {
     setModalCat(cat);
@@ -209,7 +245,7 @@ function Home() {
   };
 
   return (
-    <div id="top" className="relative min-h-screen">
+    <div id="top" className={`relative min-h-screen ${activeCombo ? "pb-32" : ""}`}>
       <Toaster position="top-center" richColors />
       <div className="orbs" aria-hidden>
         <span className="orb orb-1" /><span className="orb orb-2" /><span className="orb orb-3" />
@@ -255,64 +291,76 @@ function Home() {
       </TiledSection>
 
       <TiledSection tiles={SITE.backgrounds.customize}>
-        <div id="build" className="relative z-10 px-4 py-12 sm:py-20">
-          <div className="mx-auto max-w-6xl">
-            <SectionHead eyebrow="Step 1" title="Choose your package" sub="Pricing scales with page count. Front & back covers included." />
-            <SizesSection />
+        {show("build") && (
+          <div id="build" className="relative z-10 px-4 py-12 sm:py-20">
+            <div className="mx-auto max-w-6xl">
+              <SectionHead eyebrow="Step 1" title="Choose your package" sub="Pricing scales with page count. Front & back covers included." />
+              <SizesSection />
+            </div>
           </div>
-        </div>
+        )}
 
-        <div id="templates" className="relative z-10 px-4 py-12 sm:py-20">
-          <div className="mx-auto max-w-6xl">
-            <SectionHead eyebrow="Step 2" title="Pick your templates" sub="Choose the exact number your package allows. Click a card for details." />
-            <StepIndicator />
-            <TemplatesSection />
+        {show("templates") && (
+          <div id="templates" className="relative z-10 px-4 py-12 sm:py-20">
+            <div className="mx-auto max-w-6xl">
+              <SectionHead eyebrow="Step 2" title="Pick your templates" sub="Choose the exact number your package allows. Click a card for details." />
+              <StepIndicator />
+              <TemplatesSection />
+            </div>
           </div>
-        </div>
+        )}
 
-        <div id="pocket" className="relative z-10 px-4 py-12 sm:py-20">
-          <div className="mx-auto max-w-6xl">
-            <SectionHead eyebrow="Add it on" title="Pocket Magazine" sub="A standalone product of its own — strictly 6 pages, pocket-sized, ₹250 flat. Add it alongside your magazine above, or all on its own. Buying more than one? Pick templates for each individually below." />
-            <PocketMagazineSection />
+        {show("pocket") && (
+          <div id="pocket" className="relative z-10 px-4 py-12 sm:py-20">
+            <div className="mx-auto max-w-6xl">
+              <SectionHead eyebrow="Add it on" title="Pocket Magazine" sub="A standalone product of its own — strictly 6 pages, pocket-sized, ₹250 flat. Add it alongside your magazine above, or all on its own. Buying more than one? Pick templates for each individually below." />
+              <PocketMagazineSection />
+            </div>
           </div>
-        </div>
+        )}
 
-        <div id="newspaper" className="relative z-10 px-4 py-12 sm:py-20">
-          <div className="mx-auto max-w-6xl">
-            <SectionHead eyebrow="Something different" title="Newspaper Magazine" sub="A special standalone keepsake — not part of the package above." />
-            <NewspaperSection />
+        {show("newspaper") && (
+          <div id="newspaper" className="relative z-10 px-4 py-12 sm:py-20">
+            <div className="mx-auto max-w-6xl">
+              <SectionHead eyebrow="Something different" title="Newspaper Magazine" sub="A special standalone keepsake — not part of the package above." />
+              <NewspaperSection />
+            </div>
           </div>
-        </div>
+        )}
 
-        <div id="memory-card" className="relative z-10 px-4 py-12 sm:py-20">
-          <div className="mx-auto max-w-6xl">
-            <SectionHead eyebrow="Turn moments into keepsakes" title="The Photo Card" sub="Choose one, two, or three cards — mix the designs or repeat your favourite." />
-            <MemoryCardSection />
+        {show("memory-card") && (
+          <div id="memory-card" className="relative z-10 px-4 py-12 sm:py-20">
+            <div className="mx-auto max-w-6xl">
+              <SectionHead eyebrow="Turn moments into keepsakes" title="The Photo Card" sub="Choose one, two, or three cards — mix the designs or repeat your favourite." />
+              <MemoryCardSection />
+            </div>
           </div>
-        </div>
+        )}
 
-        <div id="friendship-card" className="relative z-10 px-4 py-12 sm:py-20">
-          <div className="mx-auto max-w-6xl">
-            <SectionHead eyebrow="Something different" title="Single & Duo Cards" sub="A fully personalised keepsake card — not part of the package above." />
-            <FriendshipCardSection />
+        {show("friendship-card") && (
+          <div id="friendship-card" className="relative z-10 px-4 py-12 sm:py-20">
+            <div className="mx-auto max-w-6xl">
+              <SectionHead eyebrow="Something different" title="Single & Duo Cards" sub="A fully personalised keepsake card — not part of the package above." />
+              <FriendshipCardSection />
+            </div>
           </div>
-        </div>
+        )}
 
         <div id="extras" className="relative z-10 px-4 py-12 sm:py-20">
           <div className="mx-auto max-w-6xl space-y-10 sm:space-y-16">
-            <div>
+            {show("addons") && <div>
               <SectionHead eyebrow="Step 3" title="Add-ons" sub="Little extras that make the keepsake feel personal." />
               <AddonsSection />
-            </div>
-            <div>
+            </div>}
+            {show("packs") && <div>
               <SectionHead eyebrow="Step 4" title="Polaroid packs" sub="Real polaroid keepsakes — tap a pack to add, or View for the full look." />
               <PacksSection />
-            </div>
+            </div>}
 
-            <div id="strips" className="scroll-mt-24">
+            {show("strips") && <div id="strips" className="scroll-mt-24">
               <SectionHead eyebrow="Step 5" title="Polaroid Strips" sub="Click a strip to add it, or tap View for details." />
               <StripsSection />
-            </div>
+            </div>}
             <div>
               <SectionHead eyebrow="Step 6" title="Delivery" />
               <ProductGrid category="delivery" items={CATALOG.delivery} onOpen={openProduct("delivery")} cols="grid-cols-2" />
@@ -376,7 +424,18 @@ function Home() {
       <SpinWheel />
 
 
-      {cartCount > 0 && (
+      {activeCombo ? (
+        <ComboGuideBar
+          comboName={activeCombo.name}
+          steps={comboGuideSteps}
+          next={nextComboAction(comboGuideSteps, comboIssues)}
+          showAll={showAll}
+          cartCount={cartCount}
+          onToggleShowAll={() => setShowAll((v) => !v)}
+          onRemove={removeActiveCombo}
+          onCart={() => setCartOpen(true)}
+        />
+      ) : cartCount > 0 && (
         <button
           onClick={() => setCartOpen(true)}
           className="fixed bottom-6 right-6 z-30 pill-btn pill-btn-hover pill-primary shadow-xl"
@@ -397,7 +456,7 @@ function WhatsAppButton() {
       target="_blank"
       rel="noreferrer"
       aria-label="Chat with us on WhatsApp"
-      className="fixed bottom-23.5 left-4 z-30 grid h-14 w-14 place-items-center rounded-full bg-[#25D366] shadow-xl ring-2 ring-white hover:scale-105 transition"
+      className="float-above-guide fixed bottom-23.5 left-4 z-30 grid h-14 w-14 place-items-center rounded-full bg-[#25D366] shadow-xl ring-2 ring-white hover:scale-105 transition"
     >
       <svg viewBox="0 0 32 32" className="h-7 w-7 fill-white" aria-hidden>
         <path d="M16.004 3C9.377 3 4 8.373 4 15c0 2.34.652 4.527 1.785 6.395L4 29l7.805-1.746A11.94 11.94 0 0 0 16.004 27C22.63 27 28 21.627 28 15S22.63 3 16.004 3Zm6.994 16.98c-.297.836-1.47 1.53-2.418 1.734-.645.137-1.488.246-4.328-.93-3.63-1.5-5.965-5.19-6.148-5.43-.176-.242-1.469-1.957-1.469-3.734 0-1.777.93-2.648 1.262-3.012.297-.324.645-.406.86-.406.215 0 .43.004.617.012.199.008.465-.075.727.555.297.688.988 2.375 1.074 2.547.086.172.145.375.03.617-.116.242-.174.39-.343.602-.172.211-.363.473-.516.633-.172.18-.352.375-.152.734.199.36.887 1.465 1.906 2.375 1.31 1.168 2.414 1.53 2.777 1.703.363.172.574.145.786-.086.211-.234.906-1.055 1.148-1.418.242-.363.484-.297.816-.18.332.117 2.117.996 2.48 1.176.363.18.605.27.695.418.09.15.09.867-.207 1.703Z"/>
