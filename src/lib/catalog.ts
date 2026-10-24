@@ -29,6 +29,8 @@ export type Category =
   | "friendship-designs"
   | "memory-card"
   | "memory-card-designs"
+  | "it-polaroids"
+  | "sticker-book"
   | "promotions";
 
 
@@ -155,7 +157,7 @@ export const CATALOG: Record<Exclude<Category, "templates" | "pocket-templates">
     { id: "strip-5", name: "Strip 5", price: 0, desc: "Editorial polaroid strip — design 5." },
   ],
   delivery: [
-    { id: "del-std", name: "Standard Delivery", price: priceOf("delivery", "del-std"), desc: "Free — arrives in 7-8 days." },
+    { id: "del-std", name: "Standard Delivery", price: priceOf("delivery", "del-std"), desc: "Free with any magazine — arrives in 7-8 days." },
     { id: "del-exp", name: "Express Shipping",  price: priceOf("delivery", "del-exp"), desc: "Priority — arrives in 3-4 days." },
   ],
 
@@ -221,6 +223,29 @@ export const CATALOG: Record<Exclude<Category, "templates" | "pocket-templates">
   "memory-card": [],
   "memory-card-designs": MEMORY_CARD_DESIGNS,
 
+  // An all-in-one bundle: the book plus its fixed inclusions (listed in
+  // SITE.stickerBook.included) on one cart line — no designs to pick.
+  "sticker-book": [
+    {
+      id: "sticker-book-01",
+      name: SITE.stickerBook.name,
+      price: priceOf("stickerBook", "sticker-book-01"),
+      desc: SITE.stickerBook.description,
+    },
+  ],
+
+  // A standalone product sold by quantity (1–100, one photo each). The store
+  // keeps a single cart line named "THE IT POLAROIDS × N" priced at N × the
+  // unit price — see setItPolaroidsQty in store.ts.
+  "it-polaroids": [
+    {
+      id: "it-pol",
+      name: SITE.itPolaroids.name,
+      price: priceOf("itPolaroids", "single"),
+      desc: SITE.itPolaroids.description,
+    },
+  ],
+
   // Free items granted by redeeming a Spin-the-Wheel coupon code — never sold
   // directly, only ever added by applyCouponFreebie() in store.ts.
   promotions: [
@@ -254,6 +279,31 @@ export const STRIP_MAX = Object.keys(PRICES.stripTiers).length;
 
 export const MEMORY_CARD_TIERS: Record<number, number> = { ...PRICES.memoryCardTiers };
 export const MEMORY_CARD_MAX = Object.keys(PRICES.memoryCardTiers).length;
+
+// The sticker book's fixed inclusions, with each Photo Card's name read from
+// SITE.memoryCardInfo so it is only ever edited there.
+export const STICKER_BOOK_INCLUDED: { name: string; note: string; image: string }[] =
+  (SITE.stickerBook.included as { name?: string; memoryCardId?: string; note: string; image: string }[]).map((inc) => ({
+    name: inc.memoryCardId ? SITE.memoryCardInfo[inc.memoryCardId].name : inc.name ?? "",
+    note: inc.note,
+    image: inc.image,
+  }));
+
+// Flat-amount coupons that only work while a given product is in the cart.
+// Amounts live in prices.ts → PRICES.productCoupons; validated in the
+// browser (see productCouponCheck in store.ts), not by the Coupons sheet.
+export type ProductCoupon = { amount: number; productId: string; message: string };
+export const PRODUCT_COUPONS: Record<string, ProductCoupon> = {
+  PATAKA200: {
+    amount: priceOf("productCoupons", "PATAKA200"),
+    productId: "sticker-book-01",
+    message: "Code PATAKA200 is only valid on The Love Sticker Book.",
+  },
+};
+
+export const IT_POLAROIDS_MIN = 1;
+export const IT_POLAROIDS_MAX = 100;
+export const IT_POLAROID_PRICE = priceOf("itPolaroids", "single");
 
 
 // ===========================================================

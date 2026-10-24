@@ -107,6 +107,16 @@ export const PRICES = {
   },
 
   // -------------------------------------------------------
+  // DELIVERY — POLAROIDS-ONLY CARTS
+  // Standard Delivery price when every paid item in the cart is a polaroid
+  // (THE IT POLAROIDS and/or Polaroid Packs). Any other cart uses the
+  // "delivery" price above.
+  // -------------------------------------------------------
+  deliveryPolaroidsOnly: {
+    "del-std": 80,
+  },
+
+  // -------------------------------------------------------
   // NEWSPAPER MAGAZINE (standalone keepsake)
   // -------------------------------------------------------
   newspaper: {
@@ -147,6 +157,30 @@ export const PRICES = {
     1: 150, // any 1 Photo Card
     2: 220, // any 2 Photo Cards
     3: 300, // any 3 Photo Cards
+  },
+
+  // -------------------------------------------------------
+  // THE IT POLAROIDS — price per polaroid (1 photo each).
+  // Customers choose 1 to 100; the cart charges this × quantity.
+  // -------------------------------------------------------
+  itPolaroids: {
+    single: 120,
+  },
+
+  // -------------------------------------------------------
+  // THE LOVE STICKER BOOK — all-in-one bundle (book, 16 stickers,
+  // Lover Era Card, Card 04 licence, Strip 2).
+  // -------------------------------------------------------
+  stickerBook: {
+    "sticker-book-01": 1199,
+  },
+
+  // -------------------------------------------------------
+  // PRODUCT COUPONS — flat ₹ off, only valid when that product is in
+  // the cart (which product is set in catalog.ts → PRODUCT_COUPONS).
+  // -------------------------------------------------------
+  productCoupons: {
+    PATAKA200: 200,
   },
 } as const;
 

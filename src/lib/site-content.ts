@@ -278,6 +278,55 @@ export const SITE = {
   memoryCardBanner: [memoryCardBanner.url],
 
   // ────────────────────────────────────────────────────────────────
+  // THE IT POLAROIDS — standalone product sold by quantity (1–100).
+  // Price per polaroid lives in prices.ts → PRICES.itPolaroids.
+  // ────────────────────────────────────────────────────────────────
+  itPolaroids: {
+    name: "THE IT POLAROIDS",
+    tagline: "Your memories, instantly iconic.",
+    description: "Turn your favourite moments into timeless keepsakes! THE IT POLAROIDS bring you the nostalgic charm of real instant photographs with a classic vintage aesthetic. Little pictures. Big memories. Forever iconic.",
+    features: [
+      "Real instant photo, printed with a vintage Polaroid camera aesthetic",
+      "Perfect for scrapbooks, journals, room decor and memory walls",
+      "Made for gifting — or keeping all to yourself",
+    ],
+    howToOrder: "Choose your quantity, add it to your cart, and share one photo for each Polaroid after ordering.",
+    poster: "/media/it-polaroids/poster.webp",
+  },
+
+  // ────────────────────────────────────────────────────────────────
+  // THE LOVE STICKER BOOK — all-in-one bundle. Price in prices.ts →
+  // PRICES.stickerBook; coupon amount in PRICES.productCoupons.
+  // Each slide: full-size image, small thumbnail, and its caption.
+  // ────────────────────────────────────────────────────────────────
+  stickerBook: {
+    name: "THE LOVE STICKER BOOK ❤️",
+    headline: "Turn your favourite photos into stickers and make memories together, one page at a time.",
+    description: "A cute, interactive couple activity where you can sit together, peel, and paste your favourite moments into your very own sticker book. From your cutest selfies to your most unforgettable memories, create a little scrapbook of your love story.",
+    howItWorks: "Upload your favourite photos, get them turned into stickers, and spend quality time together pasting them into your magazine. Make it a fun little date activity you'll want to remember forever.",
+    tagline: "Your photos. Your stickers. Your love story. ♡",
+    couponCode: "PATAKA200",
+    slides: [
+      { src: "/media/sticker-book/1.webp", thumb: "/media/sticker-book/1-thumb.webp", caption: "Front cover — \"10 things I love about you\" + an envelope of 16 stickers" },
+      { src: "/media/sticker-book/2.webp", thumb: "/media/sticker-book/2-thumb.webp", caption: "Spread 1 — Claim your Soulmate Licence + \"The Love\" music player (1 photo)" },
+      { src: "/media/sticker-book/3.webp", thumb: "/media/sticker-book/3-thumb.webp", caption: "Spread 2 — The Memory Archive: 9 photo sticker slots + stamp frame (1 photo)" },
+      { src: "/media/sticker-book/4.webp", thumb: "/media/sticker-book/4-thumb.webp", caption: "Spread 3 — The Love Issue cover + \"Five things about us\"" },
+      { src: "/media/sticker-book/5.webp", thumb: "/media/sticker-book/5-thumb.webp", caption: "Spread 4 — Vinyl record with 3 polaroids + \"Always & Forever\" envelope" },
+      { src: "/media/sticker-book/6.webp", thumb: "/media/sticker-book/6-thumb.webp", caption: "Spread 5 — Road map love note + red stamp photo" },
+      { src: "/media/sticker-book/7.webp", thumb: "/media/sticker-book/7-thumb.webp", caption: "Back cover — The Love Chronicles" },
+    ],
+    // The fixed keepsakes bundled with every book. `image` is any key of
+    // productImages below; its first image is shown. A Photo Card entry
+    // gives `memoryCardId` instead of `name` — its name comes from
+    // memoryCardInfo above.
+    included: [
+      { memoryCardId: "memory-lover", note: "Personalised keepsake card", image: "memory-lover" },
+      { name: "Card 04 — Soulmate Licence", note: "A licence which works anywhere irrespective of the universe • It's a forever thing", image: "card-4" },
+      { name: "Strip 2", note: "Moments-capturing 4-photo polaroid strip", image: "strip-2" },
+    ],
+  },
+
+  // ────────────────────────────────────────────────────────────────
   // COMBO INFORMATION
   // Every combo pop-up reads one complete record from here. Edit quoted
   // text only; originalValue is the crossed-out amount shown on the card.

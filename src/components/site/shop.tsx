@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
-import { X, ShoppingBag, Trash2, Plus, Check, ArrowUpRight, ChevronLeft, ChevronRight, Maximize2, Sparkles, Gift } from "lucide-react";
+import { X, ShoppingBag, Trash2, Plus, Minus, Check, ArrowUpRight, ChevronLeft, ChevronRight, Maximize2, Sparkles, Gift, Truck } from "lucide-react";
 import { toast } from "sonner";
-import { CATALOG, CONFIG, fmt, comboRealTotal, COUPON_FREEBIES, type Category, type Product } from "@/lib/catalog";
-import { useStore, isPostcard, useComboIssues } from "@/lib/store";
+import { CATALOG, CONFIG, fmt, comboRealTotal, COUPON_FREEBIES, STICKER_BOOK_INCLUDED, IT_POLAROIDS_MAX, IT_POLAROIDS_MIN, type Category, type Product } from "@/lib/catalog";
+import { PRICES } from "@/lib/prices";
+import { useStore, isPostcard, useComboIssues, isPolaroidsOnlyCart, deliveryPriceFor, itPolaroidsQtyIn, productCouponCheck } from "@/lib/store";
 import { validateCoupon, logCart, completeOrder } from "@/lib/gas";
 import { SITE } from "@/lib/site-content";
 import { createPortal } from "react-dom";
@@ -119,7 +120,10 @@ export function ProductGrid({
             <h4 className="font-display text-xl text-rose-wine">{item.name}</h4>
             <p className="mt-1 text-xs text-neutral-600 line-clamp-2">{item.desc}</p>
             <p className="mt-2 text-sm font-semibold text-blush-rose">
-              {isTemplate ? "Included" : item.price ? fmt(item.price) : "Free"}
+              {isTemplate ? "Included" : (() => {
+                const price = category === "delivery" ? deliveryPriceFor(item, cart) : item.price;
+                return price ? fmt(price) : "Free";
+              })()}
             </p>
 
             {/* Click stopPropagation prevents triggering handleToggle twice when clicking buttons */}
@@ -459,11 +463,32 @@ export function PromoCodeBox() {
   const [promo, setPromo] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
   const [checking, setChecking] = useState(false);
+  // A product coupon is dropped when its product leaves the cart — don't
+  // leave its "applied" message behind.
+  useEffect(() => {
+    if (!coupon) setMsg((m) => (m?.startsWith("Coupon applied") ? null : m));
+  }, [coupon]);
 
   const applyPromo = async () => {
     if (!promo.trim()) return;
-    setChecking(true);
     setMsg(null);
+    // Product coupons (e.g. PATAKA200) are checked here against the cart,
+    // not by the Coupons sheet.
+    const productCoupon = productCouponCheck(promo, useStore.getState().cart);
+    if (productCoupon) {
+      const code = promo.trim().toUpperCase();
+      if (!productCoupon.valid) {
+        setCoupon(null);
+        setMsg(productCoupon.message);
+        return;
+      }
+      applyCouponFreebie(code); // clears any freebie from an earlier code
+      setCoupon({ code, percent: 0, amount: productCoupon.amount });
+      setMsg(`Coupon applied — ${fmt(productCoupon.amount)} off`);
+      toast.success(`${fmt(productCoupon.amount)} off applied`);
+      return;
+    }
+    setChecking(true);
     try {
       const res = await validateCoupon(promo);
       const code = promo.trim().toUpperCase();
@@ -506,7 +531,7 @@ export function PromoCodeBox() {
       {msg ? (
         <p className={`mt-2 text-xs ${coupon ? "text-green-700" : "text-rose-wine"}`}>{msg}</p>
       ) : coupon ? (
-        <p className="mt-2 text-xs text-green-700">Code "{coupon.code}" applied — {coupon.percent}% off.</p>
+        <p className="mt-2 text-xs text-green-700">Code "{coupon.code}" applied — {coupon.amount ? fmt(coupon.amount) : `${coupon.percent}%`} off.</p>
       ) : null}
     </div>
   );
@@ -517,7 +542,52 @@ export function PromoCodeBox() {
 const CATEGORY_BADGE: Partial<Record<Category, string>> = {
   "memory-card": "photo card",
   friendship: "single & duo card",
+  "it-polaroids": "instant polaroids",
+  "sticker-book": "sticker book bundle",
 };
+
+// Shipping nudge shown in the cart drawer and checkout popup: polaroid-only
+// carts pay for Standard Delivery (see standardDeliveryPrice in store.ts),
+// anything else ships free. Hidden once Express Shipping is picked, since
+// neither message applies to it.
+const MAGAZINE_CATEGORIES: Category[] = ["sizes", "pocket", "newspaper"];
+
+export function ShippingBanner() {
+  const cart = useStore((s) => s.cart);
+  if (!cart.some((c) => c.price > 0)) return null;
+  if (cart.some((c) => c.category === "delivery" && c.id === "del-exp")) return null;
+  if (isPolaroidsOnlyCart(cart)) {
+    return (
+      <p className="flex items-start gap-2 rounded-2xl bg-amber-50 p-3 text-xs text-amber-900 ring-1 ring-amber-200">
+        <Truck className="mt-0.5 h-4 w-4 shrink-0" />
+        <span>🚚 Polaroid Shipping: {fmt(PRICES.deliveryPolaroidsOnly["del-std"])}. Tip: Add any magazine (A4, A5, or A6) to unlock FREE shipping!</span>
+      </p>
+    );
+  }
+  const hasMagazine = cart.some((c) => MAGAZINE_CATEGORIES.includes(c.category));
+  return (
+    <p className="rounded-2xl bg-rose-wine/5 p-3 text-center text-xs font-medium text-rose-wine ring-1 ring-rose-wine/10">
+      {hasMagazine ? "✨ Free Standard Shipping Unlocked with your Magazine! ♡" : "✨ Free Standard Shipping on this order ♡"}
+    </p>
+  );
+}
+
+// Quantity stepper for THE IT POLAROIDS' cart line.
+function ItPolaroidsStepper() {
+  const qty = useStore((s) => itPolaroidsQtyIn(s.cart));
+  const setQty = useStore((s) => s.setItPolaroidsQty);
+  return (
+    <div className="mt-2 flex items-center gap-1.5">
+      <button type="button" onClick={() => setQty(qty - 1)} disabled={qty <= IT_POLAROIDS_MIN} aria-label="Fewer polaroids" className="grid h-7 w-7 place-items-center rounded-full border border-rose-wine/30 text-rose-wine disabled:opacity-35">
+        <Minus className="h-3.5 w-3.5" />
+      </button>
+      <span className="rounded-full bg-rose-wine px-3 py-1 text-xs font-semibold text-off-white">Qty: {qty}</span>
+      <button type="button" onClick={() => setQty(qty + 1)} disabled={qty >= IT_POLAROIDS_MAX} aria-label="More polaroids" className="grid h-7 w-7 place-items-center rounded-full border border-rose-wine/30 text-rose-wine disabled:opacity-35">
+        <Plus className="h-3.5 w-3.5" />
+      </button>
+    </div>
+  );
+}
 
 export function CartDrawer({
   open,
@@ -631,13 +701,17 @@ export function CartDrawer({
 
             {cart.length > 0 && <CartSummaryPanel />}
 
+            <ShippingBanner />
+
             {mainItems.map((item) => (
               <div key={item.key} className="flex items-start gap-3 rounded-2xl bg-white/50 p-3">
                 <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-pink-mist to-blush-rose font-display text-white">
                   {item.name.charAt(0)}
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-rose-wine">{item.name}</p>
+                  <p className="truncate font-medium text-rose-wine">
+                    {item.category === "it-polaroids" ? `${SITE.itPolaroids.name} (Qty: ${itPolaroidsQtyIn(cart)})` : item.name}
+                  </p>
                   <p className="text-xs uppercase tracking-wider text-dusty-rose">
                     {CATEGORY_BADGE[item.category] ?? item.category}{item.comboId ? " · in combo" : ""}
                   </p>
@@ -645,6 +719,20 @@ export function CartDrawer({
                     <p className="mt-1 text-xs text-neutral-600">
                       Design: [{friendshipDesignNumbers.join(", ")}]
                     </p>
+                  )}
+                  {item.category === "sticker-book" && (
+                    <ul className="mt-1 space-y-0.5 text-xs text-neutral-600">
+                      <li>• A5 sticker book + 16 photo stickers</li>
+                      {STICKER_BOOK_INCLUDED.map((inc) => <li key={inc.name}>• {inc.name}</li>)}
+                    </ul>
+                  )}
+                  {item.category === "it-polaroids" && (
+                    <>
+                      <p className="mt-1 text-xs text-neutral-600">
+                        {itPolaroidsQtyIn(cart)} photo{itPolaroidsQtyIn(cart) === 1 ? "" : "s"} (1 photo per polaroid)
+                      </p>
+                      <ItPolaroidsStepper />
+                    </>
                   )}
                   {item.category === "memory-card" && memoryCardDesigns.length > 0 && (
                     <p className="mt-1 text-xs text-neutral-600">
@@ -862,7 +950,7 @@ export function CustomerInfoModal({
                 <p className="flex items-center gap-1.5 text-sm font-medium text-rose-wine">
                   {active && <Check className="h-3.5 w-3.5 shrink-0" />} {d.name}
                 </p>
-                <p className="text-xs text-dusty-rose">{d.price ? fmt(d.price) : "Free"}</p>
+                <p className="text-xs text-dusty-rose">{deliveryPriceFor(d, cart) ? fmt(deliveryPriceFor(d, cart)) : "Free"}</p>
               </button>
             );
           })}
@@ -870,6 +958,7 @@ export function CustomerInfoModal({
         {!deliveryItem && (
           <p className="mt-2 text-xs text-rose-wine">Select a delivery option to continue.</p>
         )}
+        <div className="mt-2"><ShippingBanner /></div>
       </div>
 
       <form onSubmit={handle} className="mt-5 space-y-3">
@@ -1187,7 +1276,7 @@ function CartSummaryPanel() {
         return m ? Number(m[1]) : c.id;
       });
   const addons = cart.filter((c) => c.category === "addons").map((c) => c.name).join(", ") || "—";
-  const polaroids = cart.filter((c) => c.category === "polaroids").map((c) => c.name).join(", ") || "—";
+  const polaroids = cart.filter((c) => c.category === "polaroids" || c.category === "it-polaroids").map((c) => c.name).join(", ") || "—";
   const stripsItems = cart.filter((c) => c.category === "strips");
   const stripsSummary = stripsItems.length
     ? stripsItems.map((c) => c.name).join(", ")

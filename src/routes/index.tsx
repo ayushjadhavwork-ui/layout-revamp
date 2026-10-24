@@ -23,6 +23,9 @@ import { CombosSection } from "@/components/site/combos-section";
 import { NewspaperSection } from "@/components/site/newspaper-section";
 import { MemoryCardSection } from "@/components/site/memory-card-section";
 import { FriendshipCardSection } from "@/components/site/friendship-section";
+import { ItPolaroidsSection } from "@/components/site/it-polaroids-section";
+import { StickerBookSection } from "@/components/site/sticker-book-section";
+import { KeepsakeMatchmaker } from "@/components/site/keepsake-matchmaker";
 import { ComboGuideBar } from "@/components/site/combo-guide";
 import { SpinWheel } from "@/components/site/spin-wheel";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
@@ -45,6 +48,8 @@ export const Route = createFileRoute("/")({
 const NAV = [
   { label: "Build", href: "#build" },
   { label: "Templates", href: "#templates" },
+  { label: "Sticker Book", href: "#sticker-book" },
+  { label: "IT Polaroids", href: "#it-polaroids" },
   { label: "The Team", href: "#founders" },
 ];
 
@@ -52,7 +57,7 @@ const STEPS = [
   { n: 1, t: "Select pages", d: "Choose the number of pages you want for your magazine." },
   { n: 2, t: "Pick templates", d: "Select the number of templates according to the pages you've chosen." },
   { n: 3, t: "Add extras", d: "Add any optional add-ons you'd like — gift wrapping, a personalised letter, or other extras." },
-  { n: 4, t: "Choose delivery", d: "Pick your preferred delivery: Express Shipping (₹100) or Standard Shipping (Free)." },
+  { n: 4, t: "Choose delivery", d: "Pick your preferred delivery: Express Shipping (₹100) or Standard Shipping (Free with any magazine; ₹80 for polaroid-only orders)." },
   { n: 5, t: "Checkout & confirm", d: "Add everything to your cart, checkout, and send us a screenshot of your order summary to confirm." },
 ];
 
@@ -285,9 +290,19 @@ function Home() {
         <div id="combos" className="relative z-10 px-4 py-12 sm:py-20">
           <div className="mx-auto max-w-6xl">
             <SectionHead eyebrow="Curated" title="Combos" sub="Bundled favourites at a soft price — pick one, then choose your own templates below." />
+            <KeepsakeMatchmaker />
             <CombosSection />
           </div>
         </div>
+
+        {show("sticker-book") && (
+          <div id="sticker-book" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
+            <div className="mx-auto max-w-6xl">
+              <SectionHead eyebrow="New · All-in-one" title={SITE.stickerBook.name} sub="Everything's included — flip through the whole book, then add it in one tap." />
+              <StickerBookSection />
+            </div>
+          </div>
+        )}
       </TiledSection>
 
       <TiledSection tiles={SITE.backgrounds.customize}>
@@ -333,6 +348,15 @@ function Home() {
             <div className="mx-auto max-w-6xl">
               <SectionHead eyebrow="Turn moments into keepsakes" title="The Photo Card" sub="Choose one, two, or three cards — mix the designs or repeat your favourite." />
               <MemoryCardSection />
+            </div>
+          </div>
+        )}
+
+        {show("it-polaroids") && (
+          <div id="it-polaroids" className="relative z-10 px-4 py-12 sm:py-20">
+            <div className="mx-auto max-w-6xl">
+              <SectionHead eyebrow="New" title={SITE.itPolaroids.name} sub={SITE.itPolaroids.howToOrder} />
+              <ItPolaroidsSection />
             </div>
           </div>
         )}
@@ -624,6 +648,9 @@ function Nav({ onCart }: { onCart: () => void }) {
           <span className="hidden sm:inline font-display text-2xl text-rose-wine truncate">The Layout</span>
         </a>
         <ul className="flex flex-1 min-w-0 items-center justify-start lg:justify-center gap-3 sm:gap-6 overflow-x-auto whitespace-nowrap text-xs sm:text-sm text-neutral-700 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+          <li className="shrink-0">
+            <KeepsakeMatchmaker variant="pill" />
+          </li>
           {NAV.map((n) => (
             <li key={n.href} className="shrink-0">
               <a href={n.href} className="hover:text-rose-wine transition-colors">{n.label}</a>

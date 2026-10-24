@@ -448,6 +448,8 @@ function buildInvoiceHtml_(order) {
     const isPocket = item.category === "pocket";
     const isFriendship = item.category === "friendship";
     const isMemoryCard = item.category === "memory-card";
+    const isItPolaroids = item.category === "it-polaroids";
+    const isStickerBook = item.category === "sticker-book";
     const isCombo = item.category === "combos";
     const magazineLabel = magazineInvoiceLabel_(item);
     const label = magazineLabel
@@ -456,7 +458,11 @@ function buildInvoiceHtml_(order) {
       // they print as-is.
       : isMemoryCard
         ? "The Photo Card"
-        : item.name;
+        : isItPolaroids
+          ? "THE IT POLAROIDS (Qty: " + bundleQuantity_(item) + ")"
+          : isStickerBook
+            ? STICKER_BOOK_LABEL
+            : item.name;
     const notes = [];
     if (item.note) notes.push(escapeHtml_(item.note));
     if (item.promoCode) notes.push("Free — redeemed with " + escapeHtml_(item.promoCode));
@@ -467,13 +473,26 @@ function buildInvoiceHtml_(order) {
     }
     if (isFriendship && friendshipDesignLabels.length) notes.push("Design:- " + friendshipDesignLabels.join(", "));
     if (isMemoryCard && memoryCardDesignLabels.length) notes.push("Designs:- " + memoryCardDesignLabels.join(", "));
+    if (isItPolaroids) notes.push(bundleQuantity_(item) + " Instant Camera Prints — 1 photo per print");
+    // Standard Delivery costs extra only on polaroid-only orders (the
+    // frontend prices the line — see standardDeliveryPrice in store.ts).
+    if (item.category === "delivery" && item.id === "del-std") {
+      notes.push(Number(item.price) > 0 ? "Polaroid-only order shipping" : "Free standard shipping");
+    }
     const memoryQuantity = isMemoryCard ? Math.max(1, memoryCardDesignItems.reduce((sum, design) => {
       const match = String(design.name || "").match(/×(\d+)/);
       return sum + (match ? Number(match[1]) : 1);
-    }, 0)) : 1;
-    const rate = isMemoryCard ? (Number(item.price) || 0) / memoryQuantity : Number(item.price) || 0;
+    }, 0)) : isItPolaroids ? bundleQuantity_(item) : 1;
+    const rate = (isMemoryCard || isItPolaroids) ? (Number(item.price) || 0) / memoryQuantity : Number(item.price) || 0;
     const noteHtml = notes.length ? ('<div class="item-note">' + notes.join(" · ") + "</div>") : "";
-    const sublistHtml = isCombo ? comboSublistHtml(item) : "";
+    // The free postcard still gets its own ₹0 row below; it's named here too
+    // so the bundle reads as complete.
+    const sublistHtml = isCombo
+      ? comboSublistHtml(item)
+      : isStickerBook
+        ? '<div class="combo-sublist">' + STICKER_BOOK_INVOICE_CONTENTS.concat(["Complimentary Keepsake Postcard (Free Gift)"])
+          .map((line) => '<div class="combo-sub">• ' + escapeHtml_(line) + "</div>").join("") + "</div>"
+        : "";
     return (
       "<tr>" +
       "<td>" + escapeHtml_(label) + noteHtml + sublistHtml + "</td>" +
@@ -622,6 +641,21 @@ const SHIPPING_ADDON_LABELS_ = {
   "add-combo": "Gift Wrap + Handwritten Letter",
 };
 
+// THE LOVE STICKER BOOK is one cart line ("sticker-book") whose contents are
+// fixed — mirrors SITE.stickerBook in site-content.ts. Edit both together.
+const STICKER_BOOK_LABEL = "The Love Sticker Book ❤️ (A5)";
+const STICKER_BOOK_INVOICE_CONTENTS = [
+  "1x A5 Personalised Sticker Book (5.83 × 8.27 in, 10 Pages)",
+  "16x Personalised Peel & Stick Photo Stickers",
+  "1x Personalised Polaroid Strip (Strip 2)",
+  "1x Personalised Keepsake Card (The Lover Era Card)",
+  "1x Personalised Soulmate Licence Card (Card 04)",
+];
+const STICKER_BOOK_SHIPPING_CONTENTS = [
+  "1x A5 Sticker Book + 16x Stickers",
+  "1x Strip 2 + 1x Lover Card + 1x Soulmate Licence",
+];
+
 function shippingItemLabel_(item) {
   switch (item.category) {
     case "sizes":
@@ -630,6 +664,10 @@ function shippingItemLabel_(item) {
       return magazineInvoiceLabel_(item);
     case "friendship": return item.id === "friend-duo" ? "Duo Card (Bestie Set)" : "Single Card";
     case "memory-card": return "Photo Card";
+    // The quantity is in the line name ("THE IT POLAROIDS × 12"); always
+    // print it, even for 1, so the packer knows how many prints to grab.
+    case "it-polaroids": return "THE IT POLAROIDS × " + bundleQuantity_(item);
+    case "sticker-book": return STICKER_BOOK_LABEL;
     case "polaroids": {
       const count = SHIPPING_POLAROID_COUNTS_[item.id];
       return "Polaroid " + String(item.name || "Pack") + (count ? " (" + count + " Polaroids)" : "");
@@ -685,7 +723,13 @@ function shippingItemSummaryLines_(cart) {
     shippingTally_(children).forEach((label) => lines.push(INDENT + label));
   });
 
-  shippingTally_(packable.filter((item) => !item.comboId && item.category !== "combos"))
+  // The sticker book lists its fixed contents underneath, like a combo.
+  packable.filter((item) => item.category === "sticker-book").forEach((book) => {
+    lines.push(shippingItemLabel_(book));
+    STICKER_BOOK_SHIPPING_CONTENTS.forEach((label) => lines.push("  ↳ " + label));
+  });
+
+  shippingTally_(packable.filter((item) => !item.comboId && item.category !== "combos" && item.category !== "sticker-book"))
     .forEach((label) => lines.push(label));
 
   lines.push(POSTCARD_SHIPPING_LABEL);

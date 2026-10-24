@@ -42,6 +42,42 @@ three copies of one. Bundle pricing is ₹150 for one, ₹220 for two, and ₹30
 for three. Editable copy is centralized in `SITE.memoryCardInfo`; invoice and
 shipping output aggregate the chosen quantities under one Memory Card line.
 
+### THE IT POLAROIDS
+
+Standalone product below The Photo Card: 1–100 instant prints at
+`PRICES.itPolaroids.single` (₹120) each, one photo per print. The store keeps
+one `it-polaroids` cart line named "THE IT POLAROIDS × N" priced at N × ₹120;
+quantity is read back from the name (`itPolaroidsQtyIn`), same as strips and
+Photo Cards, so code.gs reuses `bundleQuantity_`. Copy lives in `SITE.itPolaroids`.
+
+**Polaroid-only shipping:** the wrapped `set` in store.ts re-prices the
+Standard Delivery line after every cart change (`withDeliveryPrice`). When
+every paid item is a polaroid (`it-polaroids` and/or `polaroids` packs) it
+costs `PRICES.deliveryPolaroidsOnly["del-std"]` (₹80); any other cart keeps
+`PRICES.delivery["del-std"]` (free). Display code calls `deliveryPriceFor`.
+
+**Keepsake Matchmaker** (`keepsake-matchmaker.tsx` + `lib/combo-recommender.ts`):
+a 3-question wizard in the Combos section that recommends one combo. It is
+rule-based and runs in the browser (no AI call). It scores combos from
+`SITE.comboInfo` (perfectFor, description, included) and `COMBO_RECIPES`.
+"Select This Combo" calls `selectCombo`, which enters Guided Combo Mode.
+
+### THE LOVE STICKER BOOK
+
+All-in-one bundle shown right below Combos (`sticker-book-section.tsx`): a
+7-spread carousel (swipe, thumbnails, zoom lightbox), the three fixed
+inclusions (Lover Era Card, Card 04, Strip 2), and one Add to Cart button.
+It is a single `sticker-book` cart line at `PRICES.stickerBook` (₹1,199). The
+inclusions are not separate cart lines and never touch the Photo Card,
+Single & Duo Card or strips state. Copy and slide paths live in `SITE.stickerBook`.
+code.gs repeats the contents in `STICKER_BOOK_*` constants, so edit both together.
+
+**Product coupons:** `PRODUCT_COUPONS` (catalog.ts) holds flat-₹ codes tied to
+one product, with amounts in `PRICES.productCoupons`. `PATAKA200` is ₹200 off
+and only valid with the sticker book. `PromoCodeBox` checks these in the
+browser via `productCouponCheck`, never through the Coupons sheet. The
+wrapped `set` drops the coupon automatically when its product leaves the cart.
+
 ## 2. Tech stack
 
 | Layer | Choice | Notes |

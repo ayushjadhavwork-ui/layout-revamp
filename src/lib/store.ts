@@ -2,7 +2,8 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { useMemo } from "react";
 import { comboCheckoutIssues, type ComboIssue } from "./combo-validation";
-import { CATALOG, STRIP_TIERS, STRIP_MAX, MEMORY_CARD_TIERS, MEMORY_CARD_MAX, POCKET_TEMPLATE_LIMIT, COMBO_RECIPES, COUPON_FREEBIES, type Product, type Category, type SizeFormat } from "./catalog";
+import { CATALOG, STRIP_TIERS, STRIP_MAX, MEMORY_CARD_TIERS, MEMORY_CARD_MAX, POCKET_TEMPLATE_LIMIT, COMBO_RECIPES, COUPON_FREEBIES, PRODUCT_COUPONS, IT_POLAROIDS_MIN, IT_POLAROIDS_MAX, type Product, type Category, type SizeFormat } from "./catalog";
+import { priceOf } from "./prices";
 
 
 export type CartItem = {
@@ -49,7 +50,9 @@ type State = {
   // price, and the same design may appear up to three times.
   selectedMemoryCardDesignIds: string[];
   stripSelections: string[];
-  coupon: { code: string; percent: number } | null;
+  // `amount` (flat ₹ off) is set only for PRODUCT_COUPONS codes, which are
+  // dropped automatically once their product leaves the cart.
+  coupon: { code: string; percent: number; amount?: number } | null;
   cartId: string | null;
   // `phone` = shipping/contact number (printed on invoice + shipping label).
   // `whatsapp` = number used only to share the photo-upload Drive link, so a
@@ -86,6 +89,13 @@ type State = {
   selectCombo: (combo: Product) => void;
   deselectCombo: (comboId: string) => void;
   clear: () => void;
+  // THE IT POLAROIDS: one cart line whose quantity lives in its name. Both
+  // setters clamp to IT_POLAROIDS_MIN..IT_POLAROIDS_MAX; setItPolaroidsQty
+  // only changes a line already in the cart, addItPolaroids creates it.
+  addItPolaroids: (qty: number) => void;
+  setItPolaroidsQty: (qty: number) => void;
+  removeItPolaroids: () => void;
+  itPolaroidsQty: () => number; // 0 when not in the cart
 
   subtotal: () => number;
   discount: () => number;
@@ -152,7 +162,7 @@ const dropCombo = (cart: CartItem[]) => cart.filter((c) => c.category !== "combo
 // Categories no combo recipe ever touches — picking these alongside an active
 // combo (delivery, the unrelated Newspaper/Pocket Magazine products, or a
 // coupon freebie) must not blow away the combo.
-const COMBO_INDEPENDENT: Category[] = ["delivery", "newspaper", "pocket", "pocket-templates", "friendship", "friendship-designs", "memory-card", "memory-card-designs", "promotions"];
+const COMBO_INDEPENDENT: Category[] = ["delivery", "newspaper", "pocket", "pocket-templates", "friendship", "friendship-designs", "memory-card", "memory-card-designs", "it-polaroids", "sticker-book", "promotions"];
 
 // Categories a combo recipe can auto-populate — selecting a combo must clear
 // any of these picked manually beforehand, or their real price would sit in
@@ -195,6 +205,76 @@ const withPostcard = (cart: CartItem[]): CartItem[] => {
   };
   return [...cart.filter((c) => !isPostcard(c)), line];
 };
+
+// Standard Delivery costs PRICES.deliveryPolaroidsOnly when every paid item
+// is a polaroid (THE IT POLAROIDS and/or Polaroid Packs) and the normal
+// PRICES.delivery price otherwise. Delivery and free promotional lines don't
+// count either way; combo-linked lines sit under a "combos" line, which is
+// never a polaroid, so any combo keeps shipping at the normal price.
+const POLAROID_CATEGORIES: Category[] = ["it-polaroids", "polaroids"];
+
+export const isPolaroidsOnlyCart = (cart: Pick<CartItem, "category">[]): boolean => {
+  const items = cart.filter((c) => c.category !== "delivery" && c.category !== "promotions");
+  return items.length > 0 && items.every((c) => POLAROID_CATEGORIES.includes(c.category));
+};
+
+export const standardDeliveryPrice = (cart: Pick<CartItem, "category">[]): number =>
+  isPolaroidsOnlyCart(cart) ? priceOf("deliveryPolaroidsOnly", "del-std") : priceOf("delivery", "del-std");
+
+// The price a delivery option will charge for this cart — used wherever a
+// delivery option is shown, so the label always matches the cart line.
+export const deliveryPriceFor = (product: Pick<Product, "id" | "price">, cart: Pick<CartItem, "category">[]): number =>
+  product.id === "del-std" ? standardDeliveryPrice(cart) : product.price;
+
+// A delivery line's price is fixed when it's added, so re-price Standard
+// Delivery after every cart change (enforced by the wrapped `set` below).
+const withDeliveryPrice = (cart: CartItem[]): CartItem[] => {
+  const index = cart.findIndex((c) => c.category === "delivery" && c.id === "del-std");
+  if (index === -1) return cart;
+  const price = standardDeliveryPrice(cart);
+  if (cart[index].price === price) return cart;
+  return cart.map((c, i) => (i === index ? { ...c, price } : c));
+};
+
+export const clampItPolaroidsQty = (qty: number): number =>
+  Math.min(IT_POLAROIDS_MAX, Math.max(IT_POLAROIDS_MIN, Math.round(Number.isFinite(qty) ? qty : IT_POLAROIDS_MIN)));
+
+const IT_POLAROIDS_KEY = key("it-polaroids", "it-pol");
+
+const itPolaroidsLine = (qty: number): CartItem => {
+  const product = CATALOG["it-polaroids"][0];
+  return {
+    key: IT_POLAROIDS_KEY,
+    category: "it-polaroids",
+    id: product.id,
+    name: `${product.name} × ${qty}`,
+    price: product.price * qty,
+  };
+};
+
+// Reads N back out of "THE IT POLAROIDS × N".
+export const itPolaroidsQtyIn = (cart: CartItem[]): number => {
+  const line = cart.find((c) => c.category === "it-polaroids");
+  if (!line) return 0;
+  const match = line.name.match(/×\s*(\d+)/);
+  return match ? Number(match[1]) : 1;
+};
+
+// Checks a code against PRODUCT_COUPONS. Returns null for any other code
+// (those are validated by the Coupons sheet instead).
+export const productCouponCheck = (
+  code: string,
+  cart: Pick<CartItem, "id">[],
+): null | { valid: true; amount: number } | { valid: false; message: string } => {
+  const coupon = PRODUCT_COUPONS[code.trim().toUpperCase()];
+  if (!coupon) return null;
+  if (!cart.some((c) => c.id === coupon.productId)) return { valid: false, message: coupon.message };
+  return { valid: true, amount: coupon.amount };
+};
+
+// A product coupon stops applying once its product leaves the cart.
+const couponStillValid = (coupon: State["coupon"], cart: CartItem[]): boolean =>
+  !coupon || productCouponCheck(coupon.code, cart)?.valid !== false;
 
 // Upgrades a cart saved in the browser by an older version of the site
 // (see the version notes on the persist options below).
@@ -254,13 +334,16 @@ export const migrateSavedCart = (persisted: unknown, version: number) => {
 export const useStore = create<State>()(
   persist(
     (rawSet, get) => {
-  // Every state update passes through here so the postcard invariant above
-  // holds after any cart change. withPostcard returns the same array when
-  // nothing needs fixing, so unchanged carts don't trigger re-renders.
+  // Every state update passes through here so the postcard and delivery-price
+  // invariants above hold after any cart change. Both return the same array
+  // when nothing needs fixing, so unchanged carts don't trigger re-renders.
   const set = (partial: Partial<State> | ((s: State) => Partial<State>)) =>
     rawSet((s) => {
       const next = typeof partial === "function" ? partial(s) : partial;
-      return next.cart ? { ...next, cart: withPostcard(next.cart) } : next;
+      if (!next.cart) return next;
+      const cart = withPostcard(withDeliveryPrice(next.cart));
+      const coupon = "coupon" in next ? next.coupon ?? null : s.coupon;
+      return couponStillValid(coupon, cart) ? { ...next, cart } : { ...next, cart, coupon: null };
     });
 
   return {
@@ -297,7 +380,7 @@ export const useStore = create<State>()(
     // Single-choice categories (only one active at a time). Pocket Magazines
     // are deliberately excluded — they're multi-unit and go through
     // addPocketUnit/removePocketUnit, never through addItem.
-    const singleChoice: Category[] = ["addons", "polaroids", "strips", "delivery", "sizes", "combos", "newspaper", "friendship"];
+    const singleChoice: Category[] = ["addons", "polaroids", "strips", "delivery", "sizes", "combos", "newspaper", "friendship", "sticker-book"];
     set((s) => {
       const activeCombo = s.cart.find((item) => item.category === "combos");
       const recipe = activeCombo ? COMBO_RECIPES[activeCombo.id] : undefined;
@@ -834,11 +917,26 @@ export const useStore = create<State>()(
   }),
 
 
+  addItPolaroids: (qty) => set((s) => ({
+    cart: [...s.cart.filter((c) => c.category !== "it-polaroids"), itPolaroidsLine(clampItPolaroidsQty(qty))],
+  })),
+
+  setItPolaroidsQty: (qty) => set((s) => {
+    if (!s.cart.some((c) => c.category === "it-polaroids")) return s;
+    const line = itPolaroidsLine(clampItPolaroidsQty(qty));
+    return { cart: s.cart.map((c) => (c.category === "it-polaroids" ? line : c)) };
+  }),
+
+  removeItPolaroids: () => set((s) => ({ cart: s.cart.filter((c) => c.category !== "it-polaroids") })),
+
+  itPolaroidsQty: () => itPolaroidsQtyIn(get().cart),
+
   subtotal: () => get().cart.reduce((s, c) => s + c.price, 0),
   discount: () => {
     const sub = get().subtotal();
     const c = get().coupon;
     if (!c) return 0;
+    if (c.amount) return Math.min(c.amount, sub);
     return Math.round((sub * c.percent) / 100);
   },
   total: () => Math.max(0, get().subtotal() - get().discount()),
@@ -910,8 +1008,9 @@ export const useStore = create<State>()(
       }),
       // Carts saved before the universal postcard existed won't have one —
       // patch it in on load rather than waiting for the next cart change.
+      // Same for a Standard Delivery line saved at an older price.
       onRehydrateStorage: () => (state) => {
-        if (state) useStore.setState({ cart: withPostcard(state.cart) });
+        if (state) useStore.setState({ cart: withPostcard(withDeliveryPrice(state.cart)) });
       },
     },
   ),

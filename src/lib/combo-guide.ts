@@ -43,7 +43,7 @@ export function nextComboAction(steps: ComboStep[], issues: ComboIssue[]): { sec
 
 // Sections Guided Combo Mode can hide. "combos", "extras" (it holds
 // Delivery) and checkout are always shown.
-export type GuidedSection = "build" | "templates" | "pocket" | "newspaper" | "memory-card" | "friendship-card" | "addons" | "packs" | "strips";
+export type GuidedSection = "build" | "templates" | "pocket" | "newspaper" | "memory-card" | "friendship-card" | "sticker-book" | "it-polaroids" | "addons" | "packs" | "strips";
 
 const SECTION_CATEGORIES: Record<GuidedSection, Category[]> = {
   build: [],
@@ -52,6 +52,8 @@ const SECTION_CATEGORIES: Record<GuidedSection, Category[]> = {
   newspaper: ["newspaper"],
   "memory-card": ["memory-card", "memory-card-designs"],
   "friendship-card": ["friendship", "friendship-designs"],
+  "sticker-book": ["sticker-book"],
+  "it-polaroids": ["it-polaroids"],
   addons: ["addons"],
   packs: ["polaroids"],
   strips: ["strips"],
