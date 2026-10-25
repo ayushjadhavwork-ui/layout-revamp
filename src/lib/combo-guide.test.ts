@@ -59,3 +59,13 @@ describe("guided combo mode", () => {
     assert.equal(nextComboAction(steps, []), null);
   });
 });
+
+describe("THE IT POLAROIDS in guided combo mode", () => {
+  it("stays visible for every combo, so the Matchmaker's polaroid tip has somewhere to go", () => {
+    for (const combo of CATALOG.combos) {
+      store().clear();
+      store().selectCombo(combo);
+      assert.ok(guidedVisibleSections(combo.id, issuesFor(combo.id), store().cart).has("it-polaroids"), combo.id);
+    }
+  });
+});

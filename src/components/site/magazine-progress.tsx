@@ -31,8 +31,14 @@ export function MagazineProgressBar({
       <div className="mx-auto max-w-3xl rounded-2xl bg-off-white/95 p-3 shadow-2xl ring-1 ring-pink-mist backdrop-blur">
         <div className="flex items-center justify-between gap-3 text-xs">
           <p className="min-w-0 truncate font-semibold text-rose-wine">{title}</p>
+          {/* Phones get the short count so the magazine's name still fits. */}
           <p className="shrink-0 text-dusty-rose" aria-live="polite">
-            {next ? `Template Selection: ${chosen} of ${required} picked · ${percent}%` : `✓ All ${required} templates selected`}
+            {next ? (
+              <>
+                <span className="sm:hidden">{chosen} of {required} · {percent}%</span>
+                <span className="hidden sm:inline">Template Selection: {chosen} of {required} picked · {percent}%</span>
+              </>
+            ) : `✓ All ${required} templates`}
           </p>
         </div>
 

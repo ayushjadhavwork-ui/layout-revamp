@@ -10,6 +10,15 @@ describe("Keepsake Matchmaker", () => {
     assert.equal(photoCountIn("no numbers here"), 0);
   });
 
+  it("ignores prices, years, ages and other numbers", () => {
+    assert.equal(photoCountIn("budget Rs 500, 20 photos"), 20);
+    assert.equal(photoCountIn("our 1st anniversary, 2 years together"), 0);
+    assert.equal(photoCountIn("2 years of photos"), 0);
+    assert.equal(photoCountIn("12 pics from 2019"), 12);
+    assert.equal(photoCountIn("she turns 21, around 30 pictures"), 30);
+    assert.equal(photoCountIn("1199 photos"), 0);
+  });
+
   it("always recommends a real combo for every occasion and recipient", () => {
     const ids = new Set(CATALOG.combos.map((c) => c.id));
     for (const occasion of OCCASIONS) {

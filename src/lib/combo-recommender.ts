@@ -63,12 +63,15 @@ export function comboPhotoCapacity(comboId: string): number {
   return Math.round(photos);
 }
 
-// "15 travel photos and 5 selfies" → 20. Ignores numbers that look like
-// years, page counts or prices.
+// "15 travel photos and 5 selfies" → 20. Only numbers followed (within two
+// words, not counting "of") by a photo word count, so prices, years, ages
+// and page counts are ignored: "Rs 500, 20 photos" → 20, "2 years of
+// photos" → 0. No lookbehind: older Safari can't parse it.
+const PHOTO_COUNT = /\b(\d{1,3})\s+(?:(?!of\b)[a-z'-]+\s+){0,2}(?:photo|pic|picture|selfie|image|snap|shot|polaroid|print)s?\b/gi;
+
 export function photoCountIn(text: string): number {
-  // No lookbehind: older Safari can't parse it.
-  return [...text.matchAll(/(^|[^₹\d])(\d{1,3})(?!\s*(?:pages?|rs|₹|%|\d))/gi)]
-    .map((m) => Number(m[2]))
+  return [...text.matchAll(PHOTO_COUNT)]
+    .map((m) => Number(m[1]))
     .reduce((sum, n) => sum + n, 0);
 }
 

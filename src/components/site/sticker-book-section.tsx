@@ -168,7 +168,7 @@ export function StickerBookSection() {
           {line ? (
             <><Check className="h-5 w-5" /> In your cart — tap to remove</>
           ) : (
-            <><ShoppingBag className="h-5 w-5" /> Add Love Sticker Book to Cart — {fmt(couponApplied ? discounted : product.price)}</>
+            <><ShoppingBag className="h-5 w-5" /> Add Love Sticker Book to Cart — {fmt(product.price)}</>
           )}
         </button>
         <p className="mt-2 flex items-center justify-center gap-1.5 text-xs text-dusty-rose">

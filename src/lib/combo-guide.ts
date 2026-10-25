@@ -62,10 +62,12 @@ const SECTION_CATEGORIES: Record<GuidedSection, Category[]> = {
 // A section stays visible when the combo includes it, when a checkout issue
 // points at it (so "Complete my order" can always scroll there), or when the
 // cart already holds something from it (a paid extra picked while showing
-// all products).
+// all products). THE IT POLAROIDS is always shown: it's the top-up for
+// photos a combo can't hold, which the Keepsake Matchmaker points customers
+// to right after it loads a combo.
 export function guidedVisibleSections(comboId: string, issues: ComboIssue[], cart: ComboCartEntry[]): Set<GuidedSection> {
   const recipe = COMBO_RECIPES[comboId] ?? {};
-  const visible = new Set<GuidedSection>();
+  const visible = new Set<GuidedSection>(["it-polaroids"]);
   if (recipe.sizeId) visible.add("templates");
   if (recipe.pocketCount) visible.add("pocket");
   if (recipe.newspaper) visible.add("newspaper");
