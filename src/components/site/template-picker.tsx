@@ -1,4 +1,4 @@
-import { Check, Shuffle } from "lucide-react";
+import { Check, Eye, Shuffle } from "lucide-react";
 import { toast } from "sonner";
 import { type Product } from "@/lib/catalog";
 import { SITE } from "@/lib/site-content";
@@ -130,12 +130,12 @@ export function TemplateGrid({
 
               <p className="mt-3 font-display tracking-[0.2em] text-xs text-off-white">{label}</p>
 
-              <div className="mt-3 flex gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
+              <div className="mt-3 flex gap-1 sm:gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
                 <button
                   type="button"
                   disabled={disabled}
                   onClick={() => onToggle(item.id, label)}
-                  className={`flex-1 min-w-0 rounded-full px-3 py-1.5 text-[0.7rem] font-medium transition border truncate ${
+                  className={`flex-1 min-w-0 rounded-full px-1.5 sm:px-3 py-1.5 text-[0.7rem] font-medium transition border truncate ${
                     active
                       ? "bg-off-white text-rose-wine border-off-white"
                       : "bg-transparent text-off-white border-pink-mist/50 hover:bg-off-white/10"
@@ -146,9 +146,12 @@ export function TemplateGrid({
                 <button
                   type="button"
                   onClick={() => onOpen(idx)}
-                  className="shrink-0 rounded-full px-3 py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
+                  aria-label={`View ${label}`}
+                  className="grid shrink-0 place-items-center rounded-full px-2 sm:px-3 py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
                 >
-                  View
+                  {/* An eye on phones leaves room for "Selected" beside it. */}
+                  <Eye className="h-3.5 w-3.5 sm:hidden" />
+                  <span className="hidden sm:inline">View</span>
                 </button>
               </div>
             </div>
