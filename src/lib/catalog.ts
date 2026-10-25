@@ -157,7 +157,7 @@ export const CATALOG: Record<Exclude<Category, "templates" | "pocket-templates">
     { id: "strip-5", name: "Strip 5", price: 0, desc: "Editorial polaroid strip — design 5." },
   ],
   delivery: [
-    { id: "del-std", name: "Standard Delivery", price: priceOf("delivery", "del-std"), desc: "Free with any magazine — arrives in 7-8 days." },
+    { id: "del-std", name: "Standard Delivery", price: priceOf("delivery", "del-std"), desc: "Free (₹80 on polaroid-only orders) — arrives in 7-8 days." },
     { id: "del-exp", name: "Express Shipping",  price: priceOf("delivery", "del-exp"), desc: "Priority — arrives in 3-4 days." },
   ],
 

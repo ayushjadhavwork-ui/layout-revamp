@@ -94,7 +94,7 @@ export const SITE = {
   // TOP-BAR MARQUEE STRIP
   // ────────────────────────────────────────────────────────────────
   marquee: [
-    "Free standard shipping on all orders",
+    "Free standard shipping on every order except polaroid-only ones",
     "Handcrafted in small batches",
     "New templates dropped this month",
   ],

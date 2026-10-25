@@ -148,7 +148,7 @@ export function ItPolaroidsSection() {
           <p className="mt-4 text-xs leading-relaxed text-off-white/80">{info.howToOrder}</p>
           <p className="mt-2 flex items-start gap-2 text-xs text-pink-mist">
             <Truck className="mt-0.5 h-4 w-4 shrink-0" />
-            Polaroids on their own ship for {fmt(PRICES.deliveryPolaroidsOnly["del-std"])}. Add any magazine (A4, A5, A6 or Newspaper) for free standard shipping.
+            Polaroids on their own ship for {fmt(PRICES.deliveryPolaroidsOnly["del-std"])}. Add anything else — a magazine, card, sticker book or combo — and standard shipping is free.
           </p>
         </div>
       </div>

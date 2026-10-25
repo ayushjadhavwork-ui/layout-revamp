@@ -548,9 +548,8 @@ const CATEGORY_BADGE: Partial<Record<Category, string>> = {
 
 // Shipping nudge shown in the cart drawer and checkout popup: polaroid-only
 // carts pay for Standard Delivery (see standardDeliveryPrice in store.ts),
-// anything else ships free. Hidden once Express Shipping is picked, since
-// neither message applies to it.
-const MAGAZINE_CATEGORIES: Category[] = ["sizes", "pocket", "newspaper"];
+// any cart with something else in it ships free. Hidden once Express
+// Shipping is picked, since neither message applies to it.
 
 export function ShippingBanner() {
   const cart = useStore((s) => s.cart);
@@ -560,14 +559,13 @@ export function ShippingBanner() {
     return (
       <p className="flex items-start gap-2 rounded-2xl bg-amber-50 p-3 text-xs text-amber-900 ring-1 ring-amber-200">
         <Truck className="mt-0.5 h-4 w-4 shrink-0" />
-        <span>🚚 Polaroid Shipping: {fmt(PRICES.deliveryPolaroidsOnly["del-std"])}. Tip: Add any magazine (A4, A5, or A6) to unlock FREE shipping!</span>
+        <span>🚚 Polaroid Shipping: {fmt(PRICES.deliveryPolaroidsOnly["del-std"])}. Tip: Add anything else — a magazine, card, sticker book or combo — to unlock FREE shipping!</span>
       </p>
     );
   }
-  const hasMagazine = cart.some((c) => MAGAZINE_CATEGORIES.includes(c.category));
   return (
     <p className="rounded-2xl bg-rose-wine/5 p-3 text-center text-xs font-medium text-rose-wine ring-1 ring-rose-wine/10">
-      {hasMagazine ? "✨ Free Standard Shipping Unlocked with your Magazine! ♡" : "✨ Free Standard Shipping on this order ♡"}
+      ✨ Free Standard Shipping on this order ♡
     </p>
   );
 }
