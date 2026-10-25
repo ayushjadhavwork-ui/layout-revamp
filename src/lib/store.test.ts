@@ -1,6 +1,7 @@
 import assert from "node:assert/strict";
 import { beforeEach, describe, it } from "node:test";
 import { CATALOG, COMBO_RECIPES, MEMORY_CARD_MAX, MEMORY_CARD_TIERS, STRIP_TIERS } from "./catalog";
+import { PRICES } from "./prices";
 import { migrateSavedCart, useStore } from "./store";
 
 const store = () => useStore.getState();
@@ -94,5 +95,31 @@ describe("carts saved before the fix", () => {
     assert.equal((state.cart as { category: string; name: string }[]).find((c) => c.category === "memory-card")?.name, "The Photo Card × 1");
     assert.deepEqual(state.selectedMemoryCardDesignIds, [memoryDesign]);
     assert.deepEqual(state.stripSelections, [strip]);
+  });
+});
+
+describe("auto Standard Delivery at checkout", () => {
+  const delivery = () => store().cart.filter((c) => c.category === "delivery");
+  const express = CATALOG.delivery.find((d) => d.id === "del-exp")!;
+
+  it("adds Standard Delivery when no delivery is picked", () => {
+    store().addItem("sizes", CATALOG.sizes[0]);
+    assert.equal(store().ensureStandardDelivery(), true);
+    assert.deepEqual(delivery().map((c) => c.id), ["del-std"]);
+    assert.equal(store().ensureStandardDelivery(), false);
+    assert.equal(delivery().length, 1);
+  });
+
+  it("leaves an Express Shipping choice alone", () => {
+    store().addItem("sizes", CATALOG.sizes[0]);
+    store().addItem("delivery", express);
+    assert.equal(store().ensureStandardDelivery(), false);
+    assert.deepEqual(delivery().map((c) => c.id), ["del-exp"]);
+  });
+
+  it("prices it for polaroid-only carts", () => {
+    store().addItPolaroids(2);
+    store().ensureStandardDelivery();
+    assert.equal(delivery()[0].price, PRICES.deliveryPolaroidsOnly["del-std"]);
   });
 });

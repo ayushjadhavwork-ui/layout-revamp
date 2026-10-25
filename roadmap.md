@@ -16,5 +16,8 @@
 - [x] Rename Memory Card → Photo Card and Friendship Card → Single & Duo Cards in all customer-facing copy, cart, invoice and label (ids/keys unchanged; saved carts migrated).
 - [x] Guided Combo Mode: with a combo in the cart, only its sections show (`guidedVisibleSections`), and a bottom bar tracks progress from the checkout issues (`comboSteps`) with Show all / Remove / Review in cart. Logic in `src/lib/combo-guide.ts`.
 - [x] Remove OrderWaitTimeSection and ImageUploadSection from the home page.
+- [x] Replace "How to order" with "The Layout Products" directory, driven by `SITE.layoutProducts` (site-content.ts).
+- [x] Magazine Template Progress bar for Custom A4/A5 and Pocket Magazines outside a combo. Logic in `src/lib/magazine-progress.ts`.
+- [x] Auto-add Standard Delivery at checkout when none is picked (`ensureStandardDelivery`, store.ts); Express can still be chosen.
 - [x] Verify selection, documents, mobile/desktop presentation, and build.
 - [ ] Redeploy `code.gs` in Apps Script so the new sheet column and invoice/label wording go live.

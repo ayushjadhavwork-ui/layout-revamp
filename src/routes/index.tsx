@@ -27,6 +27,8 @@ import { ItPolaroidsSection } from "@/components/site/it-polaroids-section";
 import { StickerBookSection } from "@/components/site/sticker-book-section";
 import { KeepsakeMatchmaker } from "@/components/site/keepsake-matchmaker";
 import { ComboGuideBar } from "@/components/site/combo-guide";
+import { MagazineProgressBar } from "@/components/site/magazine-progress";
+import { magazineProgress, magazineTracks } from "@/lib/magazine-progress";
 import { SpinWheel } from "@/components/site/spin-wheel";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 
@@ -51,14 +53,6 @@ const NAV = [
   { label: "Sticker Book", href: "#sticker-book" },
   { label: "IT Polaroids", href: "#it-polaroids" },
   { label: "The Team", href: "#founders" },
-];
-
-const STEPS = [
-  { n: 1, t: "Select pages", d: "Choose the number of pages you want for your magazine." },
-  { n: 2, t: "Pick templates", d: "Select the number of templates according to the pages you've chosen." },
-  { n: 3, t: "Add extras", d: "Add any optional add-ons you'd like — gift wrapping, a personalised letter, or other extras." },
-  { n: 4, t: "Choose delivery", d: "Pick your preferred delivery: Express Shipping (₹100) or Standard Shipping (Free with any magazine; ₹80 for polaroid-only orders)." },
-  { n: 5, t: "Checkout & confirm", d: "Add everything to your cart, checkout, and send us a screenshot of your order summary to confirm." },
 ];
 
 const MANDATORY: {
@@ -141,6 +135,7 @@ function Home() {
   const activeCombo = cart.find((item) => item.category === "combos");
   const comboIssues = useComboIssues();
   const deselectCombo = useStore((s) => s.deselectCombo);
+  const ensureStandardDelivery = useStore((s) => s.ensureStandardDelivery);
 
   // Guided Combo Mode: with a combo in the cart, only the sections it needs
   // are shown unless the customer asks to see everything. "Show all" is
@@ -151,6 +146,16 @@ function Home() {
   const visibleSections = activeCombo ? guidedVisibleSections(activeCombo.id, comboIssues, cart) : null;
   const show = (section: GuidedSection) => !guided || !!visibleSections?.has(section);
   const comboGuideSteps = activeCombo ? comboSteps(activeCombo.id, comboIssues) : [];
+
+  // Magazine Template Progress bar — only outside a combo, which has its own.
+  const magazineTrackList = activeCombo ? [] : magazineTracks({
+    sizeId: selectedSizeId,
+    templateCount: selectedTemplateIds.length,
+    pocketUnits,
+    pocketLimit: pocketTemplateLimit,
+  });
+  const magazineGuide = magazineTrackList.length ? magazineProgress(magazineTrackList) : null;
+  const bottomBar = !!activeCombo || !!magazineGuide;
 
   // In-page links (e.g. the nav's "Build") can point at a hidden section:
   // reveal everything, then scroll once it has rendered.
@@ -234,14 +239,13 @@ function Home() {
       return;
     }
     setCartOpen(false);
-    // Delivery is no longer a hard gate here — it's chosen either on-page
-    // (Step 6) or inside the checkout popup itself (CustomerInfoModal),
-    // which won't let the customer continue to payment without it. Route
-    // to that popup whenever either piece is still missing; only skip
-    // straight to payment once both are already in place.
+    // Standard Delivery is added automatically when none is picked, so
+    // checkout never stalls on it. When it was just added, still route
+    // through the checkout popup so the customer sees it and can switch to
+    // Express; otherwise skip straight to payment once details are in place.
+    const addedDelivery = ensureStandardDelivery();
     const customerComplete = !!customer && !!customer.name && !!customer.phone && !!customer.email && !!customer.address;
-    const hasDelivery = cart.some((c) => c.category === "delivery");
-    if (!customerComplete || !hasDelivery) {
+    if (!customerComplete || addedDelivery) {
       if (!customerComplete) toast.message("Please fill your details to continue.");
       setInfoOpen(true);
     } else {
@@ -250,7 +254,7 @@ function Home() {
   };
 
   return (
-    <div id="top" className={`relative min-h-screen ${activeCombo ? "pb-32" : ""}`}>
+    <div id="top" className={`relative min-h-screen ${bottomBar ? "pb-32" : ""}`}>
       <Toaster position="top-center" richColors />
       <div className="orbs" aria-hidden>
         <span className="orb orb-1" /><span className="orb orb-2" /><span className="orb orb-3" />
@@ -271,7 +275,7 @@ function Home() {
 
 
       <TiledSection tiles={SITE.backgrounds.howToOrder}>
-        <HowToOrder />
+        <LayoutProductsSection />
       </TiledSection>
 
       <FreePostcardSection />
@@ -287,7 +291,7 @@ function Home() {
       <SizeComparisonSection />
 
       <TiledSection tiles={SITE.backgrounds.customize}>
-        <div id="combos" className="relative z-10 px-4 py-12 sm:py-20">
+        <div id="combos" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
           <div className="mx-auto max-w-6xl">
             <SectionHead eyebrow="Curated" title="Combos" sub="Bundled favourites at a soft price — pick one, then choose your own templates below." />
             <KeepsakeMatchmaker />
@@ -307,7 +311,7 @@ function Home() {
 
       <TiledSection tiles={SITE.backgrounds.customize}>
         {show("build") && (
-          <div id="build" className="relative z-10 px-4 py-12 sm:py-20">
+          <div id="build" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
             <div className="mx-auto max-w-6xl">
               <SectionHead eyebrow="Step 1" title="Choose your package" sub="Pricing scales with page count. Front & back covers included." />
               <SizesSection />
@@ -316,7 +320,7 @@ function Home() {
         )}
 
         {show("templates") && (
-          <div id="templates" className="relative z-10 px-4 py-12 sm:py-20">
+          <div id="templates" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
             <div className="mx-auto max-w-6xl">
               <SectionHead eyebrow="Step 2" title="Pick your templates" sub="Choose the exact number your package allows. Click a card for details." />
               <StepIndicator />
@@ -326,7 +330,7 @@ function Home() {
         )}
 
         {show("pocket") && (
-          <div id="pocket" className="relative z-10 px-4 py-12 sm:py-20">
+          <div id="pocket" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
             <div className="mx-auto max-w-6xl">
               <SectionHead eyebrow="Add it on" title="Pocket Magazine" sub="A standalone product of its own — strictly 6 pages, pocket-sized, ₹250 flat. Add it alongside your magazine above, or all on its own. Buying more than one? Pick templates for each individually below." />
               <PocketMagazineSection />
@@ -335,7 +339,7 @@ function Home() {
         )}
 
         {show("newspaper") && (
-          <div id="newspaper" className="relative z-10 px-4 py-12 sm:py-20">
+          <div id="newspaper" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
             <div className="mx-auto max-w-6xl">
               <SectionHead eyebrow="Something different" title="Newspaper Magazine" sub="A special standalone keepsake — not part of the package above." />
               <NewspaperSection />
@@ -344,7 +348,7 @@ function Home() {
         )}
 
         {show("memory-card") && (
-          <div id="memory-card" className="relative z-10 px-4 py-12 sm:py-20">
+          <div id="memory-card" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
             <div className="mx-auto max-w-6xl">
               <SectionHead eyebrow="Turn moments into keepsakes" title="The Photo Card" sub="Choose one, two, or three cards — mix the designs or repeat your favourite." />
               <MemoryCardSection />
@@ -353,7 +357,7 @@ function Home() {
         )}
 
         {show("it-polaroids") && (
-          <div id="it-polaroids" className="relative z-10 px-4 py-12 sm:py-20">
+          <div id="it-polaroids" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
             <div className="mx-auto max-w-6xl">
               <SectionHead eyebrow="New" title={SITE.itPolaroids.name} sub={SITE.itPolaroids.howToOrder} />
               <ItPolaroidsSection />
@@ -362,7 +366,7 @@ function Home() {
         )}
 
         {show("friendship-card") && (
-          <div id="friendship-card" className="relative z-10 px-4 py-12 sm:py-20">
+          <div id="friendship-card" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
             <div className="mx-auto max-w-6xl">
               <SectionHead eyebrow="Something different" title="Single & Duo Cards" sub="A fully personalised keepsake card — not part of the package above." />
               <FriendshipCardSection />
@@ -370,13 +374,13 @@ function Home() {
           </div>
         )}
 
-        <div id="extras" className="relative z-10 px-4 py-12 sm:py-20">
+        <div id="extras" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
           <div className="mx-auto max-w-6xl space-y-10 sm:space-y-16">
-            {show("addons") && <div>
+            {show("addons") && <div id="addons" className="scroll-mt-24">
               <SectionHead eyebrow="Step 3" title="Add-ons" sub="Little extras that make the keepsake feel personal." />
               <AddonsSection />
             </div>}
-            {show("packs") && <div>
+            {show("packs") && <div id="packs" className="scroll-mt-24">
               <SectionHead eyebrow="Step 4" title="Polaroid packs" sub="Real polaroid keepsakes — tap a pack to add, or View for the full look." />
               <PacksSection />
             </div>}
@@ -459,6 +463,8 @@ function Home() {
           onRemove={removeActiveCombo}
           onCart={() => setCartOpen(true)}
         />
+      ) : magazineGuide ? (
+        <MagazineProgressBar progress={magazineGuide} cartCount={cartCount} onCart={() => setCartOpen(true)} />
       ) : cartCount > 0 && (
         <button
           onClick={() => setCartOpen(true)}
@@ -756,36 +762,41 @@ export function SectionHead({ eyebrow, title, sub }: { eyebrow: string; title: s
   );
 }
 
-function StepCard({ s, className = "" }: { s: (typeof STEPS)[number]; className?: string }) {
-  return (
-    <div className={`step-card !p-2.5 sm:!p-4 lg:!p-6 ${className}`}>
-      <div className="mb-1.5 sm:mb-4 flex items-center justify-between">
-        <span className="font-display text-lg sm:text-2xl lg:text-4xl text-rose-wine/70">0{s.n}</span>
-        <span className="h-1.5 w-1.5 sm:h-2 sm:w-2 rounded-full bg-blush-rose shrink-0" />
-      </div>
-      <h4 className="font-display text-xs sm:text-lg lg:text-2xl text-rose-wine leading-tight">{s.t}</h4>
-      <p className="mt-1 sm:mt-2 text-[0.6rem] sm:text-xs lg:text-sm text-neutral-700 leading-snug">{s.d}</p>
-    </div>
-  );
-}
+// "The Layout Products" directory — one card per entry in
+// SITE.layoutProducts, each jumping to that product's section. They're
+// in-page links so Guided Combo Mode's link handler (in Home) can reveal a
+// section the combo is hiding before scrolling to it.
+function LayoutProductsSection() {
+  const jump = (event: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+    const el = document.getElementById(targetId);
+    if (!el) return; // hidden by Guided Combo Mode — Home's handler takes over
+    event.preventDefault();
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
-function HowToOrder() {
-  const firstRow = STEPS.slice(0, 3);
-  const lastRow = STEPS.slice(3);
   return (
-    <div id="how" className="relative z-10 px-4 py-12 sm:py-20">
+    <div id="products-directory" className="relative z-10 px-4 py-12 sm:py-20">
       <div className="mx-auto max-w-6xl">
-        <SectionHead eyebrow="Process" title="How to order" sub="Five simple steps from idea to doorstep." />
-        <div className="grid grid-cols-3 lg:grid-cols-5 gap-2 sm:gap-4">
-          {firstRow.map((s) => <StepCard key={s.n} s={s} />)}
-          {/* Incomplete last row (2 cards in a 3-col grid) centers as a pair on
-              mobile/tablet instead of hugging the left edge; at lg the wrapper
-              becomes `contents` so these rejoin the single 5-col row normally. */}
-          <div className="col-span-3 flex justify-center gap-2 sm:gap-4 lg:contents">
-            {lastRow.map((s) => (
-              <StepCard key={s.n} s={s} className="w-[calc(33.333%-0.4rem)] sm:w-[calc(33.333%-0.75rem)] lg:w-auto" />
-            ))}
-          </div>
+        <SectionHead eyebrow="Directory" title="The Layout Products" sub="Tap any product below to jump directly to its customisation options." />
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-6">
+          {SITE.layoutProducts.map((p) => (
+            <a
+              key={p.id}
+              href={`#${p.targetId}`}
+              onClick={(e) => jump(e, p.targetId)}
+              className="group relative flex min-h-[5.5rem] flex-col items-center justify-center rounded-2xl border border-blush-rose/40 bg-white/80 p-4 text-center shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-rose-wine/60 hover:bg-white hover:shadow-md active:scale-[0.98] sm:p-5"
+            >
+              {p.badge && (
+                <span className="absolute -top-2.5 right-2 rounded-full bg-rose-wine px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-off-white shadow-sm">
+                  {p.badge}
+                </span>
+              )}
+              <span className="font-display text-sm text-rose-wine sm:text-base">{p.name}</span>
+              {p.subtitle && (
+                <span className="mt-1 line-clamp-2 text-[11px] text-dusty-rose transition-colors group-hover:text-neutral-600 sm:text-xs">{p.subtitle}</span>
+              )}
+            </a>
+          ))}
         </div>
       </div>
     </div>

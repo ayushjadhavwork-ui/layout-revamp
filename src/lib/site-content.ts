@@ -47,6 +47,15 @@ export type ComboInfo = {
   originalValue: number;
 };
 
+// One button in "The Layout Products" directory (see SITE.layoutProducts).
+export type LayoutProduct = {
+  id: string;
+  name: string;
+  subtitle?: string;
+  targetId: string; // id of the page section the button scrolls to
+  badge?: string;
+};
+
 export const SITE = {
   // ────────────────────────────────────────────────────────────────
   // BRAND
@@ -170,6 +179,29 @@ export const SITE = {
     whatsapp:        "https://wa.me/919137353151",
     customerReviews: "https://thelayout.layoutt.workers.dev/happy-customers",
   },
+
+  // ────────────────────────────────────────────────────────────────
+  // THE LAYOUT PRODUCTS — the directory of buttons near the top of the
+  // page. Each one jumps to its product's section. Add, remove, rename or
+  // reorder freely; `targetId` must be one of the page's section ids:
+  // combos, sticker-book, build, templates, pocket, newspaper,
+  // memory-card, it-polaroids, friendship-card, addons, packs, strips.
+  // `badge` is an optional little tag shown on the card's corner.
+  // ────────────────────────────────────────────────────────────────
+  layoutProducts: [
+    { id: "combos",          name: "Curated Combos",     subtitle: "Value bundles & sets",          targetId: "combos", badge: "Popular" },
+    { id: "sticker-book",    name: "Love Sticker Book",  subtitle: "All-in-one couple activity",    targetId: "sticker-book", badge: "New" },
+    { id: "custom-magazine", name: "Custom Magazine",    subtitle: "A4 & A5 classic keepsakes",     targetId: "build" },
+    { id: "templates",       name: "Magazine Templates", subtitle: "Browse every spread",           targetId: "templates" },
+    { id: "pocket",          name: "Pocket Magazine",    subtitle: "6-page mini edition",           targetId: "pocket" },
+    { id: "newspaper",       name: "Newspaper Magazine", subtitle: "Broadsheet spreads",            targetId: "newspaper" },
+    { id: "photo-card",      name: "Photo Card",         subtitle: "Mix & match memory cards",      targetId: "memory-card" },
+    { id: "it-polaroids",    name: "THE IT POLAROIDS",   subtitle: "Instant prints, 1 to 100",      targetId: "it-polaroids", badge: "New" },
+    { id: "single-card",     name: "Single & Duo Cards", subtitle: "Personalised keepsake card",    targetId: "friendship-card" },
+    { id: "addons",          name: "Add-ons & Gifts",    subtitle: "Gift wrap & custom letters",    targetId: "addons" },
+    { id: "polaroids",       name: "Polaroid Packs",     subtitle: "Classic vintage photo prints",  targetId: "packs" },
+    { id: "strips",          name: "Polaroid Strips",    subtitle: "Photo booth style strips",      targetId: "strips" },
+  ] as LayoutProduct[],
 
   // ────────────────────────────────────────────────────────────────
   // FAQ — shown at the bottom of the page, above the payment & return

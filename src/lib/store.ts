@@ -96,6 +96,10 @@ type State = {
   setItPolaroidsQty: (qty: number) => void;
   removeItPolaroids: () => void;
   itPolaroidsQty: () => number; // 0 when not in the cart
+  // Adds Standard Delivery when the cart has no delivery line yet, so
+  // checkout never stops on "Choose a delivery option". Returns true when it
+  // added one. The customer can still switch to Express afterwards.
+  ensureStandardDelivery: () => boolean;
 
   subtotal: () => number;
   discount: () => number;
@@ -930,6 +934,15 @@ export const useStore = create<State>()(
   removeItPolaroids: () => set((s) => ({ cart: s.cart.filter((c) => c.category !== "it-polaroids") })),
 
   itPolaroidsQty: () => itPolaroidsQtyIn(get().cart),
+
+  ensureStandardDelivery: () => {
+    if (get().cart.some((c) => c.category === "delivery")) return false;
+    const standard = CATALOG.delivery.find((d) => d.id === "del-std");
+    if (!standard) return false;
+    // withDeliveryPrice re-prices it for polaroid-only carts.
+    get().addItem("delivery", standard);
+    return true;
+  },
 
   subtotal: () => get().cart.reduce((s, c) => s + c.price, 0),
   discount: () => {

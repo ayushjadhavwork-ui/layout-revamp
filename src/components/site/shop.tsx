@@ -874,8 +874,15 @@ export function CustomerInfoModal({
   const total = useStore((s) => s.total());
   const [submitting, setSubmitting] = useState(false);
 
+  const ensureStandardDelivery = useStore((s) => s.ensureStandardDelivery);
   const deliveryItem = cart.find((c) => c.category === "delivery");
   const minDeliveryDate = earliestDeliveryDate();
+
+  // Standard Delivery is pre-selected whenever the popup opens without one;
+  // the options below still let the customer switch to Express.
+  useEffect(() => {
+    if (open) ensureStandardDelivery();
+  }, [open, ensureStandardDelivery]);
 
   const handle = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
