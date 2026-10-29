@@ -115,8 +115,8 @@ export const SITE = {
   reels: [
     "https://www.instagram.com/reel/DcO6l7VxGg6/",
     "https://www.instagram.com/reel/Dc_f5aDzuSp/",
-    "https://www.instagram.com/reel/DcWrTbqxv0q/",
-    "https://www.instagram.com/reel/DU5klZECCtZ/",
+    "https://www.instagram.com/reel/DUi4r8pCMgy/",
+    
   ],
 
   // ────────────────────────────────────────────────────────────────
@@ -551,11 +551,21 @@ export const SITE = {
 //this is for easier push to github
 
       // Polaroid strips
-      "strip-1": ["/media/strips/1.webp"] as string[],
-      "strip-2": ["/media/strips/2.webp"] as string[],
-      "strip-3": ["/media/strips/3.webp"] as string[],
-      "strip-4": ["/media/strips/4.webp"] as string[],
-      "strip-5": ["/media/strips/5.webp"] as string[],
+      "strip-1": ["/media/strips/1.jpg"] as string[],
+      "strip-2": ["/media/strips/2.jpg"] as string[],
+      "strip-3": ["/media/strips/3.jpg"] as string[],
+      "strip-4": ["/media/strips/4.jpg"] as string[],
+      "strip-5": ["/media/strips/5.jpg"] as string[],
+      "strip-6": ["/media/strips/6.jpg"] as string[],
+      "strip-7": ["/media/strips/7.jpg"] as string[],
+      "strip-8": ["/media/strips/8.jpg"] as string[],
+      "strip-9": ["/media/strips/9.jpg"] as string[],
+      "strip-10": ["/media/strips/10.jpg"] as string[],
+      "strip-11": ["/media/strips/11.jpg"] as string[],
+      "strip-12": ["/media/strips/12.jpg"] as string[],
+      "strip-13": ["/media/strips/13.jpg"] as string[],
+
+      
       // Polaroid packs
       "pol-mini":    ["/media/polaroids/1.webp"] as string[],
       "pol-classic": ["/media/polaroids/2.webp"] as string[],
@@ -617,27 +627,6 @@ export const SITE = {
   // Any tile you leave out is simply skipped.
   // ────────────────────────────────────────────────────────────────
   backgrounds: {
-    hero: {
-      repeat: "/media/bg/checkers.webp" // Replace with your actual filename
-
-
-    } as Tiles,
-
-
-    howToOrder: {
-      repeat: "/media/bg/4.svg",
-    } as Tiles,
-
-    journey:  {} as Tiles,
-
-    // Head + repeating middle + tail — for LONG sections
-    customize: {} as Tiles,
-    // e.g.
-    // customize: {
-    //   head:   "/media/bg/customize-head.webp",
-    //   repeat: "/media/bg/customize-mid.webp",
-    //   tail:   "/media/bg/customize-tail.webp",
-    // },
     
     founders: {
       tail: "/media/bg/1.svg"
