@@ -219,6 +219,7 @@ function Home() {
       </TiledSection>
 
       <TiledSection tiles={SITE.backgrounds.customize}>
+        {/* 1. CURATED COMBOS */}
         <div id="combos" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
           <div className="mx-auto max-w-6xl">
             <SectionHead eyebrow="Curated" title="Combos" sub="Bundled favourites at a soft price — pick one, then choose your own templates below." />
@@ -227,6 +228,37 @@ function Home() {
           </div>
         </div>
 
+        {/* 2. ALL SIZES MAGAZINE ("Create Your Own Magazine") */}
+        {show("build") && (
+          <div id="build" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
+            <div className="mx-auto max-w-6xl">
+              <SizesSection />
+            </div>
+          </div>
+        )}
+
+        {/* 2a. A4 / A5 TEMPLATE PICKER */}
+        {show("templates") && (selectedSizeId || pocketUnits.length === 0) && (
+          <div id="templates" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
+            <div className="mx-auto max-w-6xl">
+              <SectionHead eyebrow="Templates" title="Pick your templates" sub="Choose the exact number your package allows. Click a card for details." />
+              <StepIndicator />
+              <TemplatesSection />
+            </div>
+          </div>
+        )}
+
+        {/* 2b. A6 POCKET MAGAZINE TEMPLATE PICKER */}
+        {show("pocket") && pocketUnits.length > 0 && (
+          <div id="pocket" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
+            <div className="mx-auto max-w-6xl">
+              <SectionHead eyebrow="Templates" title="Pocket Magazine templates" sub={`Pick ${pocketTemplateLimit} templates for each Pocket Magazine (A6) in your cart.`} />
+              <PocketTemplatePickers />
+            </div>
+          </div>
+        )}
+
+        {/* 3. THE LOVE STICKER BOOK */}
         {show("sticker-book") && (
           <div id="sticker-book" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
             <div className="mx-auto max-w-6xl">
@@ -238,35 +270,6 @@ function Home() {
       </TiledSection>
 
       <TiledSection tiles={SITE.backgrounds.customize}>
-        {show("build") && (
-          <div id="build" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
-            <div className="mx-auto max-w-6xl">
-              <SizesSection />
-            </div>
-          </div>
-        )}
-
-        {/* With only Pocket Magazines in the cart, their own pickers below
-            replace the A4/A5 template section. */}
-        {show("templates") && (selectedSizeId || pocketUnits.length === 0) && (
-          <div id="templates" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
-            <div className="mx-auto max-w-6xl">
-              <SectionHead eyebrow="Templates" title="Pick your templates" sub="Choose the exact number your package allows. Click a card for details." />
-              <StepIndicator />
-              <TemplatesSection />
-            </div>
-          </div>
-        )}
-
-        {show("pocket") && pocketUnits.length > 0 && (
-          <div id="pocket" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
-            <div className="mx-auto max-w-6xl">
-              <SectionHead eyebrow="Templates" title="Pocket Magazine templates" sub={`Pick ${pocketTemplateLimit} templates for each Pocket Magazine (A6) in your cart.`} />
-              <PocketTemplatePickers />
-            </div>
-          </div>
-        )}
-
         {show("newspaper") && (
           <div id="newspaper" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
             <div className="mx-auto max-w-6xl">

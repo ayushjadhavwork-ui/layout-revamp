@@ -154,8 +154,8 @@ export const SITE = {
   // ────────────────────────────────────────────────────────────────
   layoutProducts: [
     { id: "combos",          name: "Curated Combos",     subtitle: "Value bundles & sets",          targetId: "combos", badge: "Popular" },
-    { id: "sticker-book",    name: "Love Sticker Book",  subtitle: "All-in-one couple activity",    targetId: "sticker-book", badge: "New" },
     { id: "custom-magazine", name: "Custom Magazine",    subtitle: "A4, A5 & A6 keepsakes",         targetId: "build", magazineSize: "A4" },
+    { id: "sticker-book",    name: "Love Sticker Book",  subtitle: "All-in-one couple activity",    targetId: "sticker-book", badge: "New" },
     { id: "templates",       name: "Magazine Templates", subtitle: "Browse every spread",           targetId: "templates" },
     { id: "pocket",          name: "Pocket Magazine",    subtitle: "6-page A6 mini edition",        targetId: "build", magazineSize: "A6" },
     { id: "newspaper",       name: "Newspaper Magazine", subtitle: "Broadsheet spreads",            targetId: "newspaper" },
