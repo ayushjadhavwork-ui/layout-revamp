@@ -54,6 +54,15 @@ export type LayoutProduct = {
   subtitle?: string;
   targetId: string; // id of the page section the button scrolls to
   badge?: string;
+  // Only for targetId "build": the size the magazine builder switches to.
+  magazineSize?: MagazineSizeLabel;
+};
+
+// One size card in "Create Your Own Magazine" (see SITE.createYourOwnMagazine).
+export type MagazineSizeLabel = "A4" | "A5" | "A6";
+export type MagazineSize = {
+  label: MagazineSizeLabel;
+  dimensions: string;
 };
 
 export const SITE = {
@@ -76,7 +85,7 @@ export const SITE = {
   // Showreel video — drop your file at /public/media/showreel.mp4
   showreelVideo: "/showreel.webp",
 
-  // Single & Duo Card — interactive 3D preview (.glb). Swap the file at the
+  // License Card — interactive 3D preview (.glb). Swap the file at the
   // same path to update the model; no code change needed. This is a
   // placeholder box model — replace with a real scan/model of the card
   // whenever it's ready.
@@ -120,53 +129,6 @@ export const SITE = {
   ],
 
   // ────────────────────────────────────────────────────────────────
-  // PHOTO GALLERY — "Wall of memories" section, below Reels.
-  // Files live in /public/media/photo gallery/. The FIRST image in this
-  // list always stays pinned in the center tile; the other 8 tiles keep
-  // cycling through the rest of the list. Add or remove lines freely.
-  // ────────────────────────────────────────────────────────────────
-  photoGallery: [
-    "/media/photo%20gallery/1.webp",
-    "/media/photo%20gallery/2.webp",
-    "/media/photo%20gallery/3.webp",
-    "/media/photo%20gallery/4.webp",
-    "/media/photo%20gallery/5.webp",
-    "/media/photo%20gallery/6.webp",
-    "/media/photo%20gallery/7.webp",
-    "/media/photo%20gallery/8.webp",
-    "/media/photo%20gallery/9.webp",
-    "/media/photo%20gallery/10.webp",
-    "/media/photo%20gallery/11.webp",
-    "/media/photo%20gallery/12.webp",
-    "/media/photo%20gallery/13.webp",
-    "/media/photo%20gallery/14.webp",
-    "/media/photo%20gallery/15.webp",
-    "/media/photo%20gallery/16.webp",
-    "/media/photo%20gallery/17.webp",
-    "/media/photo%20gallery/18.webp",
-    "/media/photo%20gallery/19.webp",
-    "/media/photo%20gallery/20.webp",
-    "/media/photo%20gallery/21.webp",
-    "/media/photo%20gallery/22.webp",
-    "/media/photo%20gallery/23.webp",
-    "/media/photo%20gallery/24.webp",
-    "/media/photo%20gallery/25.webp",
-    "/media/photo%20gallery/26.webp",
-    "/media/photo%20gallery/27.webp",
-    "/media/photo%20gallery/28.webp",
-    "/media/photo%20gallery/29.webp",
-    "/media/photo%20gallery/30.webp",
-    "/media/photo%20gallery/31.webp",
-    "/media/photo%20gallery/32.webp",
-    "/media/photo%20gallery/33.webp",
-    "/media/photo%20gallery/34.webp",
-    "/media/photo%20gallery/35.webp",
-    "/media/photo%20gallery/36.webp",
-    "/media/photo%20gallery/37.webp",
-    "/media/photo%20gallery/38.webp",
-  ],
-
-  // ────────────────────────────────────────────────────────────────
   // EXTERNAL LINKS (open in new tab)
   // ────────────────────────────────────────────────────────────────
   links: {
@@ -174,7 +136,7 @@ export const SITE = {
     instagram:       "https://www.instagram.com/the_layoutt",
     youtube:         "https://www.youtube.com/@Layoutt",
     blog:            "https://thelayouttco.myportfolio.com/behind-the-scenes-1",
-    // "Check your delivery date" button (top ribbon + banner button).
+    // "Check Delivery" link in the top nav.
     deliveryCheck:   "https://cataloglayout.my.canva.site/delivery-date-calculator-infographic",
     whatsapp:        "https://wa.me/919137353151",
     customerReviews: "https://thelayout.layoutt.workers.dev/happy-customers",
@@ -184,24 +146,52 @@ export const SITE = {
   // THE LAYOUT PRODUCTS — the directory of buttons near the top of the
   // page. Each one jumps to its product's section. Add, remove, rename or
   // reorder freely; `targetId` must be one of the page's section ids:
-  // combos, sticker-book, build, templates, pocket, newspaper,
-  // memory-card, it-polaroids, friendship-card, addons, packs, strips.
+  // combos, sticker-book, build, templates, newspaper, memory-card,
+  // it-polaroids, friendship-card, addons, packs, strips.
   // `badge` is an optional little tag shown on the card's corner.
+  // `magazineSize` (A4, A5 or A6) pre-selects that size in the magazine
+  // builder when targetId is "build".
   // ────────────────────────────────────────────────────────────────
   layoutProducts: [
     { id: "combos",          name: "Curated Combos",     subtitle: "Value bundles & sets",          targetId: "combos", badge: "Popular" },
     { id: "sticker-book",    name: "Love Sticker Book",  subtitle: "All-in-one couple activity",    targetId: "sticker-book", badge: "New" },
-    { id: "custom-magazine", name: "Custom Magazine",    subtitle: "A4 & A5 classic keepsakes",     targetId: "build" },
+    { id: "custom-magazine", name: "Custom Magazine",    subtitle: "A4, A5 & A6 keepsakes",         targetId: "build", magazineSize: "A4" },
     { id: "templates",       name: "Magazine Templates", subtitle: "Browse every spread",           targetId: "templates" },
-    { id: "pocket",          name: "Pocket Magazine",    subtitle: "6-page mini edition",           targetId: "pocket" },
+    { id: "pocket",          name: "Pocket Magazine",    subtitle: "6-page A6 mini edition",        targetId: "build", magazineSize: "A6" },
     { id: "newspaper",       name: "Newspaper Magazine", subtitle: "Broadsheet spreads",            targetId: "newspaper" },
-    { id: "photo-card",      name: "Photo Card",         subtitle: "Mix & match memory cards",      targetId: "memory-card" },
+    { id: "memory-card",     name: "Memory Card",        subtitle: "Mix & match memory cards",      targetId: "memory-card" },
     { id: "it-polaroids",    name: "THE IT POLAROIDS",   subtitle: "Instant prints, 1 to 100",      targetId: "it-polaroids", badge: "New" },
-    { id: "single-card",     name: "Single & Duo Cards", subtitle: "Personalised keepsake card",    targetId: "friendship-card" },
+    { id: "license-card",    name: "License Card",       subtitle: "Personalised keepsake card",    targetId: "friendship-card" },
     { id: "addons",          name: "Add-ons & Gifts",    subtitle: "Gift wrap & custom letters",    targetId: "addons" },
     { id: "polaroids",       name: "Polaroid Packs",     subtitle: "Classic vintage photo prints",  targetId: "packs" },
     { id: "strips",          name: "Polaroid Strips",    subtitle: "Photo booth style strips",      targetId: "strips" },
   ] as LayoutProduct[],
+
+  // ────────────────────────────────────────────────────────────────
+  // CREATE YOUR OWN MAGAZINE — the magazine builder (#build). Prices
+  // come from prices.ts (sizes, sizesMini, pocket); A6 is the 6-page
+  // Pocket Magazine. Carousel images live in /public/media/Magazines_section/.
+  // ────────────────────────────────────────────────────────────────
+  createYourOwnMagazine: {
+    title: "Create Your Own Magazine ❤️",
+    descriptionParagraphs: [
+      "Choose your preferred magazine size and number of pages, then select your favourite templates for each page.",
+      "Once your order is confirmed, we'll send you a Google Drive link to upload your photos and text. We'll bring your memories to life with a personalised design and share a preview for your approval before printing.",
+    ],
+    highlightBox: "Your memories, your style, your magazine. Order yours now! ❤️",
+    carouselImages: [
+      { src: "/media/Magazines_section/cover_img.jpeg", alt: "The US & Birthday Magazine flat-lay cover showcase", caption: "Magazine Covers & Aesthetic Spreads" },
+      { src: "/media/Magazines_section/A5.webp", alt: "A5 Mini Magazine showcase", caption: "A5 Mini Magazine (14.8 × 21 cm)" },
+      { src: "/media/Magazines_section/A6.webp", alt: "A6 Pocket Magazine showcase", caption: "A6 Pocket Keepsake (10.5 × 14.8 cm)" },
+      { src: "/media/Magazines_section/ALL_SIZES.webp", alt: "All magazine sizes compared", caption: "A4 Standard, A5 Mini & A6 Pocket Comparison" },
+    ] as { src: string; alt: string; caption: string }[],
+    sizes: [
+      { label: "A4", dimensions: "21 × 29.7 cm" },
+      { label: "A5", dimensions: "14.8 × 21 cm" },
+      { label: "A6", dimensions: "10.5 × 14.8 cm" },
+    ] as MagazineSize[],
+    pocketNote: "Pocket Magazine is strictly 6 pages (3 templates)",
+  },
 
   // ────────────────────────────────────────────────────────────────
   // FAQ — shown at the bottom of the page, above the payment & return
@@ -316,11 +306,10 @@ export const SITE = {
   itPolaroids: {
     name: "THE IT POLAROIDS",
     tagline: "Your memories, instantly iconic.",
-    description: "Turn your favourite moments into timeless keepsakes! THE IT POLAROIDS bring you the nostalgic charm of real instant photographs with a classic vintage aesthetic. Little pictures. Big memories. Forever iconic.",
+    description: "Real photos, printed in a classic Polaroid style. Turn your favourite moments into tangible keepsakes you can hold, collect, and cherish forever. 💗",
     features: [
       "Real instant photo, printed with a vintage Polaroid camera aesthetic",
       "Perfect for scrapbooks, journals, room decor and memory walls",
-      "Made for gifting — or keeping all to yourself",
     ],
     howToOrder: "Choose your quantity, add it to your cart, and share one photo for each Polaroid after ordering.",
     poster: "/media/it-polaroids/poster.webp",
@@ -348,7 +337,7 @@ export const SITE = {
       { src: "/media/sticker-book/7.webp", thumb: "/media/sticker-book/7-thumb.webp", caption: "Back cover — The Love Chronicles" },
     ],
     // The fixed keepsakes bundled with every book. `image` is any key of
-    // productImages below; its first image is shown. A Photo Card entry
+    // productImages below; its first image is shown. A Memory Card entry
     // gives `memoryCardId` instead of `name` — its name comes from
     // memoryCardInfo above.
     included: [
@@ -364,22 +353,16 @@ export const SITE = {
   // text only; originalValue is the crossed-out amount shown on the card.
   // ────────────────────────────────────────────────────────────────
   comboInfo: {
-    "combo-01": { name: "Look At Me", description: "A little bit of everything, because one memory is never enough. A pocket-sized collection made for the moments you want to keep close.", photosRequired: "Photos for a 6-page A5 magazine, 1 Polaroid Strip, and 8 Mini Pack images.", detailsRequired: "Magazine content based on the templates selected, plus the text for a handwritten letter.", included: ["A5 Magazine — 6 Pages", "Polaroid Strip — Any 1", "Mini Pack — 8 Images", "Gift Wrap + Handwritten Letter", "FREE Postcard"], perfectFor: "Birthdays • Besties • Little Surprises • Just Because", originalValue: 710 },
-    "combo-02": { name: "Birthday Bits", description: "Because birthdays deserve more than just a text message. Turn someone's favourite memories into a little birthday keepsake.", photosRequired: "Photos for a 12-page A5 magazine, 1 Photo Card, and 1 Polaroid Strip.", detailsRequired: "Magazine content based on the templates selected, plus the message for the Photo Card.", included: ["A5 Magazine — 12 Pages", "Photo Card — Any 1", "Polaroid Strip — Any 1", "FREE Postcard"], perfectFor: "Birthdays • Birthday Surprises • Best Friends • Siblings", originalValue: 850 },
-    "combo-03": { name: "The Little Archive", description: "For the memories that deserve their own little archive. A quirky, nostalgic bundle for people who love their memories with personality.", photosRequired: "Photos for the Newspaper Magazine, 1 Single Card, and 8 Mini Pack images.", detailsRequired: "Newspaper content and the personalisation details for the selected Single Card.", included: ["Newspaper Magazine", "Single Card — Any 1", "Mini Pack — 8 Images", "FREE Postcard"], perfectFor: "Birthdays • Friendships • Couples • Memory Keeping", originalValue: 879 },
-    "combo-04": { name: "The Pocket Edit", description: "Small enough to carry. Special enough to keep forever. A personalised pocket magazine paired with photos and a handwritten letter.", photosRequired: "Photos for a 6-page A6 Pocket Magazine, 1 Photo Card, and 18 Classic Pack images.", detailsRequired: "Pocket Magazine content based on the templates selected, Photo Card text, and handwritten letter text.", included: ["A6 Pocket Magazine — 6 Pages", "Photo Card — Any 1", "Handwritten Letter — Any 1", "Classic Pack — 18 Images", "FREE Postcard"], perfectFor: "Little Gifts • Besties • Couples • Mini Surprises", originalValue: 700 },
-    "combo-05": { name: "The Double Trouble", description: "Twice the cards. Twice the memories. Twice the trouble. Made for duos who come as a package deal.", photosRequired: "Photos for 2 Duo Cards, 2 Photo Cards, and 2 Polaroid Strips.", detailsRequired: "Personalisation details for both Duo Cards and both Photo Cards.", included: ["Duo Cards — Any 2", "Photo Cards — Any 2", "Polaroid Strips — Any 2", "FREE Postcard"], perfectFor: "Couples • Best Friends • Friendship Gifts • Anniversaries", originalValue: 1548 },
-    "combo-06": { name: "The Love Dream", description: "For the person who deserves an entire magazine. Go all out with a personalised A4 magazine and two keepsake cards.", photosRequired: "Photos for a 12-page A4 magazine, 1 Photo Card, and 1 Single Card.", detailsRequired: "Magazine content based on the templates selected and personalisation details for both cards.", included: ["A4 Magazine — 12 Pages", "Photo Card — Any 1", "Single Card — Any 1", "FREE Postcard"], perfectFor: "Partners • Anniversaries • Valentine's Day • Love Gifts", originalValue: 1749 },
-    "combo-07": { name: "The Keepsake Edit", description: "A proper keepsake for memories worth holding onto, finished with gift-ready wrap and a handwritten letter.", photosRequired: "Photos for a 14-page A4 magazine and 1 Polaroid Strip.", detailsRequired: "Magazine content based on the templates selected, plus the handwritten letter text.", included: ["A4 Magazine — 14 Pages", "Polaroid Strip — Any 1", "Gift Wrap + Handwritten Letter", "FREE Postcard"], perfectFor: "Birthdays • Anniversaries • Milestones • Special Gifts", originalValue: 1480 },
-    "combo-08": { name: "The Treasure Basket", description: "A whole basket of memories — because choosing just one is impossible. A memory-packed bundle for someone who deserves more.", photosRequired: "Photos for a 20-page A5 magazine, 1 Single Card, 1 Photo Card, 2 Polaroid Strips, and 18 Classic Pack images.", detailsRequired: "Magazine content based on the templates selected and personalisation details for both cards.", included: ["A5 Magazine — 20 Pages", "Single Card — Any 1", "Photo Card — Any 1", "Polaroid Strips — Any 2", "Classic Pack — 18 Images", "FREE Postcard"], perfectFor: "Big Birthdays • Best Friends • Couples • Milestone Gifts", originalValue: 1948 },
-    "combo-09": { name: "The Layout Bundle", description: "The ultimate Layout experience. All your favourites, in one bundle — made for going all in.", photosRequired: "Photos for an 18-page A4 magazine, 8 Mini Pack images, 1 Polaroid Strip, 1 Single Card, and 1 Photo Card.", detailsRequired: "Magazine content based on the templates selected, card personalisation, and handwritten letter text.", included: ["A4 Magazine — 18 Pages", "Mini Pack — 8 Images", "Polaroid Strip — Any 1", "Gift Wrap + Handwritten Letter", "Single Card — Any 1", "Photo Card — Any 1", "FREE Postcard"], perfectFor: "Premium Gifting • Birthdays • Anniversaries • Couples • Best Friends", originalValue: 2409 },
+    "combo-01": { name: "Look At Me", description: "A little bit of everything, because one memory is never enough. A pocket-sized collection made for the moments you want to keep close.", photosRequired: "Photos for a 6-page A5 magazine, 1 Polaroid Strip, and 8 Mini Pack images.", detailsRequired: "Magazine content based on the templates selected, plus the text for a handwritten letter.", included: ["A5 Magazine — 6 Pages", "Polaroid Strip — Any 1", "Mini Pack — 8 Images", "Gift Wrap + Handwritten Letter"], perfectFor: "Birthdays • Besties • Little Surprises • Just Because", originalValue: 710 },
+    "combo-02": { name: "Birthday Bits", description: "Because birthdays deserve more than just a text message. Turn someone's favourite memories into a little birthday keepsake.", photosRequired: "Photos for a 12-page A5 magazine, 1 Memory Card, and 1 Polaroid Strip.", detailsRequired: "Magazine content based on the templates selected, plus the message for the Memory Card.", included: ["A5 Magazine — 12 Pages", "Memory Card — Any 1", "Polaroid Strip — Any 1"], perfectFor: "Birthdays • Birthday Surprises • Best Friends • Siblings", originalValue: 850 },
+    "combo-03": { name: "The Little Archive", description: "For the memories that deserve their own little archive. A quirky, nostalgic bundle for people who love their memories with personality.", photosRequired: "Photos for the Newspaper Magazine, 1 License Card, and 8 Mini Pack images.", detailsRequired: "Newspaper content and the personalisation details for the selected License Card.", included: ["Newspaper Magazine", "License Card — Any 1", "Mini Pack — 8 Images"], perfectFor: "Birthdays • Friendships • Couples • Memory Keeping", originalValue: 879 },
+    "combo-04": { name: "The Pocket Edit", description: "Small enough to carry. Special enough to keep forever. A personalised pocket magazine paired with photos and a handwritten letter.", photosRequired: "Photos for a 6-page A6 Pocket Magazine, 1 Memory Card, and 18 Classic Pack images.", detailsRequired: "Pocket Magazine content based on the templates selected, Memory Card text, and handwritten letter text.", included: ["A6 Pocket Magazine — 6 Pages", "Memory Card — Any 1", "Handwritten Letter — Any 1", "Classic Pack — 18 Images"], perfectFor: "Little Gifts • Besties • Couples • Mini Surprises", originalValue: 700 },
+    "combo-05": { name: "The Double Trouble", description: "Twice the cards. Twice the memories. Twice the trouble. Made for duos who come as a package deal.", photosRequired: "Photos for 2 Duo License Cards, 2 Memory Cards, and 2 Polaroid Strips.", detailsRequired: "Personalisation details for both Duo License Cards and both Memory Cards.", included: ["Duo License Cards — Any 2", "Memory Cards — Any 2", "Polaroid Strips — Any 2"], perfectFor: "Couples • Best Friends • Friendship Gifts • Anniversaries", originalValue: 1548 },
+    "combo-06": { name: "The Love Dream", description: "For the person who deserves an entire magazine. Go all out with a personalised A4 magazine and two keepsake cards.", photosRequired: "Photos for a 12-page A4 magazine, 1 Memory Card, and 1 License Card.", detailsRequired: "Magazine content based on the templates selected and personalisation details for both cards.", included: ["A4 Magazine — 12 Pages", "Memory Card — Any 1", "License Card — Any 1"], perfectFor: "Partners • Anniversaries • Valentine's Day • Love Gifts", originalValue: 1749 },
+    "combo-07": { name: "The Keepsake Edit", description: "A proper keepsake for memories worth holding onto, finished with gift-ready wrap and a handwritten letter.", photosRequired: "Photos for a 14-page A4 magazine and 1 Polaroid Strip.", detailsRequired: "Magazine content based on the templates selected, plus the handwritten letter text.", included: ["A4 Magazine — 14 Pages", "Polaroid Strip — Any 1", "Gift Wrap + Handwritten Letter"], perfectFor: "Birthdays • Anniversaries • Milestones • Special Gifts", originalValue: 1480 },
+    "combo-08": { name: "The Treasure Basket", description: "A whole basket of memories — because choosing just one is impossible. A memory-packed bundle for someone who deserves more.", photosRequired: "Photos for a 20-page A5 magazine, 1 License Card, 1 Memory Card, 2 Polaroid Strips, and 18 Classic Pack images.", detailsRequired: "Magazine content based on the templates selected and personalisation details for both cards.", included: ["A5 Magazine — 20 Pages", "License Card — Any 1", "Memory Card — Any 1", "Polaroid Strips — Any 2", "Classic Pack — 18 Images"], perfectFor: "Big Birthdays • Best Friends • Couples • Milestone Gifts", originalValue: 1948 },
+    "combo-09": { name: "The Layout Bundle", description: "The ultimate Layout experience. All your favourites, in one bundle — made for going all in.", photosRequired: "Photos for an 18-page A4 magazine, 8 Mini Pack images, 1 Polaroid Strip, 1 License Card, and 1 Memory Card.", detailsRequired: "Magazine content based on the templates selected, card personalisation, and handwritten letter text.", included: ["A4 Magazine — 18 Pages", "Mini Pack — 8 Images", "Polaroid Strip — Any 1", "Gift Wrap + Handwritten Letter", "License Card — Any 1", "Memory Card — Any 1"], perfectFor: "Premium Gifting • Birthdays • Anniversaries • Couples • Best Friends", originalValue: 2409 },
   } as Record<string, ComboInfo>,
-
-  // ────────────────────────────────────────────────────────────────
-  // MANDATORY PAGES — note shown at the bottom of that section
-  // ────────────────────────────────────────────────────────────────
-  mandatoryNote:
-    "After you place your order with us, we will send you a Google Drive link to upload images.",
 
   // ────────────────────────────────────────────────────────────────
   // JOURNEY / STATS  ← edit numbers or labels freely
@@ -453,7 +436,16 @@ export const SITE = {
   // "tpl-<n>": ["/media/templates/<n>.webp"] line into productImages
   // below (Template <n> just shows a placeholder until you do).
   // ────────────────────────────────────────────────────────────────
-  templateCount: 35,       
+  templateCount: 35,
+
+  // ────────────────────────────────────────────────────────────────
+  // STRIP COUNT
+  // How many Polaroid Strips appear in the Polaroid Strips section.
+  // To add one: bump this number and drop the image at
+  // /public/media/strips/<n>.jpg (or list it under productImages below).
+  // Also give PRICES.stripTiers in prices.ts a price for the new count.
+  // ────────────────────────────────────────────────────────────────
+  stripCount: 12,
 
   // ────────────────────────────────────────────────────────────────
   // PRODUCT IMAGES (for the e-commerce modal)
@@ -467,20 +459,6 @@ export const SITE = {
 
 
   productImages: {
-
-      "mandatory-1": ["/media/mandatory/mandatory-front.webp"], // For "Front Cover"
-      "mandatory-2": ["/media/mandatory/mandatory-first.webp"], // For "First Page"
-      "mandatory-3": ["/media/mandatory/mandatory-last.webp"],  // For "Last Page"
-      "mandatory-4": ["/media/mandatory/mandatory-back.webp"],  // For "Back Cover"
-
- 
-
-
-
-
-
-
-
     // ── Templates (optional overrides — Template 01..24) ─────────
     // Drop a spread image at /public/media/products/templates/1.webp (etc.)
     // and add the path here to override the built-in placeholder.
@@ -524,28 +502,6 @@ export const SITE = {
       "tpl-35": ["/media/templates/35.webp"],
     
 
-    // ── Package / sizes thumbnails + size guides ─────────────────
-    // By default the site auto-loads:
-    //   Standard (A4): /media/sizes/<pages>_pages_magazine.webp      (thumbnail)
-    //                  /media/sizes/<pages>_pages_sizeGuide.webp     (detail)
-    //   Mini (A5):     /media/sizes-mini/<pages>_pages_magazine.webp (thumbnail)
-    //                  /media/sizes-mini/<pages>_pages_sizeGuide.webp(detail)
-    // To use a different file, uncomment a line below and change the path.
-    // First image = thumbnail, any following images = detail gallery.
-    // Standard (A4):
-    // "sz-4":  ["/media/sizes/4_pages_magazine.webp", "/media/sizes/4_pages_sizeGuide.webp"],
-    // "sz-6":  ["/media/sizes/6_pages_magazine.webp", "/media/sizes/6_pages_sizeGuide.webp"],
-    // ... sz-8, sz-12, sz-14, sz-16, sz-18, sz-20
-    // Mini (A5):
-    "sz-4-mini":  ["/media/sizes-mini/4_pages_mini_magazine.webp", "/media/sizes-mini/4_mini_sizeGuide.webp"],
-    "sz-6-mini":  ["/media/sizes-mini/6_pages_mini_magazine.webp", "/media/sizes-mini/6_mini_sizeGuide.webp"],
-    "sz-8-mini" :  ["/media/sizes-mini/8_pages_mini_magazine.webp", "/media/sizes-mini/8_mini_sizeGuide.webp"],
-    "sz-12-mini" :  ["/media/sizes-mini/12_pages_mini_magazine.webp", "/media/sizes-mini/12_mini_sizeGuide.webp"],
-    "sz-14-mini" :  ["/media/sizes-mini/14_pages_mini_magazine.webp", "/media/sizes-mini/14_mini_sizeGuide.webp"],
-    "sz-16-mini" :  ["/media/sizes-mini/16_pages_mini_magazine.webp", "/media/sizes-mini/16_mini_sizeGuide.webp"],
-    "sz-18-mini" :  ["/media/sizes-mini/18_pages_mini_magazine.webp", "/media/sizes-mini/18_mini_sizeGuide.webp"],
-    "sz-20-mini" :  ["/media/sizes-mini/20_pages_mini_magazine.webp", "/media/sizes-mini/20_mini_sizeGuide.webp"],
-    // ... sz-8-mini, sz-12-mini, sz-14-mini, sz-16-mini, sz-18-mini, sz-20-mini
 
 
 //this is for easier push to github
@@ -563,7 +519,6 @@ export const SITE = {
       "strip-10": ["/media/strips/10.jpg"] as string[],
       "strip-11": ["/media/strips/11.jpg"] as string[],
       "strip-12": ["/media/strips/12.jpg"] as string[],
-      "strip-13": ["/media/strips/13.jpg"] as string[],
 
       
       // Polaroid packs
@@ -588,21 +543,13 @@ export const SITE = {
       "combo-08": ["/media/combos/COMBO_08.jpg"],
       "combo-09": ["/media/combos/COMBO_09.jpg"],
 
-      // Delivery (Step 6) — optional cover imagery.
-      // "del-std": ["/media/delivery/standard.webp"],
-      // "del-exp": ["/media/delivery/express.webp"],
-
       // Newspaper Magazine — previews for its two fixed spreads (the
       // main "news-mag" product itself has no preview image slot; it
       // only ever shows the two spreads below).
       "news-tpl-1":  ["/media/newspaper/1.webp"],
       "news-tpl-2":  ["/media/newspaper/2.webp"],
 
-      // Pocket Magazine — first entry is the product-card thumbnail, any
-      // further entries become extra gallery images in its modal.
-      "pocket-mag":  ["/media/pocket/pocket-hero.webp"],
-
-      // Single & Duo Card designs — first entry is the front (used as the
+      // License Card designs — first entry is the front (used as the
       // card's thumbnail everywhere), second is the back (shown when the
       // customer swipes past the front in the design detail modal). Files
       // live in /public/media/friendship/ as card_01_front.webp /
@@ -614,7 +561,7 @@ export const SITE = {
       "card-3": ["/media/friendship/CARD_03_FRONT.webp", "/media/friendship/CARD_03_BACK.webp"],
       "card-4": ["/media/friendship/CARD_04_FRONT.webp", "/media/friendship/CARD_04_BACK.webp"],
 
-      // The Photo Card — first image is the open-card thumbnail; second is
+      // The Memory Card — first image is the open-card thumbnail; second is
       // the cover. Both appear in the swipeable detail pop-up.
       "memory-birthday": ["/media/BIRTHDAY_01.webp", "/media/BIRTHDAY_02.webp"],
       "memory-friendship": ["/media/FRIEND_01.webp", "/media/FRIEND_02.webp"],

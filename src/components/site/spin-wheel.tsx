@@ -1,13 +1,14 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import {
-  X, Gift, Mail, Tag, Sticker, Clover, Copy, Check, Image as ImageIcon,
+  X, Gift, Mail, Tag, Sticker, Clover, Image as ImageIcon,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import logoAsset from "@/assets/logo.png.asset.json";
 import { SITE } from "@/lib/site-content";
 import { getSpinConfig, spinLead, type SpinResult, type SpinSegment } from "@/lib/gas";
+import { redeemCoupon } from "@/lib/coupons";
 
 /* ────────────────────────────────────────────────────────────
    Prize config now lives entirely in the "Spin Config" Google
@@ -34,7 +35,11 @@ type StoredState = {
   result?: SpinResult;
   email?: string;
   wonAt?: number; // ms
+  applied?: boolean; // the prize made it into the cart
 };
+
+// Where putting the prize into the cart stands.
+type Redeem = "pending" | "applied" | "failed";
 
 function loadState(): StoredState {
   try {
@@ -192,19 +197,24 @@ export function SpinWheel() {
   const [rotation, setRotation] = useState(0);
   const [spinning, setSpinning] = useState(false);
   const [result, setResult] = useState<SpinResult | null>(null);
+  const [redeem, setRedeem] = useState<Redeem>("pending");
   const [email, setEmail] = useState("");
   const [optIn, setOptIn] = useState(false);
   const [submitting, setSubmitting] = useState(false);
-  const [copied, setCopied] = useState(false);
   const openTimer = useRef<number | null>(null);
 
-  // Hydrate from storage + fetch sheet config once per page load. A past
-  // "spun" status is never restored — every visit gets a fresh chance to
-  // spin, so a prior win only affects this tab until it's reloaded.
+  // Hydrate from storage + fetch sheet config once per page load. The wheel
+  // opens on its own only for a visitor who has never seen it, and a visitor
+  // who has spun never gets the wheel again (see showFloating below).
   useEffect(() => {
     setMounted(true);
     const s = loadState();
-    setState(s.status === "spun" ? { status: "closed" } : s);
+    setState(s);
+    // A spin whose prize never reached the cart can still be applied.
+    if (s.status === "spun" && s.result) {
+      setResult(s.result);
+      setRedeem(s.applied || !s.result.code ? "applied" : "failed");
+    }
     setFloatingHidden(sessionStorage.getItem(SESSION_DISMISS) === "1");
 
     if (s.status === "unseen") {
@@ -233,10 +243,13 @@ export function SpinWheel() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [open]);
 
+  // Reads the saved status rather than `state`: the Esc listener keeps the
+  // handler from when the popup opened, which predates a spin made since.
   const handleClose = () => {
     setOpen(false);
-    if (state.status === "unseen") {
-      const next = { ...state, status: "closed" as const };
+    const saved = loadState();
+    if (saved.status === "unseen") {
+      const next = { ...saved, status: "closed" as const };
       setState(next); saveState(next);
     }
   };
@@ -267,6 +280,24 @@ export function SpinWheel() {
     setRotation(final);
   };
 
+  const applyPrize = (spun: StoredState) => {
+    const code = spun.result?.code;
+    if (!code) return setRedeem("applied");
+    setRedeem("pending");
+    redeemCoupon(code)
+      .then((res) => {
+        if (!res.ok) throw new Error(res.message);
+        setRedeem("applied");
+        const next = { ...spun, applied: true };
+        setState(next); saveState(next);
+        toast.success("Reward unlocked and applied directly to your cart! 🎁");
+      })
+      .catch(() => {
+        setRedeem("failed");
+        toast.error("We couldn't add your reward yet — tap Try again.");
+      });
+  };
+
   const handleSpin = async () => {
     if (!segments) return;
     if (!email.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())) {
@@ -279,12 +310,14 @@ export function SpinWheel() {
       const idx = segments.findIndex((p) => p.label === res.label);
       if (idx < 0) throw new Error("Bad server response");
       runSpinAnimation(idx, segments.length);
-      // Reveal after animation
+      // Reveal after animation, then put the prize straight into the cart —
+      // the customer never sees or copies a raw code.
       window.setTimeout(() => {
         setResult(res);
         setSpinning(false);
         const next: StoredState = { status: "spun", result: res, email: email.trim(), wonAt: Date.now() };
         setState(next); saveState(next);
+        applyPrize(next);
       }, 4600);
     } catch (err) {
       console.error(err);
@@ -293,26 +326,15 @@ export function SpinWheel() {
     }
   };
 
-  const copyCode = async () => {
-    if (!result?.code) return;
-    try {
-      await navigator.clipboard.writeText(result.code);
-      setCopied(true);
-      toast.success("Code copied");
-      window.setTimeout(() => setCopied(false), 1500);
-    } catch {
-      toast.error("Copy failed");
-    }
-  };
-
   if (!mounted) return null;
   // Backend not configured / sheet empty — don't show a broken trigger or wheel at all.
   if (configError) return null;
 
   const loadingConfig = segments === null;
+  // Once spun, the wheel is done for good — unless the prize still has to
+  // reach the cart, when the trigger stays so the customer can retry.
   const showFloating = !floatingHidden && !loadingConfig
-    && (state.status === "closed" || state.status === "dismissed" || state.status === "spun");
-  const alreadySpun = state.status === "spun" && result;
+    && (state.status === "closed" || state.status === "dismissed" || (state.status === "spun" && redeem === "failed"));
 
   return (
     <>
@@ -347,10 +369,17 @@ export function SpinWheel() {
               </p>
             </div>
 
-            {loadingConfig ? null : alreadySpun ? (
-              <ResultCard result={result!} segments={segments!} onCopy={copyCode} copied={copied} />
-            ) : result ? (
-              <ResultCard result={result} segments={segments!} onCopy={copyCode} copied={copied} />
+            {loadingConfig ? null : result ? (
+              <ResultCard
+                result={result}
+                segments={segments!}
+                redeem={redeem}
+                onRetry={() => applyPrize(state)}
+                onViewCart={() => {
+                  setOpen(false);
+                  window.dispatchEvent(new CustomEvent("open-cart"));
+                }}
+              />
             ) : (
               <form
                 onSubmit={(e) => { e.preventDefault(); handleSpin(); }}
@@ -387,7 +416,7 @@ export function SpinWheel() {
 
             <p className="mt-4 text-center text-[0.65rem] text-dusty-rose">
               <span className="rounded-full border border-pink-mist/70 px-3 py-1 inline-block">
-                One spin per visit • Coupon valid for 24 hours • Cannot be combined with other offers
+                One spin per visitor • Reward valid for 24 hours • Cannot be combined with other offers
               </span>
             </p>
 
@@ -422,35 +451,41 @@ export function SpinWheel() {
 }
 
 function ResultCard({
-  result, segments, onCopy, copied,
-}: { result: SpinResult; segments: SpinSegment[]; onCopy: () => void; copied: boolean }) {
+  result, segments, redeem, onRetry, onViewCart,
+}: { result: SpinResult; segments: SpinSegment[]; redeem: Redeem; onRetry: () => void; onViewCart: () => void }) {
   const prize = segments.find((p) => p.label === result.label);
-  return (
-    <div className="mt-5 rounded-2xl bg-white/70 p-5 text-center shadow-sm ring-1 ring-pink-mist/50">
-      <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-blush-rose/15 text-rose-wine">
-        <IconFor kind={prize?.icon ?? ""} className="h-7 w-7" />
-      </div>
-      <p className="mt-3 font-display text-2xl text-rose-wine leading-tight">{result.label}</p>
-      {result.code ? (
-        <div className="mt-4 flex items-center justify-center gap-2">
-          <span className="rounded-lg border-2 border-dashed border-rose-wine/50 bg-white px-4 py-2 font-mono text-base font-semibold text-rose-wine tracking-widest">
-            {result.code}
-          </span>
-          <button
-            type="button"
-            onClick={onCopy}
-            className="grid h-10 w-10 place-items-center rounded-full bg-rose-wine text-off-white hover:bg-blush-rose"
-            aria-label="Copy code"
-          >
-            {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
-          </button>
+  if (!result.code) {
+    return (
+      <div className="mt-5 rounded-2xl bg-white/70 p-5 text-center shadow-sm ring-1 ring-pink-mist/50">
+        <div className="mx-auto grid h-14 w-14 place-items-center rounded-full bg-blush-rose/15 text-rose-wine">
+          <IconFor kind={prize?.icon ?? ""} className="h-7 w-7" />
         </div>
-      ) : (
+        <p className="mt-3 font-display text-2xl text-rose-wine leading-tight">{result.label}</p>
         <p className="mt-3 text-sm text-dusty-rose">A better spin awaits next time ♡</p>
-      )}
-      <p className="mt-3 text-[0.65rem] uppercase tracking-[0.3em] text-dusty-rose">
-        Valid for 24 hours
+      </div>
+    );
+  }
+  return (
+    <div className="mt-4 rounded-2xl bg-white/90 p-4 text-center ring-1 ring-pink-mist/60">
+      <p className="font-display text-xl text-rose-wine">🎉 Congratulations!</p>
+      <p className="mt-1 text-sm text-dusty-rose">
+        Your reward <span className="font-semibold text-rose-wine">"{result.label}"</span>{" "}
+        {redeem === "applied"
+          ? "has been automatically added to your cart."
+          : redeem === "pending"
+            ? "is being added to your cart…"
+            : "couldn't be added to your cart just yet."}
       </p>
+      {redeem === "failed" ? (
+        <button type="button" onClick={onRetry} className="pill-btn pill-btn-hover pill-primary mt-4 w-full">
+          Try again
+        </button>
+      ) : (
+        <button type="button" onClick={onViewCart} disabled={redeem === "pending"} className="pill-btn pill-btn-hover pill-primary mt-4 w-full disabled:opacity-60">
+          View My Cart →
+        </button>
+      )}
+      <p className="mt-3 text-[0.65rem] uppercase tracking-[0.3em] text-dusty-rose">Valid for 24 hours</p>
     </div>
   );
 }

@@ -1,451 +1,13 @@
 import { useEffect, useState } from "react";
-import { X, ShoppingBag, Trash2, Plus, Minus, Check, ArrowUpRight, ChevronLeft, ChevronRight, Maximize2, Sparkles, Gift, Truck } from "lucide-react";
+import { X, ShoppingBag, Trash2, Plus, Minus, Check, ArrowUpRight, Truck } from "lucide-react";
 import { toast } from "sonner";
-import { CATALOG, CONFIG, fmt, comboRealTotal, COUPON_FREEBIES, STICKER_BOOK_INCLUDED, IT_POLAROIDS_MAX, IT_POLAROIDS_MIN, type Category, type Product } from "@/lib/catalog";
+import { CATALOG, CONFIG, fmt, comboRealTotal, STICKER_BOOK_INCLUDED, IT_POLAROIDS_MAX, IT_POLAROIDS_MIN, type Category } from "@/lib/catalog";
 import { PRICES } from "@/lib/prices";
-import { useStore, isPostcard, useComboIssues, isPolaroidsOnlyCart, deliveryPriceFor, itPolaroidsQtyIn, productCouponCheck } from "@/lib/store";
-import { validateCoupon, logCart, completeOrder } from "@/lib/gas";
+import { useStore, useComboIssues, isPolaroidsOnlyCart, deliveryPriceFor, itPolaroidsQtyIn } from "@/lib/store";
+import { logCart, completeOrder } from "@/lib/gas";
+import { redeemCoupon } from "@/lib/coupons";
 import { SITE } from "@/lib/site-content";
 import { createPortal } from "react-dom";
-import { useProductReviews } from "@/lib/use-product-reviews";
-import { ReviewsPanel, ReviewStars } from "./reviews-panel";
-
-/* ================================================================ */
-/* PRODUCT GRID + CARD                       */
-/* ================================================================ */
-
-export function ProductGrid({
-  category,
-  items,
-  onOpen,
-  cols,
-}: {
-  category: Category;
-  items: Product[];
-  onOpen: (item: Product) => void;
-  cols?: string;
-}) {
-  const cart = useStore((s) => s.cart);
-  const selectedSizeId = useStore((s) => s.selectedSizeId);
-  const selectedTemplateIds = useStore((s) => s.selectedTemplateIds);
-  const templateLimit = useStore((s) => s.templateLimit());
-  
-  // Bring in the store actions so we can trigger them directly from the card
-  const setSize = useStore((s) => s.setSize);
-  const toggleTemplate = useStore((s) => s.toggleTemplate);
-  const addItem = useStore((s) => s.addItem);
-  const removeItem = useStore((s) => s.removeItem);
-
-  return (
-    <div className={`grid gap-4 ${cols ?? "sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"}`}>
-
-      {items.map((item) => {
-        // Check current states
-        const cartItem = cart.find((c) => c.category === category && c.id === item.id);
-        const inCart = !!cartItem;
-        const isSize = category === "sizes";
-        const isTemplate = category === "templates";
-        
-        const templateSelected = isTemplate && selectedTemplateIds.includes(item.id);
-        const templateDisabled = isTemplate && (!selectedSizeId || (selectedTemplateIds.length >= templateLimit && !templateSelected));
-        const sizeSelected = isSize && selectedSizeId === item.id;
-        
-        const active = templateSelected || sizeSelected || (inCart && !isTemplate && !isSize);
-
-        // The new toggle logic directly on the card
-        const handleToggle = () => {
-          if (templateDisabled && !templateSelected) {
-            if (!selectedSizeId) toast.error("Pick a page package first.");
-            else toast.error(`You can only pick ${templateLimit} template(s) for this package.`);
-            return;
-          }
-
-          if (isSize) {
-            if (sizeSelected && cartItem) {
-              removeItem(cartItem.key);
-              toast.success(`${item.name} deselected`);
-            } else {
-              setSize(item.id);
-              toast.success(`${item.name} selected`);
-            }
-          } else if (isTemplate) {
-            toggleTemplate(item.id);
-          } else {
-            if (inCart && cartItem) {
-              removeItem(cartItem.key);
-              toast.success(`${item.name} removed`);
-            } else {
-              addItem(category, item, "");
-              toast.success(`${item.name} added`);
-            }
-          }
-        };
-
-        return (
-          <div
-            key={item.id}
-            onClick={handleToggle}
-            className={`step-card group relative flex flex-col overflow-hidden transition cursor-pointer select-none ${
-              active ? "ring-2 ring-rose-wine bg-rose-wine/5" : ""
-            } ${templateDisabled ? "opacity-50 cursor-not-allowed" : ""}`}
-          >
-            {/* NEW LOGIC: Check if this item has images in site-content.ts */}
-            {/* Delivery options have no imagery — skip the thumbnail entirely. */}
-            {category !== "delivery" && (() => {
-              const photos = SITE.productImages?.[item.id] ?? [];
-              const thumb = photos[0];
-
-              return (
-                <div
-                  onClick={(e) => { e.stopPropagation(); onOpen(item); }}
-                  className="group/thumb mb-3 flex h-48 w-full relative items-center justify-center rounded-xl bg-white border border-rose-wine/10 font-display text-4xl text-rose-wine overflow-hidden cursor-zoom-in"
-                >
-
-                  {thumb ? (
-                    <img
-                      src={thumb}
-                      alt={item.name}
-                      loading="lazy"
-                      className="absolute inset-0 h-full w-full object-contain p-2"
-                    />
-                  ) : (
-                    item.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "✦"
-                  )}
-                  <span className="pointer-events-none absolute bottom-2 right-2 flex items-center gap-1 rounded-full bg-white/90 px-2 py-1 text-[0.65rem] font-medium text-rose-wine opacity-0 shadow-sm transition group-hover/thumb:opacity-100">
-                    View full image
-                  </span>
-                </div>
-            );
-            })()}
-            <h4 className="font-display text-xl text-rose-wine">{item.name}</h4>
-            <p className="mt-1 text-xs text-neutral-600 line-clamp-2">{item.desc}</p>
-            <p className="mt-2 text-sm font-semibold text-blush-rose">
-              {isTemplate ? "Included" : (() => {
-                const price = category === "delivery" ? deliveryPriceFor(item, cart) : item.price;
-                return price ? fmt(price) : "Free";
-              })()}
-            </p>
-
-            {/* Click stopPropagation prevents triggering handleToggle twice when clicking buttons */}
-            <div className="mt-3 flex gap-2" onClick={(e) => e.stopPropagation()}>
-              <button
-                onClick={handleToggle}
-                className={`pill-btn !py-2 !px-3 !text-xs flex-1 min-w-0 transition-all ${
-                  active
-                    ? "!bg-rose-wine !text-white !border-rose-wine shadow-md"
-                    : "pill-btn-hover"
-                }`}
-                type="button"
-              >
-                {active ? (
-                  <span className="flex min-w-0 items-center justify-center gap-1">
-                    <Check className="h-3 w-3 shrink-0" /> <span className="truncate">Selected</span>
-                  </span>
-                ) : (
-                  "Select"
-                )}
-              </button>
-
-              {/* View More always visible for shoppable items; templates/sizes only when active.
-                  Delivery options have no imagery or reviews, so no View More. */}
-              {category !== "delivery" && (active || (!isSize && !isTemplate)) && (
-                <button
-                  onClick={() => onOpen(item)}
-                  className="pill-btn pill-btn-hover !py-2 !px-3 !text-xs shrink-0"
-                  type="button"
-                >
-                  View More
-                </button>
-              )}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/* ================================================================ */
-/*                         PRODUCT MODAL                            */
-/* ================================================================ */
-
-export function ProductModal({
-  open,
-  category,
-  product,
-  onClose,
-}: {
-  open: boolean;
-  category: Category | null;
-  product: Product | null;
-  onClose: () => void;
-}) {
-  const [note, setNote] = useState("");
-  const [slide, setSlide] = useState(0);
-  const [lightboxOpen, setLightboxOpen] = useState(false);
-  const {
-    reviews, loading: loadingReviews, posting, avg: avgRating, reviewerId,
-    rvName, setRvName, rvText, setRvText, rvRating, setRvRating,
-    submitReview: handleSubmitReview, deleteReview: handleDeleteReview,
-  } = useProductReviews(product?.id ?? null);
-
-  const setSize = useStore((s) => s.setSize);
-  const toggleTemplate = useStore((s) => s.toggleTemplate);
-  const addItem = useStore((s) => s.addItem);
-  const templateLimit = useStore((s) => s.templateLimit());
-  const selectedSizeId = useStore((s) => s.selectedSizeId);
-
-  useEffect(() => {
-    if (open && product) {
-      setNote("");
-      setSlide(0);
-      setLightboxOpen(false);
-    }
-  }, [open, product?.id]);
-
-  if (!open || !product || !category) return null;
-
-  const isSize = category === "sizes";
-  const isTemplate = category === "templates";
-
-  const initials = product.name.replace(/[^A-Za-z0-9]/g, "").slice(0, 2) || "✦";
-  const gradients = [
-    "from-pink-mist to-blush-rose",
-    "from-blush-rose to-rose-wine",
-    "from-dusty-rose to-pink-mist",
-  ];
-  const photos: string[] = SITE.productImages?.[product.id] ?? [];
-  const slideCount = photos.length > 0 ? photos.length : gradients.length;
-  const currentSlide = slide % slideCount;
-  const goPrev = () => setSlide((currentSlide - 1 + slideCount) % slideCount);
-  const goNext = () => setSlide((currentSlide + 1) % slideCount);
-
-  const handleAdd = () => {
-    if (isSize) {
-      setSize(product.id);
-      toast.success(`${product.name} selected — pick ${product.templateLimit} template(s).`);
-    } else if (isTemplate) {
-      if (!selectedSizeId) return toast.error("Pick a page package first.");
-      const ok = toggleTemplate(product.id);
-      if (!ok) return toast.error(`You can only pick ${templateLimit} template(s) for this package.`);
-      toast.success(`${product.name} toggled.`);
-    } else {
-      addItem(category, product, note);
-      toast.success(`${product.name} added to cart.`);
-    }
-    onClose();
-  };
-
-
-
-  return (
-    <>
-      <ModalShell onClose={onClose} maxW="max-w-6xl">
-        <div className="grid gap-8 md:grid-cols-12">
-
-          {/* ================= GALLERY ================= */}
-          <div className="md:col-span-7">
-            <div className="flex gap-3">
-              {/* Vertical thumbnail rail — desktop, Amazon-style */}
-              {slideCount > 1 && (
-                <div className="hidden sm:flex flex-col gap-2 w-20 shrink-0 max-h-[440px] overflow-y-auto pr-0.5">
-                  {Array.from({ length: slideCount }).map((_, i) => (
-                    <button
-                      key={i}
-                      type="button"
-                      onClick={() => setSlide(i)}
-                      className={`h-16 w-16 shrink-0 rounded-lg overflow-hidden border-2 transition ${
-                        i === currentSlide ? "border-rose-wine" : "border-transparent opacity-70 hover:opacity-100"
-                      }`}
-                    >
-                      {photos.length > 0 ? (
-                        <img src={photos[i]} alt="" loading="lazy" className="h-full w-full object-cover" />
-                      ) : (
-                        <div className={`h-full w-full grid place-items-center bg-gradient-to-br ${gradients[i]} font-display text-white text-sm`}>
-                          {initials}
-                        </div>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              )}
-
-              {/* Main image — white background (not pink), click opens lightbox */}
-              <button
-                type="button"
-                onClick={() => setLightboxOpen(true)}
-                className="group relative flex-1 h-[420px] md:h-[500px] rounded-2xl overflow-hidden bg-white border border-rose-wine/10 cursor-zoom-in"
-              >
-                {photos.length > 0 ? (
-                  <img
-                    src={photos[currentSlide]}
-                    alt={product.name}
-                    loading="lazy"
-                    className="absolute inset-0 h-full w-full object-contain p-3"
-                  />
-                ) : (
-                  <div className={`absolute inset-0 grid place-items-center bg-gradient-to-br ${gradients[currentSlide]} font-display text-7xl text-white`}>
-                    {initials}
-                  </div>
-                )}
-
-                <span className="absolute bottom-3 right-3 flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-xs font-medium text-rose-wine opacity-0 shadow-sm transition group-hover:opacity-100">
-                  <Maximize2 className="h-3.5 w-3.5" /> View full image
-                </span>
-
-                {slideCount > 1 && (
-                  <>
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      onClick={(e) => { e.stopPropagation(); goPrev(); }}
-                      className="absolute left-2 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/80 text-rose-wine hover:bg-white z-10"
-                      aria-label="Previous image"
-                    ><ChevronLeft className="h-5 w-5" /></span>
-                    <span
-                      role="button"
-                      tabIndex={0}
-                      onClick={(e) => { e.stopPropagation(); goNext(); }}
-                      className="absolute right-2 top-1/2 -translate-y-1/2 grid h-9 w-9 place-items-center rounded-full bg-white/80 text-rose-wine hover:bg-white z-10"
-                      aria-label="Next image"
-                    ><ChevronRight className="h-5 w-5" /></span>
-                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1.5 z-10 sm:hidden">
-                      {Array.from({ length: slideCount }).map((_, i) => (
-                        <span key={i} className={`h-1.5 w-1.5 rounded-full ${i === currentSlide ? "bg-rose-wine" : "bg-rose-wine/30"}`} />
-                      ))}
-                    </div>
-                  </>
-                )}
-              </button>
-            </div>
-
-            {/* Mobile thumbnail row (below image, since no side rail on small screens) */}
-            {slideCount > 1 && (
-              <div className="mt-3 flex gap-2 overflow-x-auto sm:hidden">
-                {Array.from({ length: slideCount }).map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => setSlide(i)}
-                    className={`h-14 w-20 shrink-0 rounded-lg overflow-hidden border-2 ${
-                      i === currentSlide ? "border-rose-wine" : "border-transparent opacity-70"
-                    }`}
-                  >
-                    {photos.length > 0 ? (
-                      <img src={photos[i]} alt="" loading="lazy" className="h-full w-full object-cover" />
-                    ) : (
-                      <div className={`h-full w-full grid place-items-center bg-gradient-to-br ${gradients[i]} font-display text-white text-sm`}>{initials}</div>
-                    )}
-                  </button>
-                ))}
-              </div>
-            )}
-          </div>
-
-          {/* ================= DETAILS ================= */}
-          <div className="md:col-span-5 flex flex-col">
-            <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">{category}</p>
-            <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">{product.name}</h3>
-
-            {category !== "delivery" && <ReviewStars avg={avgRating} count={reviews.length} />}
-
-            <p className="mt-4 text-3xl font-semibold text-blush-rose">
-              {isTemplate ? "Included with package" : product.price ? fmt(product.price) : "Free"}
-            </p>
-
-            <div className="mt-4 h-px bg-rose-wine/10" />
-
-            <p className="mt-4 text-sm leading-relaxed text-neutral-700">{product.desc}</p>
-
-            {!isSize && !isTemplate && (
-              <>
-                <label className="mt-5 block text-sm font-medium text-rose-wine">Note (optional)</label>
-                <textarea
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  rows={2}
-                  className="mt-1 w-full rounded-xl border border-rose-wine/20 bg-white/60 p-3 text-sm outline-none focus:border-rose-wine"
-                  maxLength={300}
-                  placeholder="Anything we should know?"
-                />
-              </>
-            )}
-
-            <button onClick={handleAdd} className="pill-btn pill-btn-hover pill-primary mt-6 w-full !py-3 !text-base">
-              {isSize ? "Select package" : isTemplate ? "Select" : "Add to cart"}
-            </button>
-          </div>
-        </div>
-
-        {/* Delivery options are not reviewable */}
-        {category !== "delivery" && (
-          <ReviewsPanel
-            reviews={reviews} loading={loadingReviews} posting={posting} reviewerId={reviewerId}
-            rvName={rvName} setRvName={setRvName} rvText={rvText} setRvText={setRvText}
-            rvRating={rvRating} setRvRating={setRvRating}
-            onSubmit={handleSubmitReview} onDelete={handleDeleteReview}
-          />
-        )}
-      </ModalShell>
-
-{/* ================= FULLSCREEN LIGHTBOX ================= */}
-      {lightboxOpen && createPortal(
-        <div
-          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/90 p-4"
-          onClick={() => setLightboxOpen(false)}
-        >
-          <button
-            onClick={() => setLightboxOpen(false)}
-            className="absolute right-4 top-4 rounded-full bg-white/10 p-2 text-white hover:bg-white/20 z-10"
-            aria-label="Close"
-          >
-            <X className="h-6 w-6" />
-          </button>
-
-          {slideCount > 1 && (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); goPrev(); }}
-                className="absolute left-4 top-1/2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20 z-10"
-                aria-label="Previous image"
-              ><ChevronLeft className="h-6 w-6" /></button>
-              <button
-                onClick={(e) => { e.stopPropagation(); goNext(); }}
-                className="absolute right-4 top-1/2 -translate-y-1/2 grid h-11 w-11 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20 z-10"
-                aria-label="Next image"
-              ><ChevronRight className="h-6 w-6" /></button>
-            </>
-          )}
-
-          {photos.length > 0 ? (
-            <img
-              src={photos[currentSlide]}
-              alt={product.name}
-              onClick={(e) => e.stopPropagation()}
-              className="max-h-[85vh] max-w-[90vw] object-contain rounded-lg"
-            />
-          ) : (
-            <div
-              onClick={(e) => e.stopPropagation()}
-              className={`h-72 w-72 grid place-items-center rounded-2xl bg-gradient-to-br ${gradients[currentSlide]} font-display text-8xl text-white`}
-            >
-              {initials}
-            </div>
-          )}
-
-          {slideCount > 1 && (
-            <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 z-10">
-              {Array.from({ length: slideCount }).map((_, i) => (
-                <span key={i} className={`h-1.5 w-1.5 rounded-full ${i === currentSlide ? "bg-white" : "bg-white/40"}`} />
-              ))}
-            </div>
-          )}
-        </div>,
-        document.body
-      )}
-    </>
-  );
-}
 
 /* ================================================================ */
 /*                          CART DRAWER                             */
@@ -458,7 +20,6 @@ export function ProductModal({
 export function PromoCodeBox() {
   const coupon = useStore((s) => s.coupon);
   const setCoupon = useStore((s) => s.setCoupon);
-  const applyCouponFreebie = useStore((s) => s.applyCouponFreebie);
 
   const [promo, setPromo] = useState("");
   const [msg, setMsg] = useState<string | null>(null);
@@ -472,41 +33,15 @@ export function PromoCodeBox() {
   const applyPromo = async () => {
     if (!promo.trim()) return;
     setMsg(null);
-    // Product coupons (e.g. PATAKA200) are checked here against the cart,
-    // not by the Coupons sheet.
-    const productCoupon = productCouponCheck(promo, useStore.getState().cart);
-    if (productCoupon) {
-      const code = promo.trim().toUpperCase();
-      if (!productCoupon.valid) {
-        setCoupon(null);
-        setMsg(productCoupon.message);
-        return;
-      }
-      applyCouponFreebie(code); // clears any freebie from an earlier code
-      setCoupon({ code, percent: 0, amount: productCoupon.amount });
-      setMsg(`Coupon applied — ${fmt(productCoupon.amount)} off`);
-      toast.success(`${fmt(productCoupon.amount)} off applied`);
-      return;
-    }
     setChecking(true);
     try {
-      const res = await validateCoupon(promo);
-      const code = promo.trim().toUpperCase();
-      if (res.valid) {
-        setCoupon({ code, percent: res.percent || 0 });
-        const freebieId = COUPON_FREEBIES[code];
-        if (freebieId) {
-          applyCouponFreebie(code);
-          const product = CATALOG.promotions.find((p) => p.id === freebieId);
-          setMsg(`Coupon applied — ${product?.name ?? "free gift"} added to cart 🎁`);
-          toast.success(`${product?.name ?? "Free gift"} added to your cart`);
-        } else {
-          setMsg(`Coupon applied — ${res.percent}% off`);
-          toast.success(`${res.percent}% off applied`);
-        }
+      const res = await redeemCoupon(promo);
+      if (res.ok) {
+        setMsg(`Coupon applied — ${res.message}`);
+        toast.success(res.message);
       } else {
         setCoupon(null);
-        setMsg(res.message || "Invalid code");
+        setMsg(res.message);
       }
     } catch {
       setMsg("Could not validate — try again.");
@@ -540,8 +75,8 @@ export function PromoCodeBox() {
 // Cart badges show the category key, except where the key's internal name
 // differs from what customers see.
 const CATEGORY_BADGE: Partial<Record<Category, string>> = {
-  "memory-card": "photo card",
-  friendship: "single & duo card",
+  "memory-card": "memory card",
+  friendship: "license card",
   "it-polaroids": "instant polaroids",
   "sticker-book": "sticker book bundle",
 };
@@ -633,9 +168,9 @@ export function CartDrawer({
       ? [`Select ${friendshipDesignLimit - selectedFriendshipDesignIds.length} more card design${friendshipDesignLimit - selectedFriendshipDesignIds.length === 1 ? "" : "s"} (${selectedFriendshipDesignIds.length}/${friendshipDesignLimit} picked).`]
       : []),
   ];
-  // Delivery is no longer gated here — it's chosen either on-page (Step 6)
-  // or inside the checkout popup (CustomerInfoModal), which blocks moving
-  // on to payment until it's picked. Gating it a second time here would
+  // Delivery is no longer gated here — it's chosen inside the checkout
+  // popup (CustomerInfoModal), which blocks moving on to payment until it's
+  // picked. Gating it a second time here would
   // just disable this button with no way to fix it from this drawer.
   // Numbered the same way templates are ("[1, 2, 3]" in CartSummaryPanel) —
   // extract the design's number from its id (card-1 -> "01") rather than
@@ -655,12 +190,8 @@ export function CartDrawer({
   const comboOriginal = activeCombo ? comboRealTotal(activeCombo.id) : 0;
   const comboSavings = activeCombo ? Math.max(0, comboOriginal - activeCombo.price) : 0;
 
-  // The free postcard (in every non-empty cart, see withPostcard in
-  // store.ts) gets its own gold row below — combo-linked or not — so it's
-  // kept out of both the coupon-freebie list and the combo's bullet list.
-  const postcard = cart.find(isPostcard);
-  const promoItems = cart.filter((c) => c.category === "promotions" && !c.comboId && !isPostcard(c));
-  // Single & Duo Card design picks are zero-cost sub-selections of the
+  const promoItems = cart.filter((c) => c.category === "promotions" && !c.comboId);
+  // License Card design picks are zero-cost sub-selections of the
   // "friendship" row (same relationship templates have to a magazine's
   // "sizes" row) — fold them into a note under that row (below) instead of
   // letting them leak through as their own bare ₹0.00-ish rows.
@@ -683,19 +214,6 @@ export function CartDrawer({
 
           <div className="mt-4 flex-1 space-y-3 overflow-y-auto pr-1">
             {cart.length === 0 && <p className="text-center text-dusty-rose py-10">Your cart is empty.</p>}
-
-            {cart.length > 0 && (
-              <div className="gold-glow relative overflow-hidden rounded-2xl border border-amber-300/80 bg-gradient-to-r from-amber-100 via-amber-50 to-amber-100 p-4 text-center">
-                <div className="gold-shimmer pointer-events-none absolute inset-0" aria-hidden />
-                <Sparkles className="gold-sparkle relative mx-auto h-6 w-6 text-amber-500" />
-                <p className="relative mt-2 text-[0.7rem] font-bold uppercase tracking-[0.15em] text-amber-900">
-                  ✧ ✨ Free keepsake postcard included with every order ✨ ✧
-                </p>
-                <p className="relative mt-1 text-xs italic text-amber-700">
-                  A free limited-edition aesthetic postcard has been added to your package as our gift to you.
-                </p>
-              </div>
-            )}
 
             {cart.length > 0 && <CartSummaryPanel />}
 
@@ -739,7 +257,7 @@ export function CartDrawer({
                   )}
                   {item.category === "combos" && (
                     <ul className="mt-2 space-y-0.5 text-xs text-neutral-600">
-                      {cart.filter((included) => included.comboId === item.id && included.category !== "friendship-designs" && included.category !== "memory-card-designs" && !isPostcard(included)).map((included) => (
+                      {cart.filter((included) => included.comboId === item.id && included.category !== "friendship-designs" && included.category !== "memory-card-designs").map((included) => (
                         <li key={included.key}>• {included.name}</li>
                       ))}
                     </ul>
@@ -761,21 +279,6 @@ export function CartDrawer({
                 </div>
               </div>
             ))}
-
-            {postcard && (
-              <div className="flex items-center gap-3 rounded-2xl border border-amber-300/60 bg-amber-50/70 p-3">
-                <div className="grid h-12 w-12 shrink-0 place-items-center rounded-xl bg-gradient-to-br from-amber-300 to-amber-500 text-white">
-                  <Gift className="h-5 w-5" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="truncate font-medium text-amber-900">Free Keepsake Postcard</p>
-                  <span className="mt-1 inline-block rounded-full border border-amber-300/60 bg-amber-100 px-2 py-0.5 text-[0.65rem] font-semibold text-amber-900">
-                    ✨ FREE GIFT
-                  </span>
-                </div>
-                <p className="text-sm font-bold text-amber-600">FREE</p>
-              </div>
-            )}
 
             {promoItems.length > 0 && (
               <div className="rounded-2xl bg-blush-rose/10 p-3 ring-1 ring-blush-rose/20">
@@ -901,7 +404,7 @@ export function CustomerInfoModal({
     if (!/^\d{6}$/.test(info.pincode)) return toast.error("Enter a valid 6-digit pincode");
     if (info.whatsapp.replace(/\D/g, "").length < 10) return toast.error("Enter a valid WhatsApp number");
     if (info.preferredDeliveryDate && info.preferredDeliveryDate < minDeliveryDate)
-      return toast.error("Pick a delivery date at least 4 days from today.");
+      return toast.error(`Pick a delivery date at least ${DELIVERY_BUFFER_DAYS} days from today.`);
 
 
     setSubmitting(true);
@@ -941,6 +444,7 @@ export function CustomerInfoModal({
         <div className="grid grid-cols-2 gap-2">
           {CATALOG.delivery.map((d) => {
             const active = deliveryItem?.id === d.id;
+            const eta = getEstimatedDeliveryDate(d.id === "del-exp");
             return (
               <button
                 key={d.id}
@@ -956,6 +460,9 @@ export function CustomerInfoModal({
                   {active && <Check className="h-3.5 w-3.5 shrink-0" />} {d.name}
                 </p>
                 <p className="text-xs text-dusty-rose">{deliveryPriceFor(d, cart) ? fmt(deliveryPriceFor(d, cart)) : "Free"}</p>
+                <p className="mt-0.5 text-[0.7rem] text-neutral-600">
+                  Arrives by {eta.formatted} ({eta.days} days)
+                </p>
               </button>
             );
           })}
@@ -1201,9 +708,10 @@ export function ModalShell({ children, onClose, maxW = "max-w-2xl" }: { children
   );
 }
 
-// Production plus shipping needs at least 4 days. Built from local date parts
+// The preferred delivery date can be no sooner than Standard Delivery's
+// 12-day estimate (see getEstimatedDeliveryDate). Built from local date parts
 // (not toISOString, which is UTC and lands a day early before 05:30 IST).
-const DELIVERY_BUFFER_DAYS = 4;
+const DELIVERY_BUFFER_DAYS = 12;
 function earliestDeliveryDate(): string {
   const d = new Date();
   d.setDate(d.getDate() + DELIVERY_BUFFER_DAYS);
@@ -1342,43 +850,27 @@ function CartSummaryPanel() {
   );
 }
 
-// Formats a date as "15 Aug".
-function etaLabel(d: Date) {
-  return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
+// Standard Delivery arrives about 12 days after the order, Express about 8 —
+// production and dispatch included.
+function getEstimatedDeliveryDate(isExpress: boolean): { date: Date; formatted: string; days: number } {
+  const days = isExpress ? 8 : 12;
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  const formatted = date.toLocaleDateString("en-IN", { weekday: "short", day: "numeric", month: "short" });
+  return { date, formatted, days };
 }
 
 function DeliveryEta() {
   const cart = useStore((s) => s.cart);
   const delivery = cart.find((c) => c.category === "delivery");
   const isExpress = delivery?.id === "del-exp";
-  const range = isExpress
-    ? { min: 3, max: 4, label: "Express Shipping" }
-    : { min: 7, max: 8, label: "Standard Shipping" };
-
-  // Estimated window = shipping range + a 3-day production/dispatch buffer.
-  const BUFFER_DAYS = 3;
-  const now = new Date();
-  const start = new Date(now);
-  start.setDate(start.getDate() + range.min + BUFFER_DAYS);
-  const end = new Date(now);
-  end.setDate(end.getDate() + range.max + BUFFER_DAYS);
+  const { formatted, days } = getEstimatedDeliveryDate(isExpress);
 
   return (
-    <div className="rounded-xl bg-rose-wine/5 px-3 py-2 text-xs leading-relaxed text-rose-wine">
-      {delivery ? (
-        <>
-          <span className="font-semibold">{range.label}</span> · Estimated delivery:{" "}
-          <span className="font-semibold">{etaLabel(start)} – {etaLabel(end)}</span>{" "}
-          ({range.min}–{range.max} days of shipping, plus a short window for your magazine to be
-          finalised and dispatched).
-        </>
-      ) : (
-        <>
-          <span className="font-semibold">Delivery</span> · Choose a delivery option in Step 6 to see
-          your estimated timeframe. Delivery days are counted after your magazine is completed by our
-          team.
-        </>
-      )}
+    <div className="rounded-xl bg-rose-wine/5 px-3 py-2.5 text-xs leading-relaxed text-rose-wine">
+      <span className="font-semibold">{isExpress ? "Express Shipping" : "Standard Delivery"}</span> · Estimated delivery by{" "}
+      <span className="font-bold underline decoration-rose-wine/30">{formatted}</span>{" "}
+      ({days} days from order date, including production &amp; dispatch).
     </div>
   );
 }

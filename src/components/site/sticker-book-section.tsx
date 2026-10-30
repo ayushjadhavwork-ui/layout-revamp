@@ -26,6 +26,7 @@ export function StickerBookSection() {
   const [index, setIndex] = useState(0);
   const [zoomed, setZoomed] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [preview, setPreview] = useState<(typeof STICKER_BOOK_INCLUDED)[number] | null>(null);
   const touchX = useRef<number | null>(null);
   const cart = useStore((s) => s.cart);
   const activeCoupon = useStore((s) => s.coupon);
@@ -126,15 +127,23 @@ export function StickerBookSection() {
           {STICKER_BOOK_INCLUDED.map((inc) => {
             const image = SITE.productImages[inc.image]?.[0];
             return (
-              <div key={inc.name} className="flex items-center gap-3 rounded-2xl bg-white/80 p-3 shadow-sm ring-1 ring-[#e8d3a0] sm:flex-col sm:p-4 sm:text-center">
-                <div className="grid h-20 w-24 shrink-0 place-items-center overflow-hidden rounded-xl bg-[#fdf6e3] sm:h-36 sm:w-full">
-                  {image && <img src={image} alt={inc.name} loading="lazy" className="h-full w-full object-contain p-1" />}
+              <button
+                key={inc.name}
+                type="button"
+                onClick={() => setPreview(inc)}
+                aria-label={`Preview ${inc.name}`}
+                className="flex cursor-zoom-in items-center gap-3 rounded-2xl bg-white/80 p-3 text-left shadow-sm ring-1 ring-[#e8d3a0] transition hover:ring-[#8e1b1b]/40 sm:flex-col sm:p-4 sm:text-center"
+              >
+                {/* The image keeps its own shape inside the frame (tall strip,
+                    landscape licence, portrait card) so nothing is cropped. */}
+                <div className="flex h-28 w-24 shrink-0 items-center justify-center rounded-xl bg-[#fdf6e3] p-1.5 sm:h-48 sm:w-full">
+                  {image && <img src={image} alt={inc.name} loading="lazy" className="max-h-full max-w-full object-contain" />}
                 </div>
                 <div className="min-w-0">
                   <p className="font-display text-lg leading-tight text-[#8e1b1b]">{inc.name}</p>
                   <p className="mt-1 text-xs text-neutral-600">{inc.note}</p>
                 </div>
-              </div>
+              </button>
             );
           })}
         </div>
@@ -179,7 +188,27 @@ export function StickerBookSection() {
       </div>
 
       {zoomed && <SpreadLightbox index={index} onIndex={setIndex} onClose={() => setZoomed(false)} />}
+      {preview && <IncludedPreview item={preview} onClose={() => setPreview(null)} />}
     </div>
+  );
+}
+
+// One included keepsake on its own, uncropped and at full resolution.
+function IncludedPreview({ item, onClose }: { item: (typeof STICKER_BOOK_INCLUDED)[number]; onClose: () => void }) {
+  const image = SITE.productImages[item.image]?.[0];
+  return (
+    <ModalShell onClose={onClose} maxW="max-w-2xl">
+      <div className="mt-6 flex justify-center rounded-2xl bg-[#fdf6e3] p-3 ring-1 ring-[#e8d3a0]">
+        {image && <img src={image} alt={item.name} className="max-h-[65vh] w-auto max-w-full object-contain" />}
+      </div>
+      <p className="mt-4 text-center font-display text-2xl text-[#8e1b1b]">{item.name}</p>
+      <p className="mt-1 text-center text-sm text-neutral-600">{item.note}</p>
+      <div className="mt-5 flex justify-center">
+        <button type="button" onClick={onClose} className="pill-btn pill-btn-hover">
+          Close Preview
+        </button>
+      </div>
+    </ModalShell>
   );
 }
 

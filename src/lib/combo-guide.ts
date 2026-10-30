@@ -24,9 +24,9 @@ export function comboSteps(comboId: string, issues: ComboIssue[]): ComboStep[] {
     add("templates", `Pick ${plural(limit, "magazine template")}`);
   }
   if (recipe.pocketCount) add("pocket", `Pick ${plural(POCKET_TEMPLATE_LIMIT, "Pocket Magazine template")}`);
-  if (recipe.memoryCardCount) add("memory-card", `Pick ${plural(recipe.memoryCardCount, "Photo Card design")}`);
+  if (recipe.memoryCardCount) add("memory-card", `Pick ${plural(recipe.memoryCardCount, "Memory Card design")}`);
   if (recipe.friendshipCount) {
-    add("friendship-card", recipe.friendshipCount === 2 ? "Pick Duo Card + 2 designs" : "Pick Single Card + design");
+    add("friendship-card", recipe.friendshipCount === 2 ? "Pick Duo License Card + 2 designs" : "Pick License Card + design");
   }
   if (recipe.stripCount) add("strips", `Pick ${plural(recipe.stripCount, "Polaroid Strip")}`);
   return steps;

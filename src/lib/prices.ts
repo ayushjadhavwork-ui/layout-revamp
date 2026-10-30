@@ -88,7 +88,8 @@ export const PRICES = {
   // -------------------------------------------------------
   // POLAROID STRIPS — bundle pricing by HOW MANY strips picked.
   // Individual strips have no price of their own; the total below
-  // is charged for that many strips together.
+  // is charged for that many strips together. Keep one line for every
+  // count up to the number of strips on the site (SITE.stripCount).
   // -------------------------------------------------------
   stripTiers: {
     1: 100, // any 1 strip
@@ -96,7 +97,18 @@ export const PRICES = {
     3: 175, // any 3 strips
     4: 220, // any 4 strips
     5: 275, // any 5 strips
+    6: 330, // any 6 strips
+    7: 375, // any 7 strips
+    8: 420, // any 8 strips
+    9: 460, // any 9 strips
+    10: 500, // any 10 strips
+    11: 550, // any 11 strips
+    12: 600, // any 12 strips
   },
+
+  // The bundle packs shown as chips in the Polaroid Strips pricing banner
+  // (strip counts — each must have a line in stripTiers above).
+  stripBundlePacks: [1, 2, 3, 4, 5, 6, 8, 10, 12],
 
   // -------------------------------------------------------
   // DELIVERY
@@ -108,12 +120,13 @@ export const PRICES = {
 
   // -------------------------------------------------------
   // DELIVERY — POLAROIDS-ONLY CARTS
-  // Standard Delivery price when every paid item in the cart is a polaroid
+  // Delivery prices when every paid item in the cart is a polaroid
   // (THE IT POLAROIDS and/or Polaroid Packs). Any other cart uses the
-  // "delivery" price above.
+  // "delivery" prices above.
   // -------------------------------------------------------
   deliveryPolaroidsOnly: {
-    "del-std": 80,
+    "del-std": 80, // Standard Delivery (polaroid shipping)
+    "del-exp": 180, // Express Shipping (₹100 express + ₹80 polaroid shipping)
   },
 
   // -------------------------------------------------------
@@ -154,9 +167,9 @@ export const PRICES = {
   // quantity (1, 2, or 3) chooses the matching bundle price.
   // -------------------------------------------------------
   memoryCardTiers: {
-    1: 150, // any 1 Photo Card
-    2: 220, // any 2 Photo Cards
-    3: 300, // any 3 Photo Cards
+    1: 150, // any 1 Memory Card
+    2: 220, // any 2 Memory Cards
+    3: 300, // any 3 Memory Cards
   },
 
   // -------------------------------------------------------

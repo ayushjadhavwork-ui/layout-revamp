@@ -40,13 +40,13 @@ type State = {
   // own independent template picks, so buying 2-3 Pocket Magazines together
   // means picking templates for each individually.
   pocketUnits: PocketUnit[];
-  // Single & Duo Card quantity tier (Single/Duo) and its design picks — same
+  // License Card quantity tier (Single/Duo) and its design picks — same
   // "parent selection drives a sub-selection limit" shape as
   // selectedSizeId/selectedTemplateIds above, but flat (only ever one
-  // Single & Duo Card line at a time) rather than multi-unit like Pocket.
+  // License Card line at a time) rather than multi-unit like Pocket.
   selectedFriendshipId: string | null;
   selectedFriendshipDesignIds: string[];
-  // A multiset of Photo Card design ids. Quantity determines the bundle
+  // A multiset of Memory Card design ids. Quantity determines the bundle
   // price, and the same design may appear up to three times.
   selectedMemoryCardDesignIds: string[];
   stripSelections: string[];
@@ -72,7 +72,7 @@ type State = {
   removePocketUnit: (uid: string) => void;
   togglePocketTemplate: (uid: string, id: string) => boolean; // returns success
   randomizePocketTemplates: (uid: string) => number; // returns count picked
-  // Selects/switches the Single & Duo Card quantity tier. If the previously
+  // Selects/switches the License Card quantity tier. If the previously
   // selected tier had more design picks than the new tier allows, keeps
   // only the first-picked design(s) and drops the rest (truncate, not a
   // full reset) — see catalog.ts's designLimit field.
@@ -139,7 +139,7 @@ const memoryCardCartLines = (ids: string[]): CartItem[] => {
     key: key("memory-card", "bundle"),
     category: "memory-card",
     id: "bundle",
-    name: `The Photo Card × ${ids.length}`,
+    name: `The Memory Card × ${ids.length}`,
     price: MEMORY_CARD_TIERS[ids.length] ?? 0,
   };
   const designs = [...counts].map(([id, n]) => {
@@ -175,7 +175,7 @@ const COMBO_INDEPENDENT: Category[] = ["delivery", "newspaper", "pocket", "pocke
 const COMBO_MANAGED: Category[] = ["sizes", "templates", "addons", "polaroids", "strips"];
 
 // The active combo, but only when its recipe actually includes this product.
-// Strips, Single & Duo Cards and Photo Cards picked beside a combo that doesn't
+// Strips, License Cards and Memory Cards picked beside a combo that doesn't
 // include them are ordinary paid extras: full price and no comboId (so
 // deselecting the combo keeps them and the invoice lists them on their own).
 type ComboCountField = "stripCount" | "friendshipCount" | "memoryCardCount";
@@ -184,35 +184,9 @@ const comboIncluding = (cart: CartItem[], field: ComboCountField): CartItem | un
   return combo && COMBO_RECIPES[combo.id]?.[field] ? combo : undefined;
 };
 
-// Every order ships with one free keepsake postcard, so a cart holding at
-// least one paid item always carries exactly one "promo-postcard" line, and
-// any other cart (empty, or only free lines like Standard Shipping) none.
-// A combo adds its own comboId-linked postcard (checked by
-// combo-validation.ts) — that one wins when present; otherwise a standalone
-// line is added. Enforced centrally by the wrapped `set` in the store below,
-// so no individual cart action can forget it.
-export const POSTCARD_ID = "promo-postcard";
-export const isPostcard = (c: CartItem) => c.category === "promotions" && c.id === POSTCARD_ID;
-
-const withPostcard = (cart: CartItem[]): CartItem[] => {
-  const postcards = cart.filter(isPostcard);
-  if (!cart.some((c) => c.price > 0)) return postcards.length ? cart.filter((c) => !isPostcard(c)) : cart;
-  const keep = postcards.find((c) => c.comboId) ?? postcards[0];
-  if (keep && postcards.length === 1) return cart;
-  const product = CATALOG.promotions.find((p) => p.id === POSTCARD_ID);
-  const line: CartItem = keep ?? {
-    key: key("promotions", POSTCARD_ID),
-    category: "promotions",
-    id: POSTCARD_ID,
-    name: product?.name ?? "Free Postcard",
-    price: 0,
-  };
-  return [...cart.filter((c) => !isPostcard(c)), line];
-};
-
-// Standard Delivery costs PRICES.deliveryPolaroidsOnly when every paid item
-// is a polaroid (THE IT POLAROIDS and/or Polaroid Packs) and the normal
-// PRICES.delivery price otherwise. Delivery and free promotional lines don't
+// Delivery costs PRICES.deliveryPolaroidsOnly when every paid item is a
+// polaroid (THE IT POLAROIDS and/or Polaroid Packs) and the normal
+// PRICES.delivery price otherwise — for Standard and Express alike. Delivery and free promotional lines don't
 // count either way; combo-linked lines sit under a "combos" line, which is
 // never a polaroid, so any combo keeps shipping at the normal price.
 const POLAROID_CATEGORIES: Category[] = ["it-polaroids", "polaroids"];
@@ -227,15 +201,17 @@ export const standardDeliveryPrice = (cart: Pick<CartItem, "category">[]): numbe
 
 // The price a delivery option will charge for this cart — used wherever a
 // delivery option is shown, so the label always matches the cart line.
-export const deliveryPriceFor = (product: Pick<Product, "id" | "price">, cart: Pick<CartItem, "category">[]): number =>
-  product.id === "del-std" ? standardDeliveryPrice(cart) : product.price;
+export const deliveryPriceFor = (product: Pick<Product, "id" | "price">, cart: Pick<CartItem, "category">[]): number => {
+  if (product.id !== "del-std" && product.id !== "del-exp") return product.price;
+  return isPolaroidsOnlyCart(cart) ? priceOf("deliveryPolaroidsOnly", product.id) : priceOf("delivery", product.id);
+};
 
-// A delivery line's price is fixed when it's added, so re-price Standard
-// Delivery after every cart change (enforced by the wrapped `set` below).
+// A delivery line's price is fixed when it's added, so re-price it after
+// every cart change (enforced by the wrapped `set` below).
 const withDeliveryPrice = (cart: CartItem[]): CartItem[] => {
-  const index = cart.findIndex((c) => c.category === "delivery" && c.id === "del-std");
+  const index = cart.findIndex((c) => c.category === "delivery");
   if (index === -1) return cart;
-  const price = standardDeliveryPrice(cart);
+  const price = deliveryPriceFor(cart[index], cart);
   if (cart[index].price === price) return cart;
   return cart.map((c, i) => (i === index ? { ...c, price } : c));
 };
@@ -284,7 +260,7 @@ const couponStillValid = (coupon: State["coupon"], cart: CartItem[]): boolean =>
 // (see the version notes on the persist options below).
 export const migrateSavedCart = (persisted: unknown, version: number) => {
   const s = persisted as Record<string, unknown>;
-  if (!s || typeof s !== "object" || version >= 7) return s;
+  if (!s || typeof s !== "object" || version >= 8) return s;
   let cart = Array.isArray(s.cart) ? (s.cart as CartItem[]) : [];
   const patch: Record<string, unknown> = { ...s };
   if (version < 2) {
@@ -329,7 +305,19 @@ export const migrateSavedCart = (persisted: unknown, version: number) => {
   if (version < 7) {
     cart = cart.map((c) => c.category === "memory-card" ? { ...c, name: c.name.replace("The Memory Card", "The Photo Card") } : c);
   }
-  // Photo Card picks only mean something beside their cart lines.
+  if (version < 8) {
+    // The free keepsake postcard was discontinued, and the Photo Card and
+    // Single/Duo Card were renamed Memory Card and License Card.
+    const friendshipNames: Record<string, string> = Object.fromEntries(CATALOG.friendship.map((f) => [f.id, f.name]));
+    cart = cart
+      .filter((c) => !(c.category === "promotions" && c.id === "promo-postcard"))
+      .map((c) => {
+        if (c.category === "memory-card") return { ...c, name: c.name.replace("The Photo Card", "The Memory Card") };
+        if (c.category === "friendship" && friendshipNames[c.id]) return { ...c, name: friendshipNames[c.id] };
+        return c;
+      });
+  }
+  // Memory Card picks only mean something beside their cart lines.
   if (!cart.some((c) => c.category === "memory-card")) patch.selectedMemoryCardDesignIds = [];
   patch.cart = cart;
   return patch;
@@ -338,14 +326,14 @@ export const migrateSavedCart = (persisted: unknown, version: number) => {
 export const useStore = create<State>()(
   persist(
     (rawSet, get) => {
-  // Every state update passes through here so the postcard and delivery-price
-  // invariants above hold after any cart change. Both return the same array
-  // when nothing needs fixing, so unchanged carts don't trigger re-renders.
+  // Every state update passes through here so the delivery-price invariant
+  // above holds after any cart change. It returns the same array when
+  // nothing needs fixing, so unchanged carts don't trigger re-renders.
   const set = (partial: Partial<State> | ((s: State) => Partial<State>)) =>
     rawSet((s) => {
       const next = typeof partial === "function" ? partial(s) : partial;
       if (!next.cart) return next;
-      const cart = withPostcard(withDeliveryPrice(next.cart));
+      const cart = withDeliveryPrice(next.cart);
       const coupon = "coupon" in next ? next.coupon ?? null : s.coupon;
       return couponStillValid(coupon, cart) ? { ...next, cart } : { ...next, cart, coupon: null };
     });
@@ -415,9 +403,6 @@ export const useStore = create<State>()(
 
   removeItem: (k) => {
     const item = get().cart.find((c) => c.key === k);
-    // The free postcard can't be removed on its own — it leaves with the
-    // last other item (see withPostcard).
-    if (item && isPostcard(item)) return;
     set((s) => {
       let cart = s.cart.filter((c) => c.key !== k);
       const patch: Partial<State> = { cart };
@@ -630,11 +615,11 @@ export const useStore = create<State>()(
   },
 
 
-  // Selects a Single & Duo Card quantity tier for the first time, or switches
+  // Selects a License Card quantity tier for the first time, or switches
   // between Single/Duo. Unlike setSize (which fully resets templates),
   // switching tiers TRUNCATES the design picks to the new limit — keeping
   // the first-picked design(s) — rather than clearing them, per the
-  // Single & Duo Card's own "downgrade keeps what still fits" spec.
+  // License Card's own "downgrade keeps what still fits" spec.
   setFriendship: (friendId) => {
     const product = CATALOG.friendship.find((f) => f.id === friendId);
     if (!product) return;
@@ -813,7 +798,7 @@ export const useStore = create<State>()(
       // Only one combo (and its linked items) can be active at a time, and
       // any manually-picked size/template/addon/polaroid/strip must go too —
       // otherwise its real price sits in the cart on top of the combo price.
-      // Paid Friendship/Photo Cards survive only when the new combo doesn't
+      // Paid Friendship/Memory Cards survive only when the new combo doesn't
       // include them; when it does, the customer re-picks them for free and
       // checkout validates the full count.
       const cart = s.cart.filter((c) =>
@@ -862,11 +847,6 @@ export const useStore = create<State>()(
       if (recipe?.polaroidId) {
         const pol = CATALOG.polaroids.find((p) => p.id === recipe.polaroidId);
         if (pol) linked.push({ key: `combo:${combo.id}:pol:${pol.id}`, category: "polaroids", id: pol.id, name: pol.name, price: 0, comboId: combo.id });
-      }
-
-      if (recipe?.freePostcard) {
-        const postcard = CATALOG.promotions.find((item) => item.id === "promo-postcard");
-        if (postcard) linked.push({ key: `combo:${combo.id}:postcard`, category: "promotions", id: postcard.id, name: postcard.name, price: 0, comboId: combo.id });
       }
 
       const comboLine: CartItem = { key: key("combos", combo.id), category: "combos", id: combo.id, name: combo.name, price: combo.price };
@@ -982,7 +962,7 @@ export const useStore = create<State>()(
       // strips any pre-v2 pocket/pocket-templates lines instead so old carts
       // just lose that one item rather than shipping incomplete.
       //
-      // v3: the Single & Duo Card became a two-step quantity→design picker
+      // v3: the License Card became a two-step quantity→design picker
       // (selectedFriendshipId/selectedFriendshipDesignIds, new
       // "friendship-designs" category) instead of a single addItem'd SKU
       // line. Same risk as v2: an old blob's "friendship" cart line has no
@@ -991,11 +971,13 @@ export const useStore = create<State>()(
       // with zero designs picked. migrate() strips any pre-v3
       // friendship/friendship-designs lines for the same reason v2 strips
       // pre-v2 pocket lines.
-      // v4 adds the Photo Card multiset. Old carts have no related lines,
+      // v4 adds the Memory Card multiset. Old carts have no related lines,
       // so initializing its selection list is sufficient.
       // v6 drops strips/cards that were made free by a combo not including them.
-      // v7 renames saved "The Memory Card × N" lines to "The Photo Card × N".
-      version: 7,
+      // v7 renames saved "The Memory Card × N" lines to "The Memory Card × N".
+      // v8 drops the discontinued free postcard line and renames saved
+      // Photo Card / Single & Duo Card lines to Memory Card / License Card.
+      version: 8,
       migrate: migrateSavedCart,
       // Hydration is triggered manually (see __root.tsx) after mount, not
       // automatically at store-creation time — the store module re-evaluates
@@ -1019,11 +1001,10 @@ export const useStore = create<State>()(
         coupon: s.coupon,
         cartId: s.cartId,
       }),
-      // Carts saved before the universal postcard existed won't have one —
-      // patch it in on load rather than waiting for the next cart change.
-      // Same for a Standard Delivery line saved at an older price.
+      // Re-price a delivery line saved at an older price on load rather
+      // than waiting for the next cart change.
       onRehydrateStorage: () => (state) => {
-        if (state) useStore.setState({ cart: withPostcard(withDeliveryPrice(state.cart)) });
+        if (state) useStore.setState({ cart: withDeliveryPrice(state.cart) });
       },
     },
   ),

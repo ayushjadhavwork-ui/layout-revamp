@@ -7,6 +7,7 @@ import { clampItPolaroidsQty, standardDeliveryPrice, useStore } from "./store";
 const store = () => useStore.getState();
 const line = (category: string) => store().cart.find((c) => c.category === category);
 const standard = CATALOG.delivery.find((d) => d.id === "del-std")!;
+const express = CATALOG.delivery.find((d) => d.id === "del-exp")!;
 const miniMagazine = CATALOG.sizes.find((s) => s.id === "sz-4-mini")!;
 const pack = CATALOG.polaroids[0];
 
@@ -86,9 +87,19 @@ describe("Standard Delivery price", () => {
     assert.equal(standardDeliveryPrice(store().cart), 0);
   });
 
-  it("leaves Express Shipping at its own price", () => {
+  it("charges ₹180 for Express Shipping on polaroids-only orders (₹100 express + ₹80 polaroid)", () => {
+    store().addItPolaroids(2);
+    store().addItem("delivery", express);
+    assert.equal(line("delivery")?.price, 180);
+    assert.equal(store().total(), 240 + 180); // 2 × ₹120 + ₹180
+  });
+
+  it("drops Express Shipping back to its normal price once a magazine is added", () => {
     store().addItPolaroids(1);
-    store().addItem("delivery", CATALOG.delivery.find((d) => d.id === "del-exp")!);
+    store().addItem("delivery", express);
+    store().setSize(miniMagazine.id);
     assert.equal(line("delivery")?.price, PRICES.delivery["del-exp"]);
+    store().removeItem(line("sizes")!.key);
+    assert.equal(line("delivery")?.price, PRICES.deliveryPolaroidsOnly["del-exp"]);
   });
 });

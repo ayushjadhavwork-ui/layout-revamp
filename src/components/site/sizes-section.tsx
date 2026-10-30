@@ -1,364 +1,376 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Layers, Check, Eye, X, ChevronLeft, ChevronRight } from "lucide-react";
-
+import { BookOpen, ChevronLeft, ChevronRight, X } from "lucide-react";
 import { toast } from "sonner";
-import { CATALOG, fmt, type SizeFormat } from "@/lib/catalog";
+import { CATALOG, COMBO_RECIPES, fmt } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
-import { SITE } from "@/lib/site-content";
-import { ModalShell } from "./shop";
-import { useProductReviews } from "@/lib/use-product-reviews";
-import { ReviewsPanel, ReviewStars } from "./reviews-panel";
-import { ScrollHint } from "./scroll-hint";
+import { SITE, type MagazineSizeLabel } from "@/lib/site-content";
 
-// Each package has two images, matched by page count and format:
-//   Standard → /public/media/sizes/<n>_pages_magazine.webp  +  <n>_pages_sizeGuide.webp
-//   Mini     → /public/media/sizes-mini/<n>_pages_magazine.webp  +  <n>_pages_sizeGuide.webp
-// Override either by adding paths under SITE.productImages["sz-<n>"] / ["sz-<n>-mini"].
-function pageCount(id: string): string {
-  return id.replace(/\D/g, "");
+const content = SITE.createYourOwnMagazine;
+const slides = content.carouselImages;
+const pocket = CATALOG.pocket[0];
+const POCKET_PAGES = 6;
+
+// Every page count the A4/A5 packages come in (both formats share them).
+const PAGE_COUNTS = CATALOG.sizes
+  .filter((s) => s.format === "standard")
+  .map((s) => Number(s.id.replace(/\D/g, "")));
+
+// The catalogue size an A4/A5 pick maps to (A6 is the Pocket Magazine).
+function sizeIdFor(size: MagazineSizeLabel, pages: number): string {
+  return size === "A5" ? `sz-${pages}-mini` : `sz-${pages}`;
 }
 
-function sizeFolder(format?: SizeFormat): string {
-  return format === "mini" ? "sizes-mini" : "sizes";
+function priceFor(size: MagazineSizeLabel, pages: number): number {
+  if (size === "A6") return pocket.price;
+  return CATALOG.sizes.find((s) => s.id === sizeIdFor(size, pages))?.price ?? 0;
 }
 
-// Thumbnail + size guide both come from the format's own folder, so Mini (A5)
-// and Standard (A4) can show different artwork. Override either in
-// SITE.productImages["sz-<n>"] / ["sz-<n>-mini"] (first entry = thumbnail).
-function sizeHero(id: string, format?: SizeFormat): string | undefined {
-  const override = SITE.productImages?.[id]?.[0];
-  if (override) return override;
-  const n = pageCount(id);
-  return n ? `/media/${sizeFolder(format)}/${n}_pages_magazine.webp` : undefined;
+function scrollToSection(id: string) {
+  // Give a freshly revealed section a moment to render first.
+  setTimeout(() => document.getElementById(id)?.scrollIntoView({ behavior: "smooth", block: "start" }), 60);
 }
 
-function sizeGallery(id: string, format?: SizeFormat): string[] {
-  const override = SITE.productImages?.[id];
-  if (override && override.length > 1) return override.slice(1);
-  const n = pageCount(id);
-  return n ? [`/media/${sizeFolder(format)}/${n}_pages_sizeGuide.webp`] : [];
-}
+// Larger formats get a larger outline icon, so the three cards read as sizes.
+const ICON_SIZE: Record<MagazineSizeLabel, string> = { A4: "h-7 w-7", A5: "h-6 w-6", A6: "h-5 w-5" };
 
+/* -------------------------------------------------------------- */
+/* Left column — looping swipe carousel                            */
+/* -------------------------------------------------------------- */
+function MagazineCarousel() {
+  const [index, setIndex] = useState(0);
+  const [zoomed, setZoomed] = useState(false);
+  const drag = useRef<{ x: number; moved: boolean } | null>(null);
+  const go = (delta: number) => setIndex((i) => (i + delta + slides.length) % slides.length);
+  const slide = slides[index];
 
-
-
-function SizePlaceholder({ label }: { label: string }) {
   return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-pink-mist/30 via-blush-rose/25 to-rose-wine/25 text-off-white">
-      <span className="font-display text-3xl md:text-4xl">{label}</span>
-      <span className="mt-1 w-full px-1 text-center text-[0.5rem] sm:text-[0.55rem] uppercase tracking-[0.05em] sm:tracking-[0.35em] opacity-80">Magazine pages</span>
+    <div>
+      <div
+        className="group relative aspect-[4/3] select-none overflow-hidden rounded-2xl border border-blush-rose/30 bg-[#fdf6f4] shadow-inner touch-pan-y sm:aspect-square"
+        onPointerDown={(e) => { drag.current = { x: e.clientX, moved: false }; }}
+        onPointerMove={(e) => {
+          if (drag.current && Math.abs(e.clientX - drag.current.x) > 8) drag.current.moved = true;
+        }}
+        onPointerUp={(e) => {
+          if (!drag.current) return;
+          const dx = e.clientX - drag.current.x;
+          if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+        }}
+      >
+        <div
+          className="flex h-full transition-transform duration-500 ease-out"
+          style={{ transform: `translateX(-${index * 100}%)` }}
+        >
+          {slides.map((s, i) => (
+            <button
+              key={s.src}
+              type="button"
+              tabIndex={i === index ? 0 : -1}
+              onClick={() => {
+                // A swipe must not also open the lightbox.
+                const moved = drag.current?.moved;
+                drag.current = null;
+                if (!moved) setZoomed(true);
+              }}
+              aria-label={`Enlarge: ${s.caption}`}
+              className="h-full w-full shrink-0 cursor-zoom-in"
+            >
+              <img
+                src={s.src}
+                alt={s.alt}
+                draggable={false}
+                loading={i === 0 ? "eager" : "lazy"}
+                className="h-full w-full object-cover"
+              />
+            </button>
+          ))}
+        </div>
+
+        <button
+          type="button"
+          onClick={() => go(-1)}
+          aria-label="Previous image"
+          className="absolute left-2.5 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 text-rose-wine shadow-md backdrop-blur-sm transition hover:bg-white sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => go(1)}
+          aria-label="Next image"
+          className="absolute right-2.5 top-1/2 -translate-y-1/2 rounded-full bg-white/80 p-2 text-rose-wine shadow-md backdrop-blur-sm transition hover:bg-white sm:opacity-0 sm:group-hover:opacity-100 sm:focus:opacity-100"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
+
+        <div className="absolute bottom-3.5 left-1/2 flex -translate-x-1/2 items-center gap-1.5 rounded-full bg-black/20 px-2.5 py-1 backdrop-blur-xs">
+          {slides.map((s, i) => (
+            <button
+              key={s.src}
+              type="button"
+              onClick={() => setIndex(i)}
+              aria-label={`Show image ${i + 1}`}
+              aria-current={i === index}
+              className={`h-1.5 rounded-full transition-all ${i === index ? "w-5 bg-white" : "w-1.5 bg-white/60 hover:bg-white"}`}
+            />
+          ))}
+        </div>
+      </div>
+      <p className="mt-2 text-center text-xs text-dusty-rose" aria-live="polite">{slide.caption}</p>
+
+      {zoomed && <CarouselLightbox index={index} onIndex={setIndex} onClose={() => setZoomed(false)} />}
     </div>
   );
 }
 
-/* -------------------------------------------------------------- */
-export function SizesSection() {
-  const [openId, setOpenId] = useState<string | null>(null);
-  const selectedSizeId = useStore((s) => s.selectedSizeId);
-  const setSize = useStore((s) => s.setSize);
-  const removeItem = useStore((s) => s.removeItem);
-  const cart = useStore((s) => s.cart);
-  const format = useStore((s) => s.format);
-  const setFormat = useStore((s) => s.setFormat);
-  const selectedTemplateIds = useStore((s) => s.selectedTemplateIds);
-  const templateLimit = useStore((s) => s.templateLimit());
+function CarouselLightbox({ index, onIndex, onClose }: { index: number; onIndex: (i: number) => void; onClose: () => void }) {
+  const go = (delta: number) => onIndex((index + delta + slides.length) % slides.length);
+  useEffect(() => {
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") onIndex((index + 1) % slides.length);
+      if (e.key === "ArrowLeft") onIndex((index - 1 + slides.length) % slides.length);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = original;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [index, onIndex, onClose]);
 
-  const items = CATALOG.sizes.filter((s) => s.format === format);
-
-  const handleToggle = (id: string, name: string) => {
-    if (selectedSizeId === id) {
-      const item = cart.find((c) => c.category === "sizes" && c.id === id);
-      if (item) removeItem(item.key);
-      toast.success(`${name} deselected`);
-    } else {
-      setSize(id);
-      toast.success(`${name} selected`);
-    }
-  };
-
-  const formats: { key: SizeFormat; label: string; sub: string }[] = [
-    { key: "standard", label: "Standard", sub: "A4" },
-    { key: "mini", label: "Mini", sub: "A5" },
-  ];
-
-  return (
-    <>
-      <div className="mt-6 rounded-3xl p-6 md:p-10 bg-rose-wine">
-
-        {/* Format toggle — pick before choosing a page count */}
-        <div className="mb-5 sm:mb-8 flex flex-col items-center">
-          <p className="text-[0.6rem] sm:text-[0.65rem] uppercase tracking-[0.3em] text-pink-mist">
-            Choose your format
-          </p>
-          <div className="mt-2 inline-flex rounded-full bg-black/20 p-1 ring-1 ring-pink-mist/30">
-            {formats.map((f) => {
-              const on = format === f.key;
-              return (
-                <button
-                  key={f.key}
-                  type="button"
-                  aria-pressed={on}
-                  onClick={() => {
-                    if (format === f.key) return;
-                    setFormat(f.key);
-                    toast.success(`${f.label} (${f.sub}) format selected`);
-                  }}
-                  className={`rounded-full px-4 sm:px-7 py-1.5 sm:py-2 text-[0.65rem] sm:text-xs font-medium uppercase tracking-[0.2em] transition ${
-                    on ? "bg-off-white text-rose-wine shadow" : "text-off-white/80 hover:text-off-white"
-                  }`}
-                >
-                  {f.label} <span className="opacity-60">· {f.sub}</span>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="grid grid-cols-4 gap-1.5 sm:gap-4 md:gap-5">
-          {items.map((item) => {
-            const active = selectedSizeId === item.id;
-            const hero = sizeHero(item.id, item.format);
-
-
-
-            return (
-              <div
-                key={item.id}
-                onClick={() => handleToggle(item.id, item.name)}
-                className={`relative rounded-md sm:rounded-xl p-1.5 sm:p-4 md:p-5 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
-                  active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
-                }`}
-              >
-                {active && (
-                  <span className="absolute top-1 right-1 sm:top-3 sm:right-3 grid h-4 w-4 sm:h-6 sm:w-6 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10">
-                    <Check className="h-2.5 w-2.5 sm:h-3.5 sm:w-3.5" />
-                  </span>
-                )}
-
-                <div
-                  onClick={(e) => { e.stopPropagation(); setOpenId(item.id); }}
-                  className="relative w-full aspect-[4/5] overflow-hidden rounded-sm sm:rounded-md bg-white/5 cursor-zoom-in"
-                >
-                  {hero ? (
-                    <img src={hero} alt={item.name} loading="lazy" className="absolute inset-0 h-full w-full object-cover" />
-                  ) : (
-                    <SizePlaceholder label={item.name.replace(/\D/g, "")} />
-                  )}
-                </div>
-
-                <h4 className="mt-1 sm:mt-4 font-display uppercase tracking-[0.1em] sm:tracking-[0.2em] text-[0.6rem] sm:text-sm text-off-white">
-                  {item.name}
-                </h4>
-                <p className="mt-0.5 sm:mt-1 hidden sm:block text-[0.6rem] uppercase tracking-[0.25em] text-pink-mist">
-                  {item.templateLimit} template{item.templateLimit === 1 ? "" : "s"}
-                </p>
-
-                <div className="my-1 sm:my-3 h-px w-8 sm:w-16 bg-pink-mist/40" />
-                <p className="hidden sm:block text-[0.6rem] uppercase tracking-[0.3em] text-pink-mist">Selling price</p>
-                <p className="mt-0.5 sm:mt-1 inline-block rounded sm:rounded-md px-1.5 sm:px-4 py-0.5 sm:py-1 font-display text-xs sm:text-xl text-rose-wine bg-off-white">
-                  {fmt(item.price)}
-                </p>
-
-                <div className="mt-1.5 sm:mt-4 flex gap-1 sm:gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
-                  <button
-                    type="button"
-                    onClick={() => handleToggle(item.id, item.name)}
-                    className={`flex-1 min-w-0 rounded-full px-1 sm:px-3 py-1 sm:py-1.5 text-[0.55rem] sm:text-[0.7rem] font-medium transition border truncate ${
-                      active
-                        ? "bg-off-white text-rose-wine border-off-white"
-                        : "bg-transparent text-off-white border-pink-mist/50 hover:bg-off-white/10"
-                    }`}
-                  >
-                    {active ? "Selected" : "Select"}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setOpenId(item.id)}
-                    aria-label={`View ${item.name}`}
-                    className="grid shrink-0 place-items-center rounded-full px-1.5 sm:px-3 py-1 sm:py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
-                  >
-                    <Eye className="h-3 w-3 sm:hidden" />
-                    <span className="hidden sm:inline">View</span>
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-
-        <p className="mt-6 text-center text-xs tracking-[0.2em] text-pink-mist">
-          ♡ more pages, more stories to tell ♡
-        </p>
-
-        {selectedSizeId && selectedTemplateIds.length < templateLimit && (
-          <ScrollHint
-            text={`Scroll down to pick your ${templateLimit} template${templateLimit === 1 ? "" : "s"}`}
-            targetId="templates"
-          />
-        )}
-      </div>
-
-      <SizeModal open={!!openId} sizeId={openId} onClose={() => setOpenId(null)} />
-    </>
+  return createPortal(
+    <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-black/85 p-4" onClick={onClose}>
+      <button type="button" onClick={onClose} aria-label="Close" className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20">
+        <X className="h-6 w-6" />
+      </button>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); go(-1); }}
+        aria-label="Previous image"
+        className="absolute left-3 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+      >
+        <ChevronLeft className="h-6 w-6" />
+      </button>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); go(1); }}
+        aria-label="Next image"
+        className="absolute right-3 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
+      >
+        <ChevronRight className="h-6 w-6" />
+      </button>
+      <img
+        src={slides[index].src}
+        alt={slides[index].alt}
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[82vh] max-w-full rounded-lg object-contain"
+      />
+      <p className="mt-3 text-sm text-white/80">{slides[index].caption}</p>
+    </div>,
+    document.body,
   );
 }
 
 /* -------------------------------------------------------------- */
-function SizeModal({
-  open,
-  sizeId,
-  onClose,
-}: {
-  open: boolean;
-  sizeId: string | null;
-  onClose: () => void;
-}) {
-  const [slide, setSlide] = useState(0);
-  const [lightbox, setLightbox] = useState<number | null>(null);
-
-  const item = sizeId ? CATALOG.sizes.find((s) => s.id === sizeId) ?? null : null;
-
+/* SizesSection — "Create Your Own Magazine" configurator          */
+/* -------------------------------------------------------------- */
+export function SizesSection() {
+  const cart = useStore((s) => s.cart);
   const selectedSizeId = useStore((s) => s.selectedSizeId);
+  const format = useStore((s) => s.format);
+  const setFormat = useStore((s) => s.setFormat);
   const setSize = useStore((s) => s.setSize);
-  const {
-    reviews, loading, posting, avg, reviewerId,
-    rvName, setRvName, rvText, setRvText, rvRating, setRvRating,
-    submitReview, deleteReview,
-  } = useProductReviews(item?.id ?? null);
+  const addPocketUnit = useStore((s) => s.addPocketUnit);
+  const pocketUnits = useStore((s) => s.pocketUnits);
 
-  if (!open || !item) return null;
+  const activeCombo = cart.find((c) => c.category === "combos");
+  const recipe = activeCombo ? COMBO_RECIPES[activeCombo.id] : undefined;
+  const comboSize = recipe?.sizeId ? CATALOG.sizes.find((s) => s.id === recipe.sizeId) : undefined;
+  const comboHasMagazine = !!comboSize || !!recipe?.pocketCount;
 
-  const hero = sizeHero(item.id, item.format);
-  const gallery = sizeGallery(item.id, item.format);
-  const slides = gallery.length ? gallery : hero ? [hero] : [];
-  const active = selectedSizeId === item.id;
+  // The magazine in the cart (A4/A5), if any — the builder starts on it.
+  const cartSize = selectedSizeId ? CATALOG.sizes.find((s) => s.id === selectedSizeId) : undefined;
+  const fromCatalog = (s: { id: string; format?: string }) => ({
+    size: (s.format === "mini" ? "A5" : "A4") as MagazineSizeLabel,
+    pages: Number(s.id.replace(/\D/g, "")),
+  });
+
+  // Size and page picks stay local until "Add to cart", so browsing the
+  // options never resets templates or drops a combo.
+  const [size, setSizeLabel] = useState<MagazineSizeLabel>(cartSize ? fromCatalog(cartSize).size : "A4");
+  const [pages, setPages] = useState<number>(cartSize ? fromCatalog(cartSize).pages : 12);
+
+  // Follow the cart when a combo (or the cart drawer) changes the magazine.
+  useEffect(() => {
+    const source = comboSize ?? cartSize;
+    if (source) {
+      const pick = fromCatalog(source);
+      setSizeLabel(pick.size);
+      setPages(pick.pages);
+    } else if (recipe?.pocketCount) {
+      setSizeLabel("A6");
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedSizeId, activeCombo?.id]);
+
+  // The product directory's Custom/Pocket Magazine buttons pre-select a size.
+  useEffect(() => {
+    const onConfigure = (e: Event) => {
+      const label = (e as CustomEvent<MagazineSizeLabel>).detail;
+      if (label === "A4" || label === "A5" || label === "A6") setSizeLabel(label);
+    };
+    window.addEventListener("configure-magazine", onConfigure);
+    return () => window.removeEventListener("configure-magazine", onConfigure);
+  }, []);
+
+  const shownPages = size === "A6" ? POCKET_PAGES : pages;
+  const price = priceFor(size, shownPages);
+  const targetId = size === "A6" ? null : sizeIdFor(size, pages);
+  const alreadyInCart = !!targetId && selectedSizeId === targetId;
+
+  const chooseSize = (label: MagazineSizeLabel) => {
+    if (comboHasMagazine) return toast.message(`Your magazine is included in ${activeCombo?.name} — remove the combo to build your own.`);
+    setSizeLabel(label);
+  };
+  const choosePages = (n: number) => {
+    if (comboHasMagazine) return toast.message(`Your magazine is included in ${activeCombo?.name} — remove the combo to build your own.`);
+    setPages(n);
+  };
+
+  const addToCart = () => {
+    if (size === "A6") {
+      addPocketUnit();
+      toast.success(`Pocket Magazine (A6) added — pick ${pocket.templateLimit} templates for it.`);
+      scrollToSection("pocket");
+      return;
+    }
+    if (!targetId) return;
+    if (!alreadyInCart) {
+      const wanted = size === "A5" ? "mini" : "standard";
+      if (format !== wanted) setFormat(wanted);
+      setSize(targetId);
+      const added = CATALOG.sizes.find((s) => s.id === targetId);
+      toast.success(`${size} · ${added?.name} added — now pick ${added?.templateLimit} template${added?.templateLimit === 1 ? "" : "s"}.`);
+    }
+    scrollToSection("templates");
+  };
 
   return (
-    <ModalShell onClose={onClose} maxW="max-w-4xl">
-      <div className="grid gap-6 md:grid-cols-12">
-        <div className="md:col-span-5">
-          <div className="mx-auto w-full max-w-[340px]">
-            {slides.length ? (
-              <>
-                <div
-                  className="flex snap-x snap-mandatory overflow-x-auto rounded-xl bg-white shadow-2xl ring-1 ring-rose-wine/10 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-                  onScroll={(e) => {
-                    const el = e.currentTarget;
-                    setSlide(Math.round(el.scrollLeft / Math.max(1, el.clientWidth)));
-                  }}
-                >
-                  {slides.map((src, i) => (
-                    <div key={src + i} className="w-full shrink-0 snap-center">
-                      <img
-                        src={src}
-                        alt={`${item.name} size guide ${i + 1}`}
-                        onClick={() => setLightbox(i)}
-                        className="block h-auto w-full cursor-zoom-in object-contain"
-                      />
-                    </div>
-                  ))}
-                </div>
-                {slides.length > 1 && (
-                  <div className="mt-3 flex justify-center gap-1.5">
-                    {slides.map((_, i) => (
-                      <span
-                        key={i}
-                        className={`h-1.5 rounded-full transition-all ${i === slide ? "w-4 bg-rose-wine" : "w-1.5 bg-rose-wine/30"}`}
-                      />
-                    ))}
-                  </div>
-                )}
-                <button
-                  type="button"
-                  onClick={() => setLightbox(slide)}
-                  className="mt-2 w-full text-center text-[0.65rem] uppercase tracking-[0.2em] text-dusty-rose hover:text-rose-wine"
-                >
-                  Size guide · tap to view full image{slides.length > 1 ? " · swipe to browse" : ""}
-                </button>
+    <div className="mx-auto max-w-5xl rounded-3xl border border-pink-mist/50 bg-white/95 p-6 shadow-sm sm:p-10">
+      <div className="grid grid-cols-1 items-center gap-8 lg:grid-cols-12">
+        <div className="lg:col-span-5">
+          <MagazineCarousel />
+        </div>
 
-              </>
-            ) : (
-              <div className="relative aspect-[4/5] overflow-hidden rounded-xl bg-white shadow-2xl ring-1 ring-rose-wine/10">
-                <SizePlaceholder label={item.name.replace(/\D/g, "")} />
-              </div>
-            )}
+        <div className="lg:col-span-7">
+          <h2 className="flex items-center gap-2 font-display text-2xl font-medium text-rose-wine sm:text-3xl">
+            {content.title}
+          </h2>
+          <div className="mt-3 space-y-2 font-sans text-xs leading-relaxed text-foreground/85 sm:text-sm">
+            {content.descriptionParagraphs.map((p) => <p key={p}>{p}</p>)}
           </div>
-        </div>
+          <div className="mt-3.5 rounded-xl border border-blush-rose/40 bg-pink-mist/30 px-4 py-2.5 text-xs font-medium text-rose-wine sm:text-sm">
+            {content.highlightBox}
+          </div>
 
+          <p className="mb-2.5 mt-6 text-[0.7rem] font-bold uppercase tracking-wider text-foreground/70">1. Choose your size</p>
+          <div className="grid grid-cols-3 gap-3">
+            {content.sizes.map((s) => {
+              const on = size === s.label;
+              return (
+                <button
+                  key={s.label}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => chooseSize(s.label)}
+                  className={`flex flex-col items-center rounded-xl px-1.5 py-3 text-center transition ${
+                    on
+                      ? "border-2 border-rose-wine bg-blush-rose/15 text-rose-wine shadow-sm"
+                      : "border border-border/80 bg-white text-foreground hover:border-blush-rose/80"
+                  }`}
+                >
+                  <span className="grid h-8 place-items-center">
+                    <BookOpen className={ICON_SIZE[s.label]} strokeWidth={1.5} />
+                  </span>
+                  <span className="mt-1 font-display text-lg font-semibold leading-none">{s.label}</span>
+                  <span className="mt-1 text-[0.6rem] text-muted-foreground sm:text-[0.7rem]">{s.dimensions}</span>
+                </button>
+              );
+            })}
+          </div>
 
-        <div className="md:col-span-7 flex flex-col">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">Magazine Package</p>
-          <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">{item.name}</h3>
-          <p className="mt-1 text-sm uppercase tracking-[0.2em] text-dusty-rose">
-            {item.templateLimit} template{item.templateLimit === 1 ? "" : "s"} · covers included
-          </p>
-          <ReviewStars avg={avg} count={reviews.length} />
-          <p className="mt-4 text-3xl font-semibold text-blush-rose">{fmt(item.price)}</p>
-          <div className="mt-4 h-px bg-rose-wine/10" />
-          <p className="mt-4 text-sm leading-relaxed text-neutral-700">{item.desc}</p>
-          <ul className="mt-3 space-y-1.5 text-sm text-neutral-700">
-            <li>• Premium matte-finish paper</li>
-            <li>• Front &amp; back cover included</li>
-            <li>• Editorial trim size</li>
-          </ul>
-
-          <button
-            onClick={() => { setSize(item.id); toast.success(`${item.name} selected`); onClose(); }}
-            className={`pill-btn pill-btn-hover mt-6 w-full !py-3 !text-base ${
-              active ? "!bg-rose-wine !text-white !border-rose-wine" : "pill-primary"
-            }`}
-          >
-            {active ? "Selected — click to reconfirm" : `Choose ${item.name}`}
-          </button>
-        </div>
-      </div>
-
-      <ReviewsPanel
-        reviews={reviews} loading={loading} posting={posting} reviewerId={reviewerId}
-        rvName={rvName} setRvName={setRvName} rvText={rvText} setRvText={setRvText}
-        rvRating={rvRating} setRvRating={setRvRating}
-        onSubmit={submitReview} onDelete={deleteReview}
-      />
-
-      {lightbox !== null && slides[lightbox] && createPortal(
-        <div
-          className="fixed inset-0 z-[110] flex items-center justify-center bg-black/90 p-4"
-          onClick={() => setLightbox(null)}
-        >
-          <button
-            onClick={() => setLightbox(null)}
-            aria-label="Close"
-            className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
-          >
-            <X className="h-6 w-6" />
-          </button>
-
-          {slides.length > 1 && (
-            <>
-              <button
-                onClick={(e) => { e.stopPropagation(); setLightbox((n) => ((n ?? 0) - 1 + slides.length) % slides.length); }}
-                aria-label="Previous image"
-                className="absolute left-4 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
-              ><ChevronLeft className="h-6 w-6" /></button>
-              <button
-                onClick={(e) => { e.stopPropagation(); setLightbox((n) => ((n ?? 0) + 1) % slides.length); }}
-                aria-label="Next image"
-                className="absolute right-4 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20"
-              ><ChevronRight className="h-6 w-6" /></button>
-            </>
+          <p className="mb-2.5 mt-5 text-[0.7rem] font-bold uppercase tracking-wider text-foreground/70">2. Select number of pages</p>
+          {size === "A6" ? (
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="rounded-full bg-rose-wine px-3.5 py-1.5 text-xs font-medium text-white shadow-sm">{POCKET_PAGES} Pages</span>
+              <span className="text-xs text-dusty-rose">{content.pocketNote}</span>
+            </div>
+          ) : (
+            <div className="flex flex-wrap gap-2">
+              {PAGE_COUNTS.map((n) => {
+                const on = pages === n;
+                return (
+                  <button
+                    key={n}
+                    type="button"
+                    aria-pressed={on}
+                    onClick={() => choosePages(n)}
+                    className={`rounded-full px-3.5 py-1.5 text-xs transition ${
+                      on
+                        ? "bg-rose-wine font-medium text-white shadow-sm"
+                        : "border border-border bg-white text-foreground/80 hover:border-rose-wine/60"
+                    }`}
+                  >
+                    {n} Pages
+                  </button>
+                );
+              })}
+            </div>
           )}
 
-          <img
-            src={slides[lightbox]}
-            alt={`${item.name} size guide`}
-            onClick={(e) => e.stopPropagation()}
-            className="max-h-[92vh] max-w-full object-contain"
-          />
-        </div>,
-        document.body,
-      )}
-    </ModalShell>
+          <div className="mt-6 flex items-center justify-between gap-3 border-t border-border/60 pt-5">
+            <div className="min-w-0">
+              <p className="text-[0.65rem] font-bold uppercase tracking-widest text-muted-foreground">Price</p>
+              {comboHasMagazine ? (
+                <p className="font-display text-lg font-semibold text-rose-wine sm:text-xl">✨ Included in {activeCombo?.name} (₹0)</p>
+              ) : (
+                <p className="font-display text-2xl font-bold text-rose-wine sm:text-3xl">{fmt(price)}</p>
+              )}
+            </div>
+            {comboHasMagazine ? (
+              <button
+                type="button"
+                onClick={() => scrollToSection(comboSize ? "templates" : "pocket")}
+                className="shrink-0 rounded-full bg-rose-wine px-5 py-3 text-xs font-medium text-white shadow-md transition-transform hover:bg-rose-wine/90 active:scale-95 sm:px-7 sm:text-sm"
+              >
+                Select Templates ➜
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={addToCart}
+                className="shrink-0 rounded-full bg-rose-wine px-5 py-3 text-xs font-medium text-white shadow-md transition-transform hover:bg-rose-wine/90 active:scale-95 sm:px-7 sm:text-sm"
+              >
+                {alreadyInCart ? "In cart · Pick templates ➜" : "ADD TO CART 🛒"}
+              </button>
+            )}
+          </div>
 
+          {!comboHasMagazine && (cartSize || pocketUnits.length > 0) && (
+            <p className="mt-3 text-xs text-dusty-rose">
+              In your cart:{" "}
+              {[
+                cartSize && `${fromCatalog(cartSize).size} · ${cartSize.name}`,
+                pocketUnits.length > 0 && `Pocket Magazine (A6)${pocketUnits.length > 1 ? ` × ${pocketUnits.length}` : ""}`,
+              ].filter(Boolean).join(" + ")}
+              {size !== "A6" && cartSize && !alreadyInCart && " — adding this one replaces your A4/A5 magazine."}
+            </p>
+          )}
+        </div>
+      </div>
+    </div>
   );
 }

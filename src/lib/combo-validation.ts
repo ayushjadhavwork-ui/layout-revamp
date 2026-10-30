@@ -74,9 +74,6 @@ export function comboCheckoutIssues(comboId: string, selection: ComboSelection):
     const pack = CATALOG.polaroids.find((item) => item.id === recipe.polaroidId);
     push("extras", `Restore ${pack?.name ?? "the Polaroid pack"}, included in your combo.`);
   }
-  if (recipe.freePostcard && !linked.some((item) => item.category === "promotions" && item.id === "promo-postcard")) {
-    push("combos", "Restore the free Postcard included in your combo.");
-  }
 
   const expectedStrips = recipe.stripCount ?? 0;
   if (selection.stripSelections.length !== expectedStrips || linkedCount(selection.cart, comboId, "strips") !== expectedStrips) {
@@ -90,7 +87,7 @@ export function comboCheckoutIssues(comboId: string, selection: ComboSelection):
     const selectedDesigns = selection.selectedFriendshipDesignIds.length;
     const cartDesigns = linkedCount(selection.cart, comboId, "friendship-designs");
     if (!tierPresent || selectedDesigns !== expectedFriendship || cartDesigns !== expectedFriendship) {
-      push("friendship-card", `Choose the ${expectedFriendship === 1 ? "Single Card" : "Duo Card"} and ${expectedFriendship} design${expectedFriendship === 1 ? "" : "s"} included in your combo.`);
+      push("friendship-card", `Choose the ${expectedFriendship === 1 ? "License Card" : "Duo License Card"} and ${expectedFriendship} design${expectedFriendship === 1 ? "" : "s"} included in your combo.`);
     }
   }
 
@@ -100,7 +97,7 @@ export function comboCheckoutIssues(comboId: string, selection: ComboSelection):
     const cartDesigns = linkedCount(selection.cart, comboId, "memory-card-designs");
     const parentPresent = linked.some((item) => item.category === "memory-card");
     if (!parentPresent || selectedDesigns !== expectedMemoryCards || cartDesigns !== expectedMemoryCards) {
-      push("memory-card", `Choose ${expectedMemoryCards} Photo Card design${expectedMemoryCards === 1 ? "" : "s"} included in your combo.`);
+      push("memory-card", `Choose ${expectedMemoryCards} Memory Card design${expectedMemoryCards === 1 ? "" : "s"} included in your combo.`);
     }
   }
 

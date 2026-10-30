@@ -144,7 +144,7 @@ function FriendshipModelViewer({ className = "" }: { className?: string }) {
         <model-viewer
           ref={viewerRef}
           src={SITE.friendshipCardModel}
-          alt="Interactive 3D preview of The Layout's Single Card"
+          alt="Interactive 3D preview of The Layout's License Card"
           camera-controls
           interaction-prompt="none"
           environment-image="neutral"
@@ -209,7 +209,7 @@ export function FriendshipCardSection() {
   // The card itself only makes the first selection. Once selected, quantity
   // changes are handled exclusively by the clear minus/plus controls below.
   const handleCardSelect = (id: string, label: string) => {
-    if (!selectedFriendshipId) return toast.error("Choose Single or Duo Card above first.");
+    if (!selectedFriendshipId) return toast.error("Choose License Card or Duo License Card above first.");
     const count = selectedFriendshipDesignIds.filter((x) => x === id).length;
     if (count > 0) return;
     if (!addFriendshipDesign(id))
@@ -220,7 +220,7 @@ export function FriendshipCardSection() {
   };
 
   const handleIncreaseQty = (id: string, label: string) => {
-    if (!selectedFriendshipId) return toast.error("Choose Single or Duo Card above first.");
+    if (!selectedFriendshipId) return toast.error("Choose License Card or Duo License Card above first.");
     const count = selectedFriendshipDesignIds.filter((x) => x === id).length;
     if (count >= 2) return toast.error("The maximum quantity for one design is 2.");
     if (!addFriendshipDesign(id)) {
@@ -228,8 +228,8 @@ export function FriendshipCardSection() {
         return toast.error(`You've already picked ${designLimit} card${designLimit === 1 ? "" : "s"}.`);
       return toast.error(
         designLimit === 1
-          ? "This is a Single Card — switch to Duo Card above to get two of the same design."
-          : "A Duo Card holds 2 designs — you've reached the limit.",
+          ? "This is a License Card — switch to Duo License Card above to get two of the same design."
+          : "A Duo License Card holds 2 designs — you've reached the limit.",
       );
     }
     toast.success(`${label} — Qty ×${count + 1}`);
@@ -248,7 +248,7 @@ export function FriendshipCardSection() {
           <div className="inline-flex items-center gap-2 text-off-white">
             <HeartHandshake className="h-5 w-5" />
             <span className="font-display text-2xl md:text-3xl tracking-[0.2em]">
-              SINGLE & DUO CARDS
+              LICENSE CARDS
             </span>
           </div>
           <p className="mt-2 text-xs uppercase tracking-[0.35em] text-pink-mist">
@@ -326,14 +326,10 @@ export function FriendshipCardSection() {
           })}
         </div>
 
-        {/* ── Step 2: design pick(s) — 1-up on phones, 2-up from sm: up.
-            A licence-card design is dense (photo, name, licence no., mood,
-            signature, expiry) — squeezed into half a narrow phone's width
-            (~124px after grid gap + card padding) it reads as illegible and
-            "shrunk" even though the image itself renders at its correct
-            aspect ratio. Going 1-up on mobile roughly doubles the linear
-            thumbnail size; the section already has scroll nudges to offset
-            the longer scroll. ─────────────────────────────────────────── */}
+        {/* ── Step 2: design pick(s) — a strict 2×2 grid at every width, so
+            all four designs are visible together. Each tile keeps the
+            card's real 1082×708 shape and shows the whole artwork; on narrow
+            phones the controls shrink rather than wrap. ──────────────────── */}
         <p className="mt-8 text-center text-xs font-semibold uppercase tracking-[0.25em] text-off-white">
           2. Pick your design{designLimit === 2 ? "s" : ""}
         </p>
@@ -342,12 +338,7 @@ export function FriendshipCardSection() {
             ? `${selectedFriendshipDesignIds.length} of ${designLimit} selected`
             : "Choose a quantity above to unlock designs"}
         </p>
-        {selectedFriendshipId && (
-          <p className="mt-1 text-center text-[0.65rem] uppercase tracking-[0.2em] text-pink-mist/80">
-            Tap Select for the first card · then use − and + to change its quantity
-          </p>
-        )}
-        <div className="mt-4 grid grid-cols-1 sm:grid-cols-2 gap-4 md:gap-5 max-w-2xl mx-auto">
+        <div className="mt-4 grid grid-cols-2 gap-2.5 sm:gap-4 md:gap-6 max-w-xl md:max-w-2xl mx-auto">
 
           {designs.map((item, idx) => {
             const count = selectedFriendshipDesignIds.filter((x) => x === item.id).length;
@@ -358,13 +349,13 @@ export function FriendshipCardSection() {
               <div
                 key={item.id}
                 onClick={() => handleCardSelect(item.id, item.name)}
-                className={`relative rounded-xl p-3 md:p-4 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
+                className={`relative min-w-0 rounded-lg sm:rounded-xl p-2 sm:p-3.5 flex flex-col items-center text-center transition bg-black/15 cursor-pointer select-none ${
                   active ? "ring-2 ring-off-white" : "ring-1 ring-pink-mist/30"
                 } ${disabled ? "opacity-50 cursor-not-allowed" : ""}`}
               >
                 {active && (
-                  <span className="absolute top-2 right-2 grid h-6 min-w-6 px-1 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10 text-[0.65rem] font-bold">
-                    {count > 1 ? `×${count}` : <Check className="h-3.5 w-3.5" />}
+                  <span className="absolute top-1 right-1 sm:top-2 sm:right-2 grid h-5 min-w-5 sm:h-6 sm:min-w-6 px-1 place-items-center rounded-full bg-off-white text-rose-wine shadow z-10 text-[0.6rem] sm:text-[0.65rem] font-bold">
+                    {count > 1 ? `×${count}` : <Check className="h-3 w-3 sm:h-3.5 sm:w-3.5" />}
                   </span>
                 )}
 
@@ -373,7 +364,7 @@ export function FriendshipCardSection() {
                     e.stopPropagation();
                     setOpenDesignIdx(idx);
                   }}
-                  className="relative w-full aspect-[1082/708] overflow-hidden rounded-xl bg-white cursor-zoom-in"
+                  className="relative w-full aspect-[1082/708] overflow-hidden rounded-md sm:rounded-xl bg-white ring-1 ring-pink-mist/30 cursor-zoom-in"
                 >
                   {hero && !brokenDesignIds.has(item.id) ? (
                     // The wrapper reserves the card's real 1082x708 shape up
@@ -386,7 +377,7 @@ export function FriendshipCardSection() {
                       src={hero}
                       alt={item.name}
                       loading="lazy"
-                      className="absolute inset-0 h-full w-full object-cover"
+                      className="absolute inset-0 h-full w-full object-contain"
                       onError={() => setBrokenDesignIds((prev) => new Set(prev).add(item.id))}
                     />
                   ) : (
@@ -394,21 +385,21 @@ export function FriendshipCardSection() {
                   )}
                 </div>
 
-                <p className="mt-3 font-display tracking-[0.2em] text-xs text-off-white">{item.name}</p>
+                <p className="mt-2 sm:mt-3 font-display uppercase tracking-[0.15em] sm:tracking-[0.2em] text-[0.65rem] sm:text-xs text-off-white">{item.name}</p>
 
-                <div className="mt-3 flex gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
+                <div className="mt-2 sm:mt-3 flex gap-1 sm:gap-1.5 w-full" onClick={(e) => e.stopPropagation()}>
                   {active ? (
-                    <div className="flex flex-1 min-w-0 items-center justify-center gap-1.5">
+                    <div className="flex flex-1 min-w-0 items-center justify-center gap-0.5 sm:gap-1.5">
                       <button
                         type="button"
                         onClick={() => handleDecreaseQty(item.id, item.name)}
                         aria-label={`Decrease ${item.name} quantity`}
                         title="Decrease quantity"
-                        className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-pink-mist/60 text-off-white transition hover:bg-off-white/10"
+                        className="grid h-6 w-6 sm:h-8 sm:w-8 shrink-0 place-items-center rounded-full border border-pink-mist/60 text-off-white transition hover:bg-off-white/10"
                       >
-                        <Minus className="h-3.5 w-3.5" />
+                        <Minus className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       </button>
-                      <span className="flex h-8 min-w-[4.5rem] items-center justify-center rounded-full border border-off-white bg-off-white px-2 text-[0.7rem] font-semibold text-rose-wine">
+                      <span className="flex h-6 sm:h-8 min-w-0 flex-1 sm:flex-none sm:min-w-[4.5rem] items-center justify-center whitespace-nowrap rounded-full border border-off-white bg-off-white px-1 sm:px-2 text-[0.6rem] sm:text-[0.7rem] font-semibold text-rose-wine">
                         Qty ×{count}
                       </span>
                       <button
@@ -417,9 +408,9 @@ export function FriendshipCardSection() {
                         disabled={count >= 2 || selectedFriendshipDesignIds.length >= designLimit}
                         aria-label={`Increase ${item.name} quantity`}
                         title="Increase quantity"
-                        className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-pink-mist/60 text-off-white transition hover:bg-off-white/10 disabled:cursor-not-allowed disabled:opacity-35"
+                        className="grid h-6 w-6 sm:h-8 sm:w-8 shrink-0 place-items-center rounded-full border border-pink-mist/60 text-off-white transition hover:bg-off-white/10 disabled:cursor-not-allowed disabled:opacity-35"
                       >
-                        <Plus className="h-3.5 w-3.5" />
+                        <Plus className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       </button>
                     </div>
                   ) : (
@@ -427,7 +418,7 @@ export function FriendshipCardSection() {
                       type="button"
                       disabled={disabled}
                       onClick={() => handleCardSelect(item.id, item.name)}
-                      className="flex-1 min-w-0 rounded-full border border-pink-mist/50 bg-transparent px-3 py-1.5 text-[0.7rem] font-semibold text-off-white transition hover:bg-off-white/10 disabled:cursor-not-allowed"
+                      className="flex-1 min-w-0 rounded-full border border-pink-mist/50 bg-transparent px-2 sm:px-3 py-1 sm:py-1.5 text-[0.65rem] sm:text-[0.7rem] font-semibold text-off-white transition hover:bg-off-white/10 disabled:cursor-not-allowed"
                     >
                       Select
                     </button>
@@ -436,9 +427,9 @@ export function FriendshipCardSection() {
                     type="button"
                     onClick={() => setOpenDesignIdx(idx)}
                     aria-label={`View ${item.name}`}
-                    className="grid shrink-0 place-items-center rounded-full px-3 py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
+                    className="grid shrink-0 place-items-center rounded-full px-1.5 sm:px-3 py-1 sm:py-1.5 text-[0.7rem] font-medium text-off-white border border-pink-mist/50 hover:bg-off-white/10"
                   >
-                    <Eye className="h-3.5 w-3.5" />
+                    <Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   </button>
                 </div>
               </div>

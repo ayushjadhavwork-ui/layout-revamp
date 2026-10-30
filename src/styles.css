@@ -254,31 +254,6 @@
   }
 }
 
-/* --- Cart drawer: free-postcard "golden sparkle" banner --- */
-@utility gold-glow {
-  box-shadow: 0 0 0 1px rgb(252 211 77 / 0.35), 0 6px 22px -6px rgb(245 158 11 / 0.45);
-}
-/* A soft light band sweeping across the banner, like foil catching light. */
-@utility gold-shimmer {
-  background: linear-gradient(110deg, transparent 30%, rgb(255 255 255 / 0.7) 50%, transparent 70%);
-  background-size: 250% 100%;
-  animation: goldShimmer 3.2s ease-in-out infinite;
-}
-@utility gold-sparkle {
-  animation: goldSparkle 2.4s ease-in-out infinite;
-}
-@keyframes goldShimmer {
-  0% { background-position: 150% 0; }
-  100% { background-position: -100% 0; }
-}
-@keyframes goldSparkle {
-  0%, 100% { transform: scale(1) rotate(0deg); filter: drop-shadow(0 0 2px rgb(251 191 36 / 0.5)); }
-  50% { transform: scale(1.12) rotate(8deg); filter: drop-shadow(0 0 8px rgb(251 191 36 / 0.9)); }
-}
-@media (prefers-reduced-motion: reduce) {
-  .gold-shimmer, .gold-sparkle { animation: none; }
-}
-
 /* Floating buttons (spin wheel, WhatsApp) ride above the Guided Combo bar
    while it's open (see combo-guide.tsx). */
 body.combo-guide-open .float-above-guide {

@@ -1,68 +1,50 @@
-import { useState } from "react";
-import { Check, Eye } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
+import { Check, ChevronLeft, ChevronRight, Maximize2, X } from "lucide-react";
 import { toast } from "sonner";
-import { CATALOG, STRIP_TIERS, STRIP_MAX, fmt } from "@/lib/catalog";
+import { CATALOG, COMBO_RECIPES, STRIP_BUNDLE_PACKS, STRIP_TIERS, STRIP_MAX, fmt, stripImage } from "@/lib/catalog";
 import { useStore } from "@/lib/store";
-import { SITE } from "@/lib/site-content";
-import { ModalShell } from "./shop";
-import { useProductReviews } from "@/lib/use-product-reviews";
-import { ReviewsPanel, ReviewStars } from "./reviews-panel";
 
-/* -------------------------------------------------------------- */
-/* Placeholder tile — shown when SITE.productImages[strip-N] empty */
-/* -------------------------------------------------------------- */
-function PlaceholderStrip({ n }: { n: number }) {
-  const palettes = [
-    ["#f4c9d1", "#e6a4b4", "#8b3a52"],
-    ["#eadfd0", "#c9a37a", "#6e4a2c"],
-    ["#f2d6c9", "#d98a7a", "#7a2a2a"],
-    ["#dfe7d5", "#a9c29b", "#3f6b48"],
-    ["#e0d3ee", "#a99cd4", "#4a3f7a"],
-  ];
-  const [c1, c2, c3] = palettes[(n - 1) % palettes.length];
-  return (
-    <div className="absolute inset-0 flex flex-col">
-      <div className="h-[12%] flex items-center justify-center font-display italic text-[0.7rem] tracking-wide text-white/90" style={{ background: c3 }}>
-        Strip {n}
-      </div>
-      {[0, 1, 2, 3].map((i) => (
-        <div
-          key={i}
-          className="flex-1 border-b border-white/40 flex items-center justify-center"
-          style={{ background: `linear-gradient(135deg, ${c1}, ${c2})` }}
-        >
-          <span className="font-display text-white/70 text-xs">◆</span>
-        </div>
-      ))}
-      <div className="h-[8%] flex items-center justify-center text-[0.55rem] uppercase tracking-[0.3em] text-white/80" style={{ background: c3 }}>
-        the layout
-      </div>
-    </div>
-  );
+const items = CATALOG.strips;
+const count = items.length;
+
+// Signed distance from the centred slide, wrapped so the carousel loops:
+// with 12 strips, strip 12 sits just left of strip 1.
+function offsetFrom(active: number, index: number): number {
+  let d = (index - active + count) % count;
+  if (d > count / 2) d -= count;
+  return d;
 }
 
+// How each position around the centre is drawn — scale, inward tilt and
+// fade grow with distance, giving the curved, 3D look.
+const DEPTH = [
+  { scale: 1.08, rotate: 0, opacity: 1 },
+  { scale: 0.92, rotate: 12, opacity: 0.9 },
+  { scale: 0.82, rotate: 22, opacity: 0.6 },
+  { scale: 0.72, rotate: 28, opacity: 0 },
+];
+
 /* -------------------------------------------------------------- */
-/* Pricing table                                                   */
+/* Pricing banner                                                  */
 /* -------------------------------------------------------------- */
-function StripsPricingTable({ count }: { count: number }) {
+function StripsPricingTable({ selected }: { selected: number }) {
   return (
-    <div className="mx-auto mt-4 max-w-xl rounded-2xl bg-white/70 backdrop-blur-sm ring-1 ring-rose-wine/10 p-4">
+    <div className="mx-auto mt-4 max-w-3xl rounded-2xl bg-white/70 backdrop-blur-sm ring-1 ring-rose-wine/10 p-3 sm:p-4">
       <p className="text-center text-[0.65rem] font-semibold uppercase tracking-[0.3em] text-blush-rose">
         Bundle pricing
       </p>
-      <div className="mt-3 grid grid-cols-5 gap-1 text-center">
-        {[1, 2, 3, 4, 5].map((n) => {
-          const active = count === n;
+      <div className="mt-3 flex snap-x gap-1.5 overflow-x-auto pb-1 [scrollbar-width:none] sm:grid sm:grid-cols-9 sm:overflow-visible [&::-webkit-scrollbar]:hidden">
+        {STRIP_BUNDLE_PACKS.map((n) => {
+          const active = selected === n;
           return (
             <div
               key={n}
-              className={`rounded-xl px-1.5 py-2 transition ${
-                active
-                  ? "bg-rose-wine text-white shadow-md"
-                  : "bg-white/70 text-rose-wine ring-1 ring-rose-wine/10"
+              className={`min-w-[4.25rem] shrink-0 snap-start rounded-xl px-1.5 py-2 text-center transition sm:min-w-0 ${
+                active ? "bg-rose-wine text-white shadow-md" : "bg-white/70 text-rose-wine ring-1 ring-rose-wine/10"
               }`}
             >
-              <p className="flex min-h-[2.3em] items-center justify-center text-[0.6rem] uppercase tracking-[0.2em] opacity-80">
+              <p className="text-[0.6rem] uppercase tracking-[0.15em] opacity-80">
                 {n} strip{n === 1 ? "" : "s"}
               </p>
               <p className="font-display text-base font-semibold">{fmt(STRIP_TIERS[n])}</p>
@@ -70,218 +52,284 @@ function StripsPricingTable({ count }: { count: number }) {
           );
         })}
       </div>
+      <p className="mt-2 text-center text-sm text-rose-wine">
+        {selected > 0 ? (
+          <>
+            <span className="font-semibold">{selected}</span> strip{selected === 1 ? "" : "s"} selected ·{" "}
+            <span className="font-semibold">{fmt(STRIP_TIERS[selected] ?? 0)}</span>
+          </>
+        ) : (
+          <span className="text-dusty-rose">Pick any strips — the price follows how many you choose.</span>
+        )}
+      </p>
     </div>
   );
 }
 
-/* -------------------------------------------------------------- */
-/* StripsSection                                                   */
-/* -------------------------------------------------------------- */
-export function StripsSection() {
-  const [openId, setOpenId] = useState<string | null>(null);
+// Toggles a strip and reports the result. Shared by the carousel and the
+// lightbox so both say the same thing.
+function useStripToggle() {
   const selections = useStore((s) => s.stripSelections);
   const toggleStrip = useStore((s) => s.toggleStrip);
+  const cart = useStore((s) => s.cart);
+  const combo = cart.find((c) => c.category === "combos");
+  const comboStrips = combo ? COMBO_RECIPES[combo.id]?.stripCount ?? 0 : 0;
 
-  const items = CATALOG.strips;
-  const count = selections.length;
-  const tierPrice = count > 0 ? STRIP_TIERS[count] : 0;
-
-  const handleToggle = (id: string, name: string) => {
+  return (id: string, name: string) => {
     const already = selections.includes(id);
-    const ok = toggleStrip(id);
-    if (!ok) {
+    if (!toggleStrip(id)) {
       toast.error(`You can only pick up to ${STRIP_MAX} strips.`);
+      return;
+    }
+    // A full combo allowance swaps out the oldest pick (see toggleStrip).
+    if (!already && comboStrips > 0 && selections.length >= comboStrips) {
+      toast.success(`${name} swapped in — your combo includes ${comboStrips} strip${comboStrips === 1 ? "" : "s"}`);
       return;
     }
     toast.success(already ? `${name} removed` : `${name} added`);
   };
+}
+
+/* -------------------------------------------------------------- */
+/* StripsSection — curved, looping 3D carousel                     */
+/* -------------------------------------------------------------- */
+export function StripsSection() {
+  const [active, setActive] = useState(0);
+  const [lightbox, setLightbox] = useState<number | null>(null);
+  const selections = useStore((s) => s.stripSelections);
+  const toggle = useStripToggle();
+  const drag = useRef<{ x: number; moved: boolean } | null>(null);
+
+  const go = (delta: number) => setActive((i) => (i + delta + count) % count);
+  const current = items[active];
+  const currentSelected = selections.includes(current.id);
+
+  const onPointerDown = (e: React.PointerEvent) => {
+    drag.current = { x: e.clientX, moved: false };
+  };
+  const onPointerMove = (e: React.PointerEvent) => {
+    if (drag.current && Math.abs(e.clientX - drag.current.x) > 8) drag.current.moved = true;
+  };
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (!drag.current) return;
+    const dx = e.clientX - drag.current.x;
+    if (Math.abs(dx) > 40) go(dx < 0 ? 1 : -1);
+  };
+  // A swipe must not also count as a tap on the slide under the finger.
+  const wasDrag = () => {
+    const moved = !!drag.current?.moved;
+    drag.current = null;
+    return moved;
+  };
+
+  const onSlideClick = (index: number) => {
+    if (wasDrag()) return;
+    if (index === active) toggle(items[index].id, items[index].name);
+    else setActive(index);
+  };
 
   return (
     <>
-      <StripsPricingTable count={count} />
+      <StripsPricingTable selected={selections.length} />
 
-      <div className="mt-6">
-        <div className="grid grid-cols-5 gap-1 sm:gap-4">
-          {items.map((item, idx) => {
-            const active = selections.includes(item.id);
-            const photos = SITE.productImages?.[item.id] ?? [];
-            const hero = photos[0];
-
+      <div
+        className="relative mx-auto mt-6 h-[27rem] max-w-5xl touch-pan-y select-none overflow-hidden sm:h-[36rem]"
+        style={{ perspective: "1200px" }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={onPointerUp}
+        onKeyDown={(e) => {
+          if (e.key === "ArrowRight") go(1);
+          if (e.key === "ArrowLeft") go(-1);
+        }}
+        role="region"
+        aria-roledescription="carousel"
+        aria-label="Polaroid strips"
+        tabIndex={0}
+      >
+        <div className="absolute inset-0" style={{ transformStyle: "preserve-3d" }}>
+          {items.map((item, index) => {
+            const d = offsetFrom(active, index);
+            const distance = Math.abs(d);
+            if (distance >= DEPTH.length) return null;
+            const depth = DEPTH[distance];
+            const selected = selections.includes(item.id);
             return (
-              <div
+              <button
                 key={item.id}
-                onClick={() => handleToggle(item.id, item.name)}
-                className={`group relative flex flex-col rounded-md sm:rounded-2xl overflow-hidden transition cursor-pointer select-none ${
-                  active ? "ring-2 ring-rose-wine shadow-lg" : "ring-1 ring-rose-wine/10"
-                }`}
+                type="button"
+                onClick={() => onSlideClick(index)}
+                aria-label={index === active ? `${selected ? "Remove" : "Select"} ${item.name}` : `Show ${item.name}`}
+                aria-pressed={index === active ? selected : undefined}
+                tabIndex={index === active ? 0 : -1}
+                className={`absolute left-1/2 top-1/2 w-[7rem] rounded-xl bg-white p-1.5 transition-[transform,opacity,box-shadow] duration-500 ease-out sm:w-[9.5rem] sm:p-2 ${
+                  selected ? "ring-4 ring-rose-wine shadow-[0_0_24px_rgba(193,71,109,0.55)]" : "ring-1 ring-rose-wine/10"
+                } ${d === 0 ? "shadow-2xl" : "shadow-md"}`}
+                style={{
+                  transform: `translate(-50%, -50%) translateX(${d * 82}%) scale(${depth.scale}) rotateY(${-Math.sign(d) * depth.rotate}deg)`,
+                  opacity: depth.opacity,
+                  zIndex: 10 - distance,
+                  pointerEvents: depth.opacity === 0 ? "none" : undefined,
+                }}
               >
-                <button
-                  type="button"
-                  onClick={(e) => { e.stopPropagation(); setOpenId(item.id); }}
-                  className="relative w-full aspect-[303/1000] bg-white overflow-hidden cursor-zoom-in p-0.5 sm:p-3"
-                  aria-label={`View ${item.name}`}
-                >
-                  {hero ? (
-                    <img
-                      src={hero}
-                      alt={item.name}
-                      loading="lazy"
-                      className="block w-full h-full object-contain"
-                    />
-                  ) : (
-                    <div className="absolute inset-0">
-                      <PlaceholderStrip n={idx + 1} />
-                    </div>
-                  )}
-                  {active && (
-                    <span className="absolute top-1 right-1 sm:top-2 sm:right-2 grid h-4 w-4 sm:h-7 sm:w-7 place-items-center rounded-full bg-rose-wine text-white shadow-md">
-                      <Check className="h-2.5 w-2.5 sm:h-4 sm:w-4" />
-                    </span>
-                  )}
-                </button>
-
-                <div className="p-1 sm:p-3 bg-white/80 backdrop-blur-sm flex flex-col gap-1 sm:gap-2">
-                  <h4 className="font-display text-[0.6rem] sm:text-base text-rose-wine leading-tight text-center truncate">
-                    {item.name}
-                  </h4>
-                  <div className="flex gap-0.5 sm:gap-1.5" onClick={(e) => e.stopPropagation()}>
-                    <button
-                      type="button"
-                      onClick={() => handleToggle(item.id, item.name)}
-                      className={`pill-btn !py-0.5 sm:!py-1.5 !px-1 sm:!px-2 !text-[0.5rem] sm:!text-[0.7rem] flex-1 min-w-0 ${
-                        active ? "!bg-rose-wine !text-white !border-rose-wine" : "pill-btn-hover"
-                      }`}
-                    >
-                      {active ? (
-                        <span className="flex min-w-0 items-center justify-center gap-1">
-                          <Check className="h-3 w-3 hidden sm:inline shrink-0" /> <span className="truncate">Selected</span>
-                        </span>
-                      ) : (
-                        "Select"
-                      )}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setOpenId(item.id)}
-                      aria-label={`View ${item.name}`}
-                      className="pill-btn pill-btn-hover !py-0.5 sm:!py-1.5 !px-1 sm:!px-2 !text-[0.5rem] sm:!text-[0.7rem] shrink-0"
-                    >
-                      <Eye className="h-3 w-3 sm:hidden" />
-                      <span className="hidden sm:inline">View</span>
-                    </button>
-                  </div>
-                </div>
-              </div>
+                <img
+                  src={stripImage(item.id)}
+                  alt={item.name}
+                  loading={distance <= 1 ? "eager" : "lazy"}
+                  draggable={false}
+                  className="block aspect-[303/1000] w-full object-contain"
+                />
+                {selected && (
+                  <span className="absolute right-1.5 top-1.5 flex items-center gap-1 rounded-full bg-rose-wine px-2 py-0.5 text-[0.6rem] font-semibold text-white shadow-md">
+                    <Check className="h-3 w-3" /> Selected
+                  </span>
+                )}
+              </button>
             );
           })}
         </div>
 
-        {count > 0 && (
-          <p className="mt-4 text-center text-sm text-rose-wine">
-            <span className="font-semibold">{count}</span> strip{count === 1 ? "" : "s"} selected ·{" "}
-            <span className="font-semibold">{fmt(tierPrice)}</span>
-          </p>
-        )}
+        <button
+          type="button"
+          onClick={() => go(-1)}
+          aria-label="Previous strip"
+          className="absolute left-1 top-1/2 z-20 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/70 text-rose-wine shadow-md backdrop-blur-md transition hover:bg-white sm:left-4 sm:h-12 sm:w-12"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => go(1)}
+          aria-label="Next strip"
+          className="absolute right-1 top-1/2 z-20 grid h-10 w-10 -translate-y-1/2 place-items-center rounded-full bg-white/70 text-rose-wine shadow-md backdrop-blur-md transition hover:bg-white sm:right-4 sm:h-12 sm:w-12"
+        >
+          <ChevronRight className="h-5 w-5" />
+        </button>
       </div>
 
-      <StripModal
-        open={!!openId}
-        stripIndex={items.findIndex((i) => i.id === openId)}
-        onClose={() => setOpenId(null)}
-      />
+      <div className="mt-3 flex justify-center gap-1.5" role="tablist" aria-label="Choose a strip">
+        {items.map((item, index) => (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={index === active}
+            aria-label={item.name}
+            onClick={() => setActive(index)}
+            className={`h-1.5 rounded-full transition-all ${
+              index === active ? "w-5 bg-rose-wine" : selections.includes(item.id) ? "w-1.5 bg-blush-rose" : "w-1.5 bg-rose-wine/25"
+            }`}
+          />
+        ))}
+      </div>
+
+      <div className="mx-auto mt-4 flex max-w-xs items-center gap-2">
+        <button
+          type="button"
+          onClick={() => toggle(current.id, current.name)}
+          className={`pill-btn flex-1 !py-2.5 ${currentSelected ? "!bg-rose-wine !text-white !border-rose-wine" : "pill-btn-hover pill-primary"}`}
+        >
+          {currentSelected ? <><Check className="h-4 w-4" /> {current.name} selected</> : `Select ${current.name}`}
+        </button>
+        <button
+          type="button"
+          onClick={() => setLightbox(active)}
+          aria-label={`View ${current.name} full size`}
+          className="pill-btn pill-btn-hover shrink-0 !px-3 !py-2.5"
+        >
+          <Maximize2 className="h-4 w-4" />
+        </button>
+      </div>
+      <p className="mt-2 text-center text-[0.65rem] uppercase tracking-[0.2em] text-dusty-rose">
+        Swipe or use the arrows · tap the centre strip to select
+      </p>
+
+      {lightbox !== null && (
+        <StripLightbox index={lightbox} onIndex={(i) => { setLightbox(i); setActive(i); }} onClose={() => setLightbox(null)} />
+      )}
     </>
   );
 }
 
 /* -------------------------------------------------------------- */
-/* StripModal — tall image + right-side details + reviews          */
+/* StripLightbox — full-screen, uncropped, cycles every strip      */
 /* -------------------------------------------------------------- */
-function StripModal({
-  open,
-  stripIndex,
-  onClose,
-}: {
-  open: boolean;
-  stripIndex: number;
-  onClose: () => void;
-}) {
-  const item = stripIndex >= 0 ? CATALOG.strips[stripIndex] : null;
+function StripLightbox({ index, onIndex, onClose }: { index: number; onIndex: (i: number) => void; onClose: () => void }) {
   const selections = useStore((s) => s.stripSelections);
-  const toggleStrip = useStore((s) => s.toggleStrip);
-  const {
-    reviews, loading, posting, avg, reviewerId,
-    rvName, setRvName, rvText, setRvText, rvRating, setRvRating,
-    submitReview, deleteReview,
-  } = useProductReviews(item?.id ?? null);
+  const toggle = useStripToggle();
+  const item = items[index];
+  const selected = selections.includes(item.id);
+  const go = (delta: number) => onIndex((index + delta + count) % count);
 
-  if (!open || !item) return null;
+  useEffect(() => {
+    const original = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowRight") onIndex((index + 1) % count);
+      if (e.key === "ArrowLeft") onIndex((index - 1 + count) % count);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => {
+      document.body.style.overflow = original;
+      window.removeEventListener("keydown", onKey);
+    };
+  }, [index, onIndex, onClose]);
 
-  const photos = SITE.productImages?.[item.id] ?? [];
-  const hero = photos[0];
-  const active = selections.includes(item.id);
+  return createPortal(
+    <div className="fixed inset-0 z-[110] flex flex-col items-center justify-center bg-black/75 p-4 backdrop-blur-md" onClick={onClose}>
+      <button
+        type="button"
+        onClick={onClose}
+        aria-label="Close"
+        className="absolute right-4 top-4 z-10 rounded-full bg-white/10 p-2 text-white hover:bg-white/20"
+      >
+        <X className="h-6 w-6" />
+      </button>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); go(-1); }}
+        aria-label="Previous strip"
+        className="absolute left-3 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20 sm:left-6"
+      >
+        <ChevronLeft className="h-6 w-6" />
+      </button>
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); go(1); }}
+        aria-label="Next strip"
+        className="absolute right-3 top-1/2 z-10 grid h-11 w-11 -translate-y-1/2 place-items-center rounded-full bg-white/10 text-white hover:bg-white/20 sm:right-6"
+      >
+        <ChevronRight className="h-6 w-6" />
+      </button>
 
-  const handleToggle = () => {
-    const already = active;
-    const ok = toggleStrip(item.id);
-    if (!ok) return toast.error(`You can only pick up to ${STRIP_MAX} strips.`);
-    toast.success(already ? `${item.name} removed` : `${item.name} added`);
-  };
-
-  return (
-    <ModalShell onClose={onClose} maxW="max-w-4xl">
-      <div className="grid gap-6 md:grid-cols-12">
-        <div className="md:col-span-5 flex justify-center">
-          <div className="w-full max-w-[220px] aspect-[303/1000] max-h-[560px] rounded-xl overflow-hidden bg-white border border-rose-wine/10 shadow-xl relative p-4">
-            {hero ? (
-              <img src={hero} alt={item.name} className="block w-full h-full object-contain" />
-            ) : (
-              <div className="absolute inset-0">
-                <PlaceholderStrip n={stripIndex + 1} />
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="md:col-span-7 flex flex-col">
-          <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">Polaroid Strip</p>
-          <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">{item.name}</h3>
-          <ReviewStars avg={avg} count={reviews.length} />
-          <div className="mt-4 rounded-xl bg-white/60 p-3 ring-1 ring-rose-wine/10">
-            <p className="text-[0.65rem] uppercase tracking-[0.3em] text-blush-rose">Bundle pricing</p>
-            <div className="mt-2 grid grid-cols-5 gap-1 text-center text-xs">
-              {[1, 2, 3, 4, 5].map((n) => (
-                <div key={n} className="rounded-md bg-white px-1 py-1.5 ring-1 ring-rose-wine/10">
-                  <p className="text-[0.6rem] text-dusty-rose">{n}</p>
-                  <p className="font-semibold text-rose-wine">{fmt(STRIP_TIERS[n])}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-          <div className="mt-4 h-px bg-rose-wine/10" />
-          <p className="mt-4 text-sm leading-relaxed text-neutral-700">{item.desc}</p>
-          <ul className="mt-3 space-y-1.5 text-sm text-neutral-700">
-            <li>• Printed on premium matte-finish photo paper</li>
-            <li>• 4 photo cells per strip in editorial layout</li>
-            <li>• Ships flat with a protective sleeve</li>
-          </ul>
-
-          <button
-            onClick={handleToggle}
-            className={`pill-btn pill-btn-hover mt-6 w-full !py-3 !text-base ${
-              active ? "!bg-rose-wine !text-white !border-rose-wine" : "pill-primary"
-            }`}
-          >
-            {active ? "Remove from selection" : "Add to selection"}
-          </button>
-        </div>
-      </div>
-
-      <ReviewsPanel
-        reviews={reviews} loading={loading} posting={posting} reviewerId={reviewerId}
-        rvName={rvName} setRvName={setRvName} rvText={rvText} setRvText={setRvText}
-        rvRating={rvRating} setRvRating={setRvRating}
-        onSubmit={submitReview} onDelete={deleteReview}
+      <img
+        src={stripImage(item.id)}
+        alt={item.name}
+        onClick={(e) => e.stopPropagation()}
+        className="max-h-[72vh] max-w-[70vw] rounded-lg bg-white object-contain p-2 shadow-2xl"
       />
-    </ModalShell>
+
+      <div
+        className="mt-4 flex w-full max-w-sm flex-wrap items-center justify-center gap-3 rounded-2xl bg-white/95 p-3 shadow-xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="text-center">
+          <p className="font-display text-xl text-rose-wine">{item.name}</p>
+          <p className="text-[0.65rem] uppercase tracking-[0.2em] text-dusty-rose">
+            {index + 1} of {count}
+            {selections.length > 0 && ` · ${selections.length} selected · ${fmt(STRIP_TIERS[selections.length] ?? 0)}`}
+          </p>
+        </div>
+        <button
+          type="button"
+          onClick={() => toggle(item.id, item.name)}
+          className={`pill-btn !py-2 ${selected ? "!bg-rose-wine !text-white !border-rose-wine" : "pill-btn-hover pill-primary"}`}
+        >
+          {selected ? "Remove Strip" : "Select Strip"}
+        </button>
+      </div>
+    </div>,
+    document.body,
   );
 }

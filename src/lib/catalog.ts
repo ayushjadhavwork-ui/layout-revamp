@@ -44,9 +44,9 @@ export type Product = {
   desc: string;
   templateLimit?: number;
   format?: SizeFormat;
-  // Struck-through "was" price — only Single & Duo Card entries carry this.
+  // Struck-through "was" price — only License Card entries carry this.
   mrp?: number;
-  // How many Single & Duo Card designs this quantity tier allows (1 for
+  // How many License Card designs this quantity tier allows (1 for
   // Single, 2 for Duo) — only "friendship" entries carry this. Mirrors
   // how a "sizes" entry's templateLimit drives that product's own
   // sub-selection cap (see friendshipDesignLimit() in store.ts).
@@ -82,7 +82,7 @@ const TEMPLATES: Product[] = Array.from({ length: SITE.templateCount }, (_, i) =
   desc: "Curated aesthetic layout — included with your chosen package.",
 }));
 
-// The 4 Single & Duo Card design templates — front image is the thumbnail,
+// The 4 License Card design templates — front image is the thumbnail,
 // back image is shown when the customer swipes past it in the detail modal
 // (see FRIENDSHIP_DESIGN_IMAGE_COUNT convention in site-content.ts's
 // productImages: ["<front>", "<back>"]). A customer picks 1 (Single) or up
@@ -92,7 +92,14 @@ const FRIENDSHIP_DESIGNS: Product[] = Array.from({ length: 4 }, (_, i) => ({
   id: `card-${i + 1}`,
   name: `Card ${String(i + 1).padStart(2, "0")}`,
   price: 0,
-  desc: "A curated Single & Duo Card design — front & back preview available.",
+  desc: "A curated License Card design — front & back preview available.",
+}));
+
+const STRIPS: Product[] = Array.from({ length: SITE.stripCount }, (_, i) => ({
+  id: `strip-${i + 1}`,
+  name: `Strip ${i + 1}`,
+  price: 0,
+  desc: `Editorial polaroid photo booth strip — design ${i + 1}.`,
 }));
 
 const MEMORY_CARD_DESIGNS: Product[] = [
@@ -149,16 +156,11 @@ export const CATALOG: Record<Exclude<Category, "templates" | "pocket-templates">
     { id: "pol-memory",  name: "Memory Pack",  price: priceOf("polaroids", "pol-memory"),  desc: "27 polaroids to tell the whole story." },
     { id: "pol-premium", name: "Premium Pack", price: priceOf("polaroids", "pol-premium"), desc: "36 premium polaroids — the full collection." },
   ],
-  strips: [
-    { id: "strip-1", name: "Strip 1", price: 0, desc: "Editorial polaroid strip — design 1." },
-    { id: "strip-2", name: "Strip 2", price: 0, desc: "Editorial polaroid strip — design 2." },
-    { id: "strip-3", name: "Strip 3", price: 0, desc: "Editorial polaroid strip — design 3." },
-    { id: "strip-4", name: "Strip 4", price: 0, desc: "Editorial polaroid strip — design 4." },
-    { id: "strip-5", name: "Strip 5", price: 0, desc: "Editorial polaroid strip — design 5." },
-  ],
+  // Count lives in site-content.ts (SITE.stripCount) — bump it there.
+  strips: STRIPS,
   delivery: [
-    { id: "del-std", name: "Standard Delivery", price: priceOf("delivery", "del-std"), desc: "Free (₹80 on polaroid-only orders) — arrives in 7-8 days." },
-    { id: "del-exp", name: "Express Shipping",  price: priceOf("delivery", "del-exp"), desc: "Priority — arrives in 3-4 days." },
+    { id: "del-std", name: "Standard Delivery", price: priceOf("delivery", "del-std"), desc: "Free (₹80 on polaroid-only orders) — arrives in about 12 days." },
+    { id: "del-exp", name: "Express Shipping",  price: priceOf("delivery", "del-exp"), desc: "Priority (₹180 on polaroid-only orders) — arrives in about 8 days." },
   ],
 
   // A small, standalone product — not part of the magazine builder or any
@@ -172,11 +174,10 @@ export const CATALOG: Record<Exclude<Category, "templates" | "pocket-templates">
     },
   ],
 
-  // A standalone product within Step 1 — strictly 6 pages, pocket-sized, and
-  // shoppable alongside (not instead of) a Standard/Mini magazine above.
-  // Its own template picks happen in Step 2, tracked separately under the
-  // "pocket-templates" category so they never collide with the main
-  // magazine's template selection.
+  // The A6 size in the magazine builder — strictly 6 pages, pocket-sized,
+  // and shoppable alongside (not instead of) an A4/A5 magazine. Its own
+  // template picks are tracked separately under the "pocket-templates"
+  // category so they never collide with the main magazine's selection.
   pocket: [
     {
       id: "pocket-mag",
@@ -188,7 +189,7 @@ export const CATALOG: Record<Exclude<Category, "templates" | "pocket-templates">
   ],
 
   // A standalone product, same spirit as the Newspaper/Pocket Magazine —
-  // not part of the magazine builder. Fully custom-printed single & duo card,
+  // not part of the magazine builder. Fully custom-printed license card,
   // sold as a quantity tier (Single/Duo) — picking one unlocks a design
   // pick step below (see "friendship-designs"), same two-step shape as
   // sizes → templates. The 3D viewer and customisation copy live in
@@ -196,7 +197,7 @@ export const CATALOG: Record<Exclude<Category, "templates" | "pocket-templates">
   friendship: [
     {
       id: "friend-single",
-      name: "Single Card",
+      name: "License Card",
       price: priceOf("friendship", "friend-single"),
       mrp: mrpOf("friendshipMrp", "friend-single"),
       designLimit: 1,
@@ -204,15 +205,15 @@ export const CATALOG: Record<Exclude<Category, "templates" | "pocket-templates">
     },
     {
       id: "friend-duo",
-      name: "Duo Card — BESTIE SET",
+      name: "Duo License Card",
       price: priceOf("friendship", "friend-duo"),
       mrp: mrpOf("friendshipMrp", "friend-duo"),
       designLimit: 2,
-      desc: "A matching pair of cards for you and your bestie — same customisation as the Single Card, designed as a set. Pick up to 2 designs.",
+      desc: "A matching pair of cards for you and your bestie — same customisation as the License Card, designed as a set. Pick up to 2 designs.",
     },
   ],
 
-  // Design picks for the Single & Duo Card — a flat "which of the 4 designs"
+  // Design picks for the License Card — a flat "which of the 4 designs"
   // selection, limited by the chosen quantity tier's designLimit (see
   // friendshipDesignLimit() in store.ts). Same relationship to "friendship"
   // as "templates" has to "sizes".
@@ -252,7 +253,6 @@ export const CATALOG: Record<Exclude<Category, "templates" | "pocket-templates">
     { id: "promo-strip",   name: "Free Polaroid Strip",       price: 0, desc: "Redeemed via spin-the-wheel coupon." },
     { id: "promo-letter",  name: "Free Personalized Letter",  price: 0, desc: "Redeemed via spin-the-wheel coupon." },
     { id: "promo-sticker", name: "Free Sticker Pack",         price: 0, desc: "Redeemed via spin-the-wheel coupon." },
-    { id: "promo-postcard", name: "Free Postcard", price: 0, desc: "Included with a curated combo." },
   ],
 };
 
@@ -272,15 +272,23 @@ export const COUPON_FREEBIES: Record<string, string> = {
   SPINSTICK: "promo-sticker",
 };
 
-// Tier pricing for polaroid strips, indexed by number of strips selected (1..5).
-// Numbers live in prices.ts → PRICES.stripTiers.
+// Tier pricing for polaroid strips, indexed by number of strips selected.
+// Numbers live in prices.ts → PRICES.stripTiers; the chips shown in the
+// pricing banner in PRICES.stripBundlePacks.
 export const STRIP_TIERS: Record<number, number> = { ...PRICES.stripTiers };
-export const STRIP_MAX = Object.keys(PRICES.stripTiers).length;
+export const STRIP_MAX = SITE.stripCount;
+export const STRIP_BUNDLE_PACKS: readonly number[] = PRICES.stripBundlePacks;
+
+// A strip's image: its SITE.productImages entry, or /media/strips/<n>.jpg
+// when none is listed — so a new strip only needs its file dropped in.
+export function stripImage(id: string): string {
+  return SITE.productImages[id]?.[0] ?? `/media/strips/${id.replace("strip-", "")}.jpg`;
+}
 
 export const MEMORY_CARD_TIERS: Record<number, number> = { ...PRICES.memoryCardTiers };
 export const MEMORY_CARD_MAX = Object.keys(PRICES.memoryCardTiers).length;
 
-// The sticker book's fixed inclusions, with each Photo Card's name read from
+// The sticker book's fixed inclusions, with each Memory Card's name read from
 // SITE.memoryCardInfo so it is only ever edited there.
 export const STICKER_BOOK_INCLUDED: { name: string; note: string; image: string }[] =
   (SITE.stickerBook.included as { name?: string; memoryCardId?: string; note: string; image: string }[]).map((inc) => ({
@@ -320,19 +328,18 @@ export type ComboRecipe = {
   stripCount?: number;
   friendshipCount?: number;
   memoryCardCount?: number;
-  freePostcard?: boolean;
 };
 
 export const COMBO_RECIPES: Record<string, ComboRecipe> = {
-  "combo-01": { sizeId: "sz-6-mini", stripCount: 1, polaroidId: "pol-mini", addonIds: ["add-combo"], freePostcard: true },
-  "combo-02": { sizeId: "sz-12-mini", memoryCardCount: 1, stripCount: 1, freePostcard: true },
-  "combo-03": { newspaper: true, friendshipCount: 1, polaroidId: "pol-mini", freePostcard: true },
-  "combo-04": { pocketCount: 1, memoryCardCount: 1, addonIds: ["add-letter"], polaroidId: "pol-classic", freePostcard: true },
-  "combo-05": { friendshipCount: 2, memoryCardCount: 2, stripCount: 2, freePostcard: true },
-  "combo-06": { sizeId: "sz-12", memoryCardCount: 1, friendshipCount: 1, freePostcard: true },
-  "combo-07": { sizeId: "sz-14", stripCount: 1, addonIds: ["add-combo"], freePostcard: true },
-  "combo-08": { sizeId: "sz-20-mini", friendshipCount: 1, memoryCardCount: 1, stripCount: 2, polaroidId: "pol-classic", freePostcard: true },
-  "combo-09": { sizeId: "sz-18", polaroidId: "pol-mini", stripCount: 1, addonIds: ["add-combo"], friendshipCount: 1, memoryCardCount: 1, freePostcard: true },
+  "combo-01": { sizeId: "sz-6-mini", stripCount: 1, polaroidId: "pol-mini", addonIds: ["add-combo"] },
+  "combo-02": { sizeId: "sz-12-mini", memoryCardCount: 1, stripCount: 1 },
+  "combo-03": { newspaper: true, friendshipCount: 1, polaroidId: "pol-mini" },
+  "combo-04": { pocketCount: 1, memoryCardCount: 1, addonIds: ["add-letter"], polaroidId: "pol-classic" },
+  "combo-05": { friendshipCount: 2, memoryCardCount: 2, stripCount: 2 },
+  "combo-06": { sizeId: "sz-12", memoryCardCount: 1, friendshipCount: 1 },
+  "combo-07": { sizeId: "sz-14", stripCount: 1, addonIds: ["add-combo"] },
+  "combo-08": { sizeId: "sz-20-mini", friendshipCount: 1, memoryCardCount: 1, stripCount: 2, polaroidId: "pol-classic" },
+  "combo-09": { sizeId: "sz-18", polaroidId: "pol-mini", stripCount: 1, addonIds: ["add-combo"], friendshipCount: 1, memoryCardCount: 1 },
 };
 
 // Real sum of what a combo's included items would cost bought separately —

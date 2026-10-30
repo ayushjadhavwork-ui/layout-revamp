@@ -1,23 +1,23 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState, useEffect, useRef } from "react";
-import { ArrowUpRight, Sparkles, Instagram, Youtube, Heart } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Instagram, Youtube, Heart } from "lucide-react";
 import { Toaster, toast } from "sonner";
 import logoAsset from "@/assets/logo.png.asset.json";
-import { CATALOG, CONFIG, type Category, type Product } from "@/lib/catalog";
+import { CONFIG } from "@/lib/catalog";
 import { useStore, useComboIssues } from "@/lib/store";
 import { comboSteps, guidedVisibleSections, nextComboAction, type GuidedSection } from "@/lib/combo-guide";
 import { SITE } from "@/lib/site-content";
 import { TiledSection } from "@/components/site/TiledSection";
 import {
-  ProductGrid, ProductModal, CartDrawer, CustomerInfoModal,
-  PaymentModal, SuccessModal, CartButton, StepIndicator, ModalShell,
+  CartDrawer, CustomerInfoModal,
+  PaymentModal, SuccessModal, CartButton, StepIndicator,
 } from "@/components/site/shop";
 
 import { StripsSection } from "@/components/site/strips-section";
 import { PacksSection } from "@/components/site/packs-section";
 import { TemplatesSection } from "@/components/site/templates-section";
 import { SizesSection } from "@/components/site/sizes-section";
-import { PocketMagazineSection } from "@/components/site/pocket-section";
+import { PocketTemplatePickers } from "@/components/site/pocket-section";
 import { AddonsSection } from "@/components/site/addons-section";
 import { CombosSection } from "@/components/site/combos-section";
 import { NewspaperSection } from "@/components/site/newspaper-section";
@@ -38,9 +38,9 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "The Layout — Custom Magazines & Keepsakes" },
-      { name: "description", content: "Create custom magazines, Photo Cards, Single & Duo Cards, polaroid keepsakes, and personalised gifts from The Layout." },
+      { name: "description", content: "Create custom magazines, Memory Cards, License Cards, polaroid keepsakes, and personalised gifts from The Layout." },
       { property: "og:title", content: "The Layout — Custom Magazines & Keepsakes" },
-      { property: "og:description", content: "Create custom magazines, Photo Cards, Single & Duo Cards, polaroid keepsakes, and personalised gifts from The Layout." },
+      { property: "og:description", content: "Create custom magazines, Memory Cards, License Cards, polaroid keepsakes, and personalised gifts from The Layout." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -55,64 +55,7 @@ const NAV = [
   { label: "The Team", href: "#founders" },
 ];
 
-const MANDATORY: {
-  t: string;
-  d: string;
-  long: string;
-  bullets: string[];
-}[] = [
-  {
-    t: "Front Cover",
-    d: "Your title, hero image and issue mark.",
-    long: "The Front Cover sets the tone of the entire magazine — your name or title, the issue number, and the hero photograph that anchors your story.",
-    bullets: [
-      "Custom title & issue mark",
-      "Hero image with editorial framing",
-      "Matte or gloss cover finish",
-    ],
-  },
-  {
-    t: "First Page",
-    d: "A welcoming opener — a letter, a dedication.",
-    long: "The First Page welcomes the reader — a personal letter, a dedication, or a quote that captures the spirit of your magazine.",
-    bullets: [
-      "Personal note or dedication",
-      "Custom typography & layout",
-      "Optional signature or photo",
-    ],
-  },
-  {
-    t: "Last Page",
-    d: "A closing note, credits, a signature.",
-    long: "The Last Page closes the story — a heartfelt sign-off, credits to contributors, or a final photo that lingers.",
-    bullets: [
-      "Closing note or signature",
-      "Contributor credits",
-      "Optional final photograph",
-    ],
-  },
-  {
-    t: "Back Cover",
-    d: "Barcode, tagline and finishing details.",
-    long: "The Back Cover is the finishing touch — tagline, barcode, and the little details that make your magazine feel real.",
-    bullets: [
-      "Custom tagline",
-      "Editorial barcode",
-      "Matching finish to front cover",
-    ],
-  },
-];
-
-
-const TIMELINE = [
-  { t: "Design",   d: "1–2 working days" },
-  { t: "Printing", d: "1 day after approval" },
-  { t: "Delivery", d: "7–8 days (location dependent)" },
-];
-
 function Home() {
-  const [modalCat, setModalCat] = useState<Category | null>(null);
-  const [modalProduct, setModalProduct] = useState<Product | null>(null);
   const [cartOpen, setCartOpen] = useState(false);
   const [infoOpen, setInfoOpen] = useState(false);
   const [payOpen, setPayOpen] = useState(false);
@@ -173,16 +116,19 @@ function Home() {
     return () => document.removeEventListener("click", onClick);
   }, [guided]);
 
+  // Other widgets (e.g. the spin wheel's "View My Cart") open the drawer by
+  // dispatching this event rather than reaching into Home's state.
+  useEffect(() => {
+    const onOpenCart = () => setCartOpen(true);
+    window.addEventListener("open-cart", onOpenCart);
+    return () => window.removeEventListener("open-cart", onOpenCart);
+  }, []);
+
   const removeActiveCombo = () => {
     if (!activeCombo) return;
     if (!window.confirm(`Remove ${activeCombo.name} and everything included with it?`)) return;
     deselectCombo(activeCombo.id);
     toast.success(`${activeCombo.name} removed`);
-  };
-
-  const openProduct = (cat: Category) => (p: Product) => {
-    setModalCat(cat);
-    setModalProduct(p);
   };
 
   const startCheckout = () => {
@@ -218,7 +164,7 @@ function Home() {
       return;
     }
     if (selectedFriendshipId && selectedFriendshipDesignIds.length < friendshipDesignLimit) {
-      toast.error(`Pick your ${friendshipDesignLimit} design${friendshipDesignLimit === 1 ? "" : "s"} for your ${selectedFriendshipId === "friend-duo" ? "Duo" : "Single"} Card before ordering — ${selectedFriendshipDesignIds.length}/${friendshipDesignLimit} selected.`);
+      toast.error(`Pick your ${friendshipDesignLimit} design${friendshipDesignLimit === 1 ? "" : "s"} for your ${selectedFriendshipId === "friend-duo" ? "Duo License Card" : "License Card"} before ordering — ${selectedFriendshipDesignIds.length}/${friendshipDesignLimit} selected.`);
       document.getElementById("friendship-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
@@ -230,7 +176,7 @@ function Home() {
       return sum + (match ? Number(match[1]) : 1);
     }, 0);
     if (expectedMemoryCards > 0 && selectedMemoryCardDesignIds.length < expectedMemoryCards) {
-      toast.error(`Pick ${expectedMemoryCards} Photo Card design${expectedMemoryCards === 1 ? "" : "s"} included in your combo before ordering.`);
+      toast.error(`Pick ${expectedMemoryCards} Memory Card design${expectedMemoryCards === 1 ? "" : "s"} included in your combo before ordering.`);
       document.getElementById("memory-card")?.scrollIntoView({ behavior: "smooth", block: "start" });
       return;
     }
@@ -263,32 +209,14 @@ function Home() {
       <Marquee />
       <Nav onCart={() => setCartOpen(true)} />
       <Showreel />
-      <CustomImageSection />
 
       <Hero />
 
-
-
-
       <Milestone />
-
-
 
       <TiledSection tiles={SITE.backgrounds.howToOrder}>
         <LayoutProductsSection />
       </TiledSection>
-
-      <FreePostcardSection />
-
-
-
-      <CreateMagazineSection />
-
-      <section className="pattern-satin">
-        <Mandatory />
-      </section>
-
-      <SizeComparisonSection />
 
       <TiledSection tiles={SITE.backgrounds.customize}>
         <div id="combos" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
@@ -313,27 +241,28 @@ function Home() {
         {show("build") && (
           <div id="build" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
             <div className="mx-auto max-w-6xl">
-              <SectionHead eyebrow="Step 1" title="Choose your package" sub="Pricing scales with page count. Front & back covers included." />
               <SizesSection />
             </div>
           </div>
         )}
 
-        {show("templates") && (
+        {/* With only Pocket Magazines in the cart, their own pickers below
+            replace the A4/A5 template section. */}
+        {show("templates") && (selectedSizeId || pocketUnits.length === 0) && (
           <div id="templates" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
             <div className="mx-auto max-w-6xl">
-              <SectionHead eyebrow="Step 2" title="Pick your templates" sub="Choose the exact number your package allows. Click a card for details." />
+              <SectionHead eyebrow="Templates" title="Pick your templates" sub="Choose the exact number your package allows. Click a card for details." />
               <StepIndicator />
               <TemplatesSection />
             </div>
           </div>
         )}
 
-        {show("pocket") && (
+        {show("pocket") && pocketUnits.length > 0 && (
           <div id="pocket" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
             <div className="mx-auto max-w-6xl">
-              <SectionHead eyebrow="Add it on" title="Pocket Magazine" sub="A standalone product of its own — strictly 6 pages, pocket-sized, ₹250 flat. Add it alongside your magazine above, or all on its own. Buying more than one? Pick templates for each individually below." />
-              <PocketMagazineSection />
+              <SectionHead eyebrow="Templates" title="Pocket Magazine templates" sub={`Pick ${pocketTemplateLimit} templates for each Pocket Magazine (A6) in your cart.`} />
+              <PocketTemplatePickers />
             </div>
           </div>
         )}
@@ -350,7 +279,7 @@ function Home() {
         {show("memory-card") && (
           <div id="memory-card" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
             <div className="mx-auto max-w-6xl">
-              <SectionHead eyebrow="Turn moments into keepsakes" title="The Photo Card" sub="Choose one, two, or three cards — mix the designs or repeat your favourite." />
+              <SectionHead eyebrow="Turn moments into keepsakes" title="The Memory Card" sub="Choose one, two, or three cards — mix the designs or repeat your favourite." />
               <MemoryCardSection />
             </div>
           </div>
@@ -368,7 +297,7 @@ function Home() {
         {show("friendship-card") && (
           <div id="friendship-card" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
             <div className="mx-auto max-w-6xl">
-              <SectionHead eyebrow="Something different" title="Single & Duo Cards" sub="A fully personalised keepsake card — not part of the package above." />
+              <SectionHead eyebrow="Personalised Keepsakes" title="License Cards" sub="A fully personalised keepsake card — not part of the package above." />
               <FriendshipCardSection />
             </div>
           </div>
@@ -377,55 +306,24 @@ function Home() {
         <div id="extras" className="relative z-10 scroll-mt-24 px-4 py-12 sm:py-20">
           <div className="mx-auto max-w-6xl space-y-10 sm:space-y-16">
             {show("addons") && <div id="addons" className="scroll-mt-24">
-              <SectionHead eyebrow="Step 3" title="Add-ons" sub="Little extras that make the keepsake feel personal." />
+              <SectionHead eyebrow="Add-ons" title="Add-ons" sub="Little extras that make the keepsake feel personal." />
               <AddonsSection />
             </div>}
             {show("packs") && <div id="packs" className="scroll-mt-24">
-              <SectionHead eyebrow="Step 4" title="Polaroid packs" sub="Real polaroid keepsakes — tap a pack to add, or View for the full look." />
+              <SectionHead eyebrow="Keepsakes" title="Polaroid packs" sub="Real polaroid keepsakes — tap a pack to add, or View for the full look." />
               <PacksSection />
             </div>}
 
             {show("strips") && <div id="strips" className="scroll-mt-24">
-              <SectionHead eyebrow="Step 5" title="Polaroid Strips" sub="Click a strip to add it, or tap View for details." />
+              <SectionHead eyebrow="Strips" title="Polaroid Strips" sub="Swipe through every strip — tap the centre one to add it, or open it full size." />
               <StripsSection />
             </div>}
-            <div>
-              <SectionHead eyebrow="Step 6" title="Delivery" />
-              <ProductGrid category="delivery" items={CATALOG.delivery} onOpen={openProduct("delivery")} cols="grid-cols-2" />
-            </div>
           </div>
         </div>
-
-      <section className="relative z-10 px-4 pb-10 sm:pb-16">
-        <div className="mx-auto max-w-4xl">
-          <div className="glass rounded-3xl p-8 md:p-10 text-center">
-            <h3 className="font-display text-3xl md:text-4xl text-rose-wine">Ready to place your order?</h3>
-            <p className="mt-2 text-dusty-rose">We'll ask for your shipping details and take you to payment.</p>
-            <button
-              onClick={startCheckout}
-              className="pill-btn pill-btn-hover pill-primary mt-6 mx-auto"
-              type="button"
-            >
-              Complete my order <ArrowUpRight className="h-4 w-4" />
-            </button>
-            <p className="mt-3 text-xs text-dusty-rose">{cartCount} item{cartCount === 1 ? "" : "s"} in cart</p>
-            <a
-              href={SITE.links.behindTheLayout}
-              target="_blank"
-              rel="noreferrer"
-              className="mt-4 inline-block text-sm text-rose-wine underline underline-offset-4 hover:text-blush-rose"
-            >
-              Behind The Layout →
-            </a>
-          </div>
-        </div>
-      </section>
-
-      <section className="pattern-satin"></section>
-        <Timeline />
-      <section/>
-      
       </TiledSection>
+
+      <Reels />
+
       <TiledSection tiles={SITE.backgrounds.founders}>
         <Founders />
       </TiledSection>
@@ -434,17 +332,12 @@ function Home() {
         <Journey />
       </section>         
 
-      <Reels />
-      <PhotoGallery />
       <HappyCustomersBanner />
       <Faq />
       <Policy />
 
-
-
       <Footer />
 
-      <ProductModal open={!!modalProduct} category={modalCat} product={modalProduct} onClose={() => setModalProduct(null)} />
       <CartDrawer open={cartOpen} onClose={() => setCartOpen(false)} onCheckout={startCheckout} />
       <CustomerInfoModal open={infoOpen} onClose={() => setInfoOpen(false)} onSubmit={() => { setInfoOpen(false); setPayOpen(true); }} />
       <PaymentModal open={payOpen} onClose={() => setPayOpen(false)} onDone={(id) => { setPayOpen(false); setOrderId(id); setSuccessOpen(true); }} />
@@ -519,58 +412,6 @@ const REELS = [
   "https://www.instagram.com/reel/DaWLtOkzxqR/",
   "https://www.instagram.com/reel/DaQZQ2TKI8L/",
 ];
-
-// Middle tile of the 3x3 grid — always shows SITE.photoGallery[0].
-const GALLERY_CENTER_SLOT = 4;
-
-function PhotoGallery() {
-  const images = SITE.photoGallery;
-
-  const [tiles, setTiles] = useState(() => {
-    const arr = Array.from({ length: 9 }, (_, i) => (i % (images.length - 1 || 1)) + 1);
-    arr[GALLERY_CENTER_SLOT] = 0;
-    return arr;
-  });
-
-  useEffect(() => {
-    if (images.length <= 2) return;
-    const id = setInterval(() => {
-      setTiles((prev) => {
-        const slots = prev.map((_, i) => i).filter((i) => i !== GALLERY_CENTER_SLOT);
-        const slot = slots[Math.floor(Math.random() * slots.length)];
-        let next: number;
-        do {
-          next = 1 + Math.floor(Math.random() * (images.length - 1));
-        } while (next === prev[slot]);
-        const copy = [...prev];
-        copy[slot] = next;
-        return copy;
-      });
-    }, 2200);
-    return () => clearInterval(id);
-  }, [images.length]);
-
-  return (
-    <section id="gallery" className="relative z-10 px-4 py-12 sm:py-20">
-      <div className="mx-auto max-w-3xl">
-        <SectionHead eyebrow="Straight from the studio" title="Wall of memories" sub="A living peek at prints, packs and unboxings — refreshing in real time." />
-        <div className="grid grid-cols-3 gap-1.5 sm:gap-3">
-          {tiles.map((imgIdx, slot) => (
-            <div key={slot} className="relative aspect-square overflow-hidden rounded-lg sm:rounded-2xl bg-white/40 shadow-sm">
-              <img
-                key={imgIdx}
-                src={images[imgIdx]}
-                alt=""
-                loading="lazy"
-                className="gallery-fade absolute inset-0 h-full w-full object-cover"
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
 
 function useInstagramEmbeds() {
   useEffect(() => {
@@ -769,7 +610,10 @@ export function SectionHead({ eyebrow, title, sub }: { eyebrow: string; title: s
 // in-page links so Guided Combo Mode's link handler (in Home) can reveal a
 // section the combo is hiding before scrolling to it.
 function LayoutProductsSection() {
-  const jump = (event: React.MouseEvent<HTMLAnchorElement>, targetId: string) => {
+  const jump = (event: React.MouseEvent<HTMLAnchorElement>, targetId: string, magazineSize?: string) => {
+    // Pre-select the size in the magazine builder — after a beat, so a
+    // builder Guided Combo Mode was hiding has rendered by then.
+    if (magazineSize) setTimeout(() => window.dispatchEvent(new CustomEvent("configure-magazine", { detail: magazineSize })), 80);
     const el = document.getElementById(targetId);
     if (!el) return; // hidden by Guided Combo Mode — Home's handler takes over
     event.preventDefault();
@@ -785,17 +629,18 @@ function LayoutProductsSection() {
             <a
               key={p.id}
               href={`#${p.targetId}`}
-              onClick={(e) => jump(e, p.targetId)}
-              className="group relative flex min-h-[5.5rem] flex-col items-center justify-center rounded-2xl border border-blush-rose/40 bg-white/80 p-4 text-center shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-rose-wine/60 hover:bg-white hover:shadow-md active:scale-[0.98] sm:p-5"
+              onClick={(e) => jump(e, p.targetId, p.magazineSize)}
+              // Warm vintage yellow, matching the Love Sticker Book section.
+              className="group relative flex min-h-[5.5rem] flex-col items-center justify-center rounded-2xl border border-[#e8d3a0] bg-[#fbf0d4]/90 p-4 text-center shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:border-[#8e1b1b]/40 hover:bg-[#faeec7] hover:shadow-md active:scale-[0.98] sm:p-5"
             >
               {p.badge && (
-                <span className="absolute -top-2.5 right-2 rounded-full bg-rose-wine px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-off-white shadow-sm">
+                <span className="absolute -top-2.5 right-2 rounded-full bg-[#8e1b1b] px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-off-white shadow-sm">
                   {p.badge}
                 </span>
               )}
-              <span className="font-display text-sm text-rose-wine sm:text-base">{p.name}</span>
+              <span className="font-display text-sm font-medium text-[#8e1b1b] sm:text-base">{p.name}</span>
               {p.subtitle && (
-                <span className="mt-1 line-clamp-2 text-[11px] text-dusty-rose transition-colors group-hover:text-neutral-600 sm:text-xs">{p.subtitle}</span>
+                <span className="mt-1 line-clamp-2 text-[11px] text-dusty-rose transition-colors group-hover:text-neutral-700 sm:text-xs">{p.subtitle}</span>
               )}
             </a>
           ))}
@@ -805,110 +650,6 @@ function LayoutProductsSection() {
   );
 }
 
-
-function MandatoryPlaceholder({ label }: { label: string }) {
-  return (
-    <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-blush-rose/30 via-pink-mist/40 to-rose-wine/20 text-rose-wine">
-      <span className="font-display italic text-lg opacity-70">The Layout</span>
-      <span className="mt-1 text-[0.6rem] uppercase tracking-[0.35em] opacity-70">{label}</span>
-    </div>
-  );
-}
-
-function Mandatory() {
-  const [openIdx, setOpenIdx] = useState<number | null>(null);
-  const active = openIdx !== null ? MANDATORY[openIdx] : null;
-  const photo = active ? SITE.productImages?.[`mandatory-${openIdx! + 1}`]?.[0] : undefined;
-
-  return (
-    <div className="relative z-10 px-4 py-12 sm:py-20">
-      <div className="mx-auto max-w-6xl">
-        <SectionHead eyebrow="Included by default" title="Mandatory pages" sub="Tap any page to view it in isolation." />
-        <div className="grid grid-cols-4 gap-1.5 sm:gap-4 md:gap-5">
-          {MANDATORY.map((m, i) => {
-            const hero = SITE.productImages?.[`mandatory-${i + 1}`]?.[0];
-            return (
-              <button
-                key={m.t}
-                type="button"
-                onClick={() => setOpenIdx(i)}
-                className="group text-left rounded-md sm:rounded-2xl overflow-hidden bg-white shadow-md ring-1 ring-rose-wine/10 hover:shadow-xl hover:-translate-y-0.5 transition"
-              >
-                <div className="relative aspect-[2480/3508] overflow-hidden bg-neutral-100">
-                  {hero ? (
-                    <img src={hero} alt={m.t} loading="lazy" className="absolute inset-0 h-full w-full object-cover object-center" />
-                  ) : (
-                    <MandatoryPlaceholder label={m.t} />
-                  )}
-                </div>
-                <div className="p-1 sm:p-3 md:p-4 text-center">
-                  <h4 className="font-display text-[0.65rem] sm:text-base md:text-xl text-rose-wine leading-tight">{m.t}</h4>
-                  <p className="mt-1 hidden sm:block text-xs text-neutral-600 line-clamp-2">{m.d}</p>
-                  <span className="mt-1 sm:mt-3 hidden sm:inline-block text-[0.65rem] font-semibold uppercase tracking-[0.25em] text-blush-rose group-hover:text-rose-wine">
-                    View page →
-                  </span>
-                </div>
-              </button>
-            );
-          })}
-        </div>
-        {SITE.mandatoryNote && (
-          <p className="mt-6 text-center text-sm text-neutral-600">{SITE.mandatoryNote}</p>
-        )}
-      </div>
-
-
-      {active && (
-        <ModalShell onClose={() => setOpenIdx(null)} maxW="max-w-3xl">
-          <div className="grid gap-6 md:grid-cols-12">
-            <div className="md:col-span-6 flex justify-center">
-              <div className="w-full max-w-[340px] aspect-[2480/3508] rounded-xl overflow-hidden bg-white shadow-2xl ring-1 ring-rose-wine/10 relative">
-                {photo ? (
-                  <img src={photo} alt={active.t} className="absolute inset-0 h-full w-full object-cover object-center" />
-                ) : (
-                  <MandatoryPlaceholder label={active.t} />
-                )}
-              </div>
-            </div>
-            <div className="md:col-span-6 flex flex-col">
-              <p className="text-xs font-semibold uppercase tracking-[0.3em] text-blush-rose">Mandatory page</p>
-              <h3 className="font-display text-3xl md:text-4xl text-rose-wine mt-2 leading-tight">{active.t}</h3>
-              <p className="mt-4 text-sm leading-relaxed text-neutral-700">{active.long}</p>
-              <ul className="mt-3 space-y-1.5 text-sm text-neutral-700">
-                {active.bullets.map((b) => (
-                  <li key={b}>• {b}</li>
-                ))}
-              </ul>
-              <p className="mt-6 text-xs text-dusty-rose italic">
-                Included with every magazine at no extra cost.
-              </p>
-            </div>
-          </div>
-        </ModalShell>
-      )}
-    </div>
-  );
-}
-
-
-function Timeline() {
-  return (
-    <div id="timeline" className="relative z-10 px-4 py-12 sm:py-20">
-      <div className="mx-auto max-w-6xl">
-        <SectionHead eyebrow="Timeline" title="From design to your hands" />
-        <div className="grid grid-cols-3 gap-1.5 sm:gap-4">
-          {TIMELINE.map((t, i) => (
-            <div key={t.t} className="step-card !p-2.5 sm:!p-4 md:!p-6">
-              <span className="font-display text-lg sm:text-2xl md:text-4xl text-rose-wine/60">0{i + 1}</span>
-              <h4 className="mt-1 sm:mt-2 font-display text-xs sm:text-lg md:text-2xl text-rose-wine leading-tight">{t.t}</h4>
-              <p className="mt-1 text-[0.6rem] sm:text-sm text-neutral-700 leading-snug">{t.d}</p>
-            </div>
-          ))}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 function Founders() {
   return (
@@ -1034,88 +775,3 @@ function Journey() {
     </div>
   );
 }
-
-function CustomImageSection() {
-  return (
-    // Removed all side padding (px-4) and spacing so it touches the absolute edges
-    <section className="relative z-10 w-full">
-      {/* 1. Removed the 'max-w-6xl' wrapper so it can span 100% of the screen.
-        2. Removed 'rounded' and 'shadow' classes.
-        3. Kept the aspect ratio and object-cover so the text stays perfectly centered.
-      */}
-      <img
-        src="/media/bg/2.svg"
-        alt="Showcase"
-        className="block w-full h-auto object-center"
-      />
-      {/* "Cherished Moments" banner — button sits just below the banner's
-          text, roughly 3/4 of the way down the image. */}
-      <div className="absolute inset-x-0 z-20 flex justify-center" style={{ top: "75%" }}>
-        <a
-          href={SITE.links.deliveryCheck}
-          target="_blank"
-          rel="noreferrer"
-          className="pill-btn pill-btn-hover pill-primary"
-        >
-          Check your delivery date <ArrowUpRight className="h-4 w-4" />
-        </a>
-      </div>
-    </section>
-  );
-}
-
-// Poster-style artwork with its own cream background and baked-in text, so
-// it's shown as a rounded card rather than a full-bleed banner. The postcard
-// art is portrait (1086×1448): full card width on phones, capped on desktop
-// so it doesn't grow taller than the screen.
-function FreePostcardSection() {
-  return (
-    <section className="relative z-10 px-4 py-10 sm:py-16">
-      <img
-        src="/media/bg/free_postcard.webp"
-        alt="A free postcard with every order — a little something from The Layout Club"
-        width={1086}
-        height={1448}
-        loading="lazy"
-        className="mx-auto block h-auto w-full max-w-md rounded-3xl shadow-xl ring-1 ring-rose-wine/10 lg:max-w-lg"
-      />
-    </section>
-  );
-}
-
-// Landscape (1672×941) A4 / A5 / A6 comparison. Nearly edge-to-edge on phones
-// so the size labels stay legible, capped at the content width on desktop.
-function SizeComparisonSection() {
-  return (
-    <section className="relative z-10 px-3 py-10 sm:px-6 sm:py-16">
-      <img
-        src="/media/bg/same_story_sizes.webp"
-        alt="Same story, different sizes — A4 original magazine, A5 mini magazine and A6 pocket magazine"
-        width={1672}
-        height={941}
-        loading="lazy"
-        className="mx-auto block h-auto w-full max-w-6xl rounded-2xl shadow-xl ring-1 ring-rose-wine/10 sm:rounded-3xl"
-      />
-    </section>
-  );
-}
-
-function CreateMagazineSection() {
-  return (
-    <section className="relative z-10 w-full">
-      <img 
-        src="/media/bg/3.svg"
-        alt="Showcase" 
-        // Swapped aspect-[4/3] and object-cover for h-auto
-        // This makes the image scale proportionally without ever cropping the sides
-        className="block w-full h-auto object-center"
-      />
-    </section>
-  );
-}
-
-
-
-
-// keep unused imports referenced if any tree-shake concern
-void useRef;
