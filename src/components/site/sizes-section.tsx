@@ -354,14 +354,14 @@ export function SizesSection() {
             ) : (
               <div className="flex shrink-0 items-center gap-2">
                 {/* Deselect straight from the homepage — no cart drawer needed. */}
-                {alreadyInCart && cartSizeItem && (
+                {alreadyInCart && cartSize && cartSizeItem && (
                   <button
                     type="button"
                     onClick={() => {
                       removeItem(cartSizeItem.key);
-                      toast.success(`${fromCatalog(cartSizeItem).size} · ${cartSizeItem.name} removed from cart.`);
+                      toast.success(`${fromCatalog(cartSize).size} · ${cartSize.name} removed from cart.`);
                     }}
-                    aria-label={`Remove ${fromCatalog(cartSizeItem).size} magazine from cart`}
+                    aria-label={`Remove ${fromCatalog(cartSize).size} magazine from cart`}
                     className="rounded-full border border-rose-wine/40 bg-white px-3.5 py-3 text-xs font-medium text-rose-wine transition hover:border-rose-wine hover:bg-rose-wine/5 active:scale-95 sm:text-sm"
                   >
                     ✕ Remove
