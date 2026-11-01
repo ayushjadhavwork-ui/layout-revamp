@@ -367,6 +367,20 @@ export function SizesSection() {
                     ✕ Remove
                   </button>
                 )}
+                {size === "A6" && pocketUnits.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const last = pocketUnits[pocketUnits.length - 1];
+                      if (last) removePocketUnit(last.uid);
+                      toast.success("Pocket Magazine (A6) removed from cart.");
+                    }}
+                    aria-label="Remove one Pocket Magazine (A6) from cart"
+                    className="rounded-full border border-rose-wine/40 bg-white px-3.5 py-3 text-xs font-medium text-rose-wine transition hover:border-rose-wine hover:bg-rose-wine/5 active:scale-95 sm:text-sm"
+                  >
+                    ✕ Remove
+                  </button>
+                )}
                 <button
                   type="button"
                   onClick={addToCart}
@@ -383,25 +397,9 @@ export function SizesSection() {
               In your cart:{" "}
               {[
                 cartSize && `${fromCatalog(cartSize).size} · ${cartSize.name}`,
-                pocketUnits.length > 0 && `Pocket Magazine (A6)${pocketUnits.length > 1 ? ` × ${pocketUnits.length}` : ""}`,
+                pocketUnits.length > 0 && `Pocket Magazine (A6) × ${pocketUnits.length}`,
               ].filter(Boolean).join(" + ")}
               {size !== "A6" && cartSize && !alreadyInCart && " — adding this one replaces your A4/A5 magazine."}
-              {size === "A6" && pocketUnits.length > 0 && (
-                <>
-                  {" "}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      const last = pocketUnits[pocketUnits.length - 1];
-                      if (last) removePocketUnit(last.uid);
-                      toast.success("Pocket Magazine (A6) removed from cart.");
-                    }}
-                    className="font-semibold text-rose-wine underline underline-offset-2 transition hover:text-blush-rose"
-                  >
-                    (Remove ✕)
-                  </button>
-                </>
-              )}
             </p>
           )}
         </div>
