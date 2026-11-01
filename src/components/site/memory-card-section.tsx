@@ -53,7 +53,7 @@ export function MemoryCardSection() {
           </p>
         </div>
 
-        <div className="mx-auto mt-4 grid max-w-5xl grid-cols-2 gap-3 md:grid-cols-3 md:gap-5">
+        <div className="mx-auto mt-4 grid max-w-5xl grid-cols-3 gap-1.5 sm:gap-3 md:gap-5">
           {designs.map((item, index) => {
             const count = selectedIds.filter((id) => id === item.id).length;
             const active = count > 0;
@@ -62,9 +62,9 @@ export function MemoryCardSection() {
             return (
               <article
                 key={item.id}
-                className={`flex min-w-0 flex-col rounded-lg bg-black/15 p-2 ring-1 transition sm:p-4 ${
+                className={`flex min-w-0 flex-col rounded-lg bg-black/15 p-1.5 ring-1 transition sm:p-4 ${
                   active ? "ring-2 ring-off-white" : "ring-pink-mist/30"
-                } ${index === 2 ? "col-span-2 mx-auto w-[calc(50%-0.375rem)] md:col-span-1 md:w-auto" : ""}`}
+                }`}
               >
                 <button
                   type="button"
@@ -86,22 +86,22 @@ export function MemoryCardSection() {
 
                 <div className="mt-auto pt-3">
                   {active ? (
-                    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-1">
-                      <button type="button" onClick={() => remove(item)} aria-label={`Decrease ${item.name} quantity`} className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-pink-mist/60 text-off-white">
-                        <Minus className="h-3.5 w-3.5" />
+                    <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-0.5 sm:gap-1">
+                      <button type="button" onClick={() => remove(item)} aria-label={`Decrease ${item.name} quantity`} className="grid h-7 w-7 sm:h-8 sm:w-8 shrink-0 place-items-center rounded-full border border-pink-mist/60 text-off-white">
+                        <Minus className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       </button>
-                      <span className="flex h-8 min-w-0 items-center justify-center rounded-full bg-off-white px-1 text-[0.65rem] font-semibold text-rose-wine sm:text-xs">Qty ×{count}</span>
-                      <button type="button" onClick={() => add(item)} disabled={total >= limit} aria-label={`Increase ${item.name} quantity`} className="grid h-8 w-8 shrink-0 place-items-center rounded-full border border-pink-mist/60 text-off-white disabled:opacity-35">
-                        <Plus className="h-3.5 w-3.5" />
+                      <span className="flex h-7 sm:h-8 min-w-0 items-center justify-center rounded-full bg-off-white px-0.5 text-[0.6rem] font-semibold text-rose-wine sm:px-1 sm:text-xs">Qty ×{count}</span>
+                      <button type="button" onClick={() => add(item)} disabled={total >= limit} aria-label={`Increase ${item.name} quantity`} className="grid h-7 w-7 sm:h-8 sm:w-8 shrink-0 place-items-center rounded-full border border-pink-mist/60 text-off-white disabled:opacity-35">
+                        <Plus className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                       </button>
                     </div>
                   ) : (
-                    <button type="button" onClick={() => add(item)} disabled={disabled} className="h-8 w-full rounded-full border border-pink-mist/60 text-[0.65rem] font-semibold text-off-white disabled:opacity-35 sm:text-xs">
+                    <button type="button" onClick={() => add(item)} disabled={disabled} className="h-7 sm:h-8 w-full rounded-full border border-pink-mist/60 text-[0.6rem] sm:text-xs font-semibold text-off-white disabled:opacity-35">
                       Select
                     </button>
                   )}
-                  <button type="button" onClick={() => setOpenIndex(index)} className="mt-2 flex h-8 w-full items-center justify-center gap-1 rounded-full border border-pink-mist/60 text-[0.65rem] text-off-white sm:text-xs">
-                    <Eye className="h-3.5 w-3.5" /> View More
+                  <button type="button" onClick={() => setOpenIndex(index)} className="mt-1.5 flex h-7 sm:h-8 w-full items-center justify-center gap-1 rounded-full border border-pink-mist/60 text-[0.6rem] sm:text-xs text-off-white sm:mt-2">
+                    <Eye className="h-3 w-3 sm:h-3.5 sm:w-3.5" /> View More
                   </button>
                 </div>
               </article>
