@@ -183,7 +183,9 @@ export function SizesSection() {
   const format = useStore((s) => s.format);
   const setFormat = useStore((s) => s.setFormat);
   const setSize = useStore((s) => s.setSize);
+  const removeItem = useStore((s) => s.removeItem);
   const addPocketUnit = useStore((s) => s.addPocketUnit);
+  const removePocketUnit = useStore((s) => s.removePocketUnit);
   const pocketUnits = useStore((s) => s.pocketUnits);
 
   const activeCombo = cart.find((c) => c.category === "combos");
@@ -193,6 +195,7 @@ export function SizesSection() {
 
   // The magazine in the cart (A4/A5), if any — the builder starts on it.
   const cartSize = selectedSizeId ? CATALOG.sizes.find((s) => s.id === selectedSizeId) : undefined;
+  const cartSizeItem = cart.find((c) => c.category === "sizes");
   const fromCatalog = (s: { id: string; format?: string }) => ({
     size: (s.format === "mini" ? "A5" : "A4") as MagazineSizeLabel,
     pages: Number(s.id.replace(/\D/g, "")),
