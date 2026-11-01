@@ -183,7 +183,9 @@ export function SizesSection() {
   const format = useStore((s) => s.format);
   const setFormat = useStore((s) => s.setFormat);
   const setSize = useStore((s) => s.setSize);
+  const removeItem = useStore((s) => s.removeItem);
   const addPocketUnit = useStore((s) => s.addPocketUnit);
+  const removePocketUnit = useStore((s) => s.removePocketUnit);
   const pocketUnits = useStore((s) => s.pocketUnits);
 
   const activeCombo = cart.find((c) => c.category === "combos");
@@ -193,6 +195,7 @@ export function SizesSection() {
 
   // The magazine in the cart (A4/A5), if any — the builder starts on it.
   const cartSize = selectedSizeId ? CATALOG.sizes.find((s) => s.id === selectedSizeId) : undefined;
+  const cartSizeItem = cart.find((c) => c.category === "sizes");
   const fromCatalog = (s: { id: string; format?: string }) => ({
     size: (s.format === "mini" ? "A5" : "A4") as MagazineSizeLabel,
     pages: Number(s.id.replace(/\D/g, "")),
@@ -349,13 +352,29 @@ export function SizesSection() {
                 Select Templates ➜
               </button>
             ) : (
-              <button
-                type="button"
-                onClick={addToCart}
-                className="shrink-0 rounded-full bg-rose-wine px-5 py-3 text-xs font-medium text-white shadow-md transition-transform hover:bg-rose-wine/90 active:scale-95 sm:px-7 sm:text-sm"
-              >
-                {alreadyInCart ? "In cart · Pick templates ➜" : "ADD TO CART 🛒"}
-              </button>
+              <div className="flex shrink-0 items-center gap-2">
+                {/* Deselect straight from the homepage — no cart drawer needed. */}
+                {alreadyInCart && cartSize && cartSizeItem && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      removeItem(cartSizeItem.key);
+                      toast.success(`${fromCatalog(cartSize).size} · ${cartSize.name} removed from cart.`);
+                    }}
+                    aria-label={`Remove ${fromCatalog(cartSize).size} magazine from cart`}
+                    className="rounded-full border border-rose-wine/40 bg-white px-3.5 py-3 text-xs font-medium text-rose-wine transition hover:border-rose-wine hover:bg-rose-wine/5 active:scale-95 sm:text-sm"
+                  >
+                    ✕ Remove
+                  </button>
+                )}
+                <button
+                  type="button"
+                  onClick={addToCart}
+                  className="rounded-full bg-rose-wine px-5 py-3 text-xs font-medium text-white shadow-md transition-transform hover:bg-rose-wine/90 active:scale-95 sm:px-7 sm:text-sm"
+                >
+                  {alreadyInCart ? "In cart · Pick templates ➜" : size === "A6" && pocketUnits.length > 0 ? "Add Another A6 🛒" : "ADD TO CART 🛒"}
+                </button>
+              </div>
             )}
           </div>
 
@@ -367,6 +386,22 @@ export function SizesSection() {
                 pocketUnits.length > 0 && `Pocket Magazine (A6)${pocketUnits.length > 1 ? ` × ${pocketUnits.length}` : ""}`,
               ].filter(Boolean).join(" + ")}
               {size !== "A6" && cartSize && !alreadyInCart && " — adding this one replaces your A4/A5 magazine."}
+              {size === "A6" && pocketUnits.length > 0 && (
+                <>
+                  {" "}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const last = pocketUnits[pocketUnits.length - 1];
+                      if (last) removePocketUnit(last.uid);
+                      toast.success("Pocket Magazine (A6) removed from cart.");
+                    }}
+                    className="font-semibold text-rose-wine underline underline-offset-2 transition hover:text-blush-rose"
+                  >
+                    (Remove ✕)
+                  </button>
+                </>
+              )}
             </p>
           )}
         </div>
