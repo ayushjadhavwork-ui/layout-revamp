@@ -4,8 +4,8 @@ import { CATALOG } from "./catalog";
 const find = (id: string) => CATALOG.sizes.find((s) => s.id === id)!;
 describe("new magazine sizes", () => {
   test("A4 and A5 each offer 18 page counts (4–38)", () => {
-    expect(CATALOG.sizes.filter((s) => s.format === "standard").length).toBe(18);
-    expect(CATALOG.sizes.filter((s) => s.format === "mini").length).toBe(18);
+    assert.equal(CATALOG.sizes.filter((s) => s.format === "standard").length, 18);
+    assert.equal(CATALOG.sizes.filter((s) => s.format === "mini").length, 18);
   });
   test("A4 38 pages costs ₹4100 with 35 templates", () => {
     assert.equal(find("sz-38").price, 4100);
