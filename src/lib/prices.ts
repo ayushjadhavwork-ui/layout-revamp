@@ -26,11 +26,21 @@ export const PRICES = {
     "sz-4": 699, // 4 Pages
     "sz-6": 799, // 6 Pages
     "sz-8": 999, // 8 Pages
+    "sz-10": 1100, // 10 Pages
     "sz-12": 1200, // 12 Pages
     "sz-14": 1300, // 14 Pages
     "sz-16": 1449, // 16 Pages
     "sz-18": 1600, // 18 Pages
     "sz-20": 1850, // 20 Pages
+    "sz-22": 2100, // 22 Pages
+    "sz-24": 2350, // 24 Pages
+    "sz-26": 2600, // 26 Pages
+    "sz-28": 2850, // 28 Pages
+    "sz-30": 3100, // 30 Pages
+    "sz-32": 3350, // 32 Pages
+    "sz-34": 3600, // 34 Pages
+    "sz-36": 3850, // 36 Pages
+    "sz-38": 4100, // 38 Pages
   },
 
   // -------------------------------------------------------
@@ -41,11 +51,21 @@ export const PRICES = {
     "sz-4-mini": 350, // 4 Pages (Mini)
     "sz-6-mini": 450, // 6 Pages (Mini)
     "sz-8-mini": 550, // 8 Pages (Mini)
-    "sz-12-mini": 600, // 12 Pages (Mini)
-    "sz-14-mini": 650, // 14 Pages (Mini)
-    "sz-16-mini": 750, // 16 Pages (Mini)
-    "sz-18-mini": 800, // 18 Pages (Mini)
-    "sz-20-mini": 999, // 20 Pages (Mini)
+    "sz-10-mini": 650, // 10 Pages (Mini)
+    "sz-12-mini": 750, // 12 Pages (Mini)
+    "sz-14-mini": 850, // 14 Pages (Mini)
+    "sz-16-mini": 950, // 16 Pages (Mini)
+    "sz-18-mini": 1050, // 18 Pages (Mini)
+    "sz-20-mini": 1150, // 20 Pages (Mini)
+    "sz-22-mini": 1250, // 22 Pages (Mini)
+    "sz-24-mini": 1350, // 24 Pages (Mini)
+    "sz-26-mini": 1450, // 26 Pages (Mini)
+    "sz-28-mini": 1550, // 28 Pages (Mini)
+    "sz-30-mini": 1650, // 30 Pages (Mini)
+    "sz-32-mini": 1750, // 32 Pages (Mini)
+    "sz-34-mini": 1850, // 34 Pages (Mini)
+    "sz-36-mini": 1950, // 36 Pages (Mini)
+    "sz-38-mini": 2050, // 38 Pages (Mini)
   },
 
 

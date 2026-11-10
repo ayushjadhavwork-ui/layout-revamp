@@ -56,14 +56,24 @@ export type Product = {
 // Page count → how many templates that package includes. Shared by both
 // formats (Mini gets the same template allowance as Standard).
 const SIZE_ROWS: { pages: number; templateLimit: number }[] = [
-  { pages: 4,  templateLimit: 1 },
-  { pages: 6,  templateLimit: 3 },
-  { pages: 8,  templateLimit: 5 },
+  { pages: 4, templateLimit: 1 },
+  { pages: 6, templateLimit: 3 },
+  { pages: 8, templateLimit: 5 },
+  { pages: 10, templateLimit: 7 },
   { pages: 12, templateLimit: 9 },
   { pages: 14, templateLimit: 11 },
   { pages: 16, templateLimit: 13 },
   { pages: 18, templateLimit: 15 },
   { pages: 20, templateLimit: 17 },
+  { pages: 22, templateLimit: 19 },
+  { pages: 24, templateLimit: 21 },
+  { pages: 26, templateLimit: 23 },
+  { pages: 28, templateLimit: 25 },
+  { pages: 30, templateLimit: 27 },
+  { pages: 32, templateLimit: 29 },
+  { pages: 34, templateLimit: 31 },
+  { pages: 36, templateLimit: 33 },
+  { pages: 38, templateLimit: 35 },
 ];
 
 // The pocket magazine is a strictly 6-page, single-SKU product — fixed page
